@@ -9,6 +9,7 @@ import Units.Ranger as ranger
 import Units.Worker as worker
 import Units.factory as factory
 import Units.rocket as rocket
+import research
 
 
 print("pystarting")
@@ -27,9 +28,7 @@ random.seed(6137)
 
 # let's start off with some research!
 # we can queue as much as we want.
-gc.queue_research(bc.UnitType.Rocket)
-gc.queue_research(bc.UnitType.Worker)
-gc.queue_research(bc.UnitType.Knight)
+
 
 my_team = gc.team()
 
@@ -39,6 +38,7 @@ while True:
 
     # frequent try/catches are a good idea
     try:
+		research.research_step(gc)
         # walk through our units:
         for unit in gc.my_units():
 

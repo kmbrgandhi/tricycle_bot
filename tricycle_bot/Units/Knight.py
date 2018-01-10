@@ -20,8 +20,8 @@ def timestep(gc, unit):
                 if gc.is_attack_ready(unit.id) and gc.can_attack(unit.id, other.id):
                     gc.attack(unit.id, other.id)
                     d = directions[0]
-                elif not gc.can_attack(unit.id, other.id):
-                    d = gc.direction_to(location, other.location)
+                elif not gc.can_attack(unit.id, other.id) and location.is_on_map():
+                    d = location.map_location().direction_to(other.location.map_location())
 
     # if no dudes, pick a random direction:
     if d == None:
