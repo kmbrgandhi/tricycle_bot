@@ -4,6 +4,12 @@ import sys
 import traceback
 
 def timestep(gc, unit):
+
+    # last check to make sure the right unit type is running this
+    if unit.unitType != bc.UnitType.Factory:
+        # prob should return some kind of error
+        return
+
     garrison = unit.structure_garrison()
     directions = list(bc.Direction)
     if len(garrison) > 0:
