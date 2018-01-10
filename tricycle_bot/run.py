@@ -34,10 +34,8 @@ my_team = gc.team()
 
 while True:
     # We only support Python 3, which means brackets around print()
-    print('pyround:', gc.round())
-
-    # frequent try/catches are a good idea
-    try:
+	print('pyround:', gc.round())
+	try:
 		research.research_step(gc)
 		# walk through our units:
 		num_workers= num_knights=num_rangers= num_mages= num_healers= num_factory= num_rocket = 0
@@ -58,10 +56,9 @@ while True:
 				num_rocket+=1
 		info = [num_workers, num_knights, num_rangers, num_mages, num_healers, num_factory, num_rocket]
 		for unit in gc.my_units():
-
 			# resepective unit types execute their own AI
 			if unit.unit_type == bc.UnitType.Worker:
-				worker.timestep(gc,unit,info)
+				worker.timestep(gc,unit)
 			elif unit.unit_type == bc.UnitType.Knight:
 				knight.timestep(gc,unit,info)
 			elif unit.unit_type == bc.UnitType.Ranger:
@@ -74,16 +71,16 @@ while True:
 				factory.timestep(gc,unit,info)
 			elif unit.unit_type == bc.UnitType.Rocket:
 				rocket.timestep(gc,unit,info)
+	except Exception as e:
+		print('Error:', e)
+		# use this to show where the error was
+		traceback.print_exc()
 
-    except Exception as e:
-        print('Error:', e)
-        # use this to show where the error was
-        traceback.print_exc()
+	# send the actions we've performed, and wait for our next turn.
+	gc.next_turn()
 
-    # send the actions we've performed, and wait for our next turn.
-    gc.next_turn()
+	# these lines are not strictly necessary, but it helps make the logs make more sense.
+	# it forces everything we've written this turn to be written to the manager.
+	sys.stdout.flush()
+	sys.stderr.flush()
 
-    # these lines are not strictly necessary, but it helps make the logs make more sense.
-    # it forces everything we've written this turn to be written to the manager.
-    sys.stdout.flush()
-    sys.stderr.flush()
