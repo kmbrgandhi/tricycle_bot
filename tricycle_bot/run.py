@@ -39,24 +39,41 @@ while True:
     # frequent try/catches are a good idea
     try:
 		research.research_step(gc)
-        # walk through our units:
-        for unit in gc.my_units():
+		# walk through our units:
+		num_workers= num_knights=num_rangers= num_mages= num_healers= num_factory= num_rocket = 0
+		for unit in gc.my_units():
+			if unit.unit_type == bc.UnitType.Worker:
+				num_workers+=1
+			elif unit.unit_type == bc.UnitType.Knight:
+				num_knights+=1
+			elif unit.unit_type == bc.UnitType.Ranger:
+				num_rangers+=1
+			elif unit.unit_type == bc.UnitType.Mage:
+				num_mages+=1
+			elif unit.unit_type == bc.UnitType.Healer:
+				num_healers+=1
+			elif unit.unit_type == bc.UnitType.Factory:
+				num_factory+=1
+			elif unit.unit_type == bc.UnitType.Rocket:
+				num_rocket+=1
+		info = [num_workers, num_knights, num_rangers, num_mages, num_healers, num_factory, num_rocket]
+		for unit in gc.my_units():
 
-        	# resepective unit types execute their own AI
-        	if unit.unit_type == bc.UnitType.Worker:
-        		worker.timestep(gc,unit)
-        	elif unit.unit_type == bc.UnitType.Knight:
-        		knight.timestep(gc,unit)
-        	elif unit.unit_type == bc.UnitType.Ranger:
-        		ranger.timestep(gc,unit)
-        	elif unit.unit_type == bc.UnitType.Mage:
-        		mage.timestep(gc,unit)
-        	elif unit.unit_type == bc.UnitType.Healer:
-        		healer.timestep(gc,unit)
-        	elif unit.unit_type == bc.UnitType.Factory:
-        		factory.timestep(gc,unit)
-        	elif unit.unit_type == bc.UnitType.Rocket:
-        		rocket.timestep(gc,unit)
+			# resepective unit types execute their own AI
+			if unit.unit_type == bc.UnitType.Worker:
+				worker.timestep(gc,unit,info)
+			elif unit.unit_type == bc.UnitType.Knight:
+				knight.timestep(gc,unit,info)
+			elif unit.unit_type == bc.UnitType.Ranger:
+				ranger.timestep(gc,unit,info)
+			elif unit.unit_type == bc.UnitType.Mage:
+				mage.timestep(gc,unit,info)
+			elif unit.unit_type == bc.UnitType.Healer:
+				healer.timestep(gc,unit,info)
+			elif unit.unit_type == bc.UnitType.Factory:
+				factory.timestep(gc,unit,info)
+			elif unit.unit_type == bc.UnitType.Rocket:
+				rocket.timestep(gc,unit,info)
 
     except Exception as e:
         print('Error:', e)
