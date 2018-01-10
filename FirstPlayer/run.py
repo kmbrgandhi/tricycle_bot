@@ -2,7 +2,7 @@ import battlecode as bc
 import random
 import sys
 import traceback
-from pathfinding_util import *
+
 
 print("pystarting")
 
