@@ -5,7 +5,7 @@ import traceback
 
 def timestep(gc, unit):
     # last check to make sure the right unit type is running this
-    if unit.unitType != bc.UnitType.Knight:
+    if unit.unit_type != bc.UnitType.Knight:
         # prob should return some kind of error
         return
 
