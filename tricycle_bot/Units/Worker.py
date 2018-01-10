@@ -5,10 +5,11 @@ import traceback
 
 def timestep(gc, unit):
 
-	# last check to make sure the right unit type is running this
-	if unit.unitType != bc.UnitType.Worker:
-		# prob should return some kind of error
-		return
+    # last check to make sure the right unit type is running this
+    if unit.unitType != bc.UnitType.Worker:
+        # prob should return some kind of error
+        return
+    my_team = gc.team()
 
     # first, let's look for nearby blueprints to work on
     location = unit.location
@@ -27,6 +28,7 @@ def timestep(gc, unit):
 
     # okay, there weren't any dudes around
     # pick a random direction:
+    directions = list(bc.Direction)
     d = random.choice(directions)
 
     # or, try to build a factory:

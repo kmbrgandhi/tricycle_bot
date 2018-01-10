@@ -3,7 +3,7 @@ import random
 import sys
 import traceback
 import Units.healer as healer
-import Units.knight as knights
+import Units.knight as knight
 import Units.mage as mage
 import Units.ranger as ranger
 import Units.worker as worker
@@ -53,8 +53,8 @@ while True:
         		mage.timestep(gc,unit)
         	elif unit.unit_type == bc.UnitType.Healer:
         		healer.timestep(gc,unit)
-        	elif unit.unit_type == bc.UnitType.Factor:
-        		factor.timestep(gc,unit)
+        	elif unit.unit_type == bc.UnitType.Factory:
+        		factory.timestep(gc,unit)
         	elif unit.unit_type == bc.UnitType.Rocket:
         		rocket.timestep(gc,unit)
 

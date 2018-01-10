@@ -5,11 +5,13 @@ import traceback
 
 def timestep(gc, unit):
     # last check to make sure the right unit type is running this
-	if unit.unitType != bc.UnitType.Ranger:
-		# prob should return some kind of error
-		return
+    if unit.unitType != bc.UnitType.Ranger:
+        # prob should return some kind of error
+        return
 
-	# pick a random direction:
+
+    directions = list(bc.Direction)
+    # pick a random direction:
     d = random.choice(directions)
 
     if gc.is_move_ready(unit.id) and gc.can_move(unit.id, d):
