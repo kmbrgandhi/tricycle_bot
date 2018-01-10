@@ -2,6 +2,13 @@ import battlecode as bc
 import random
 import sys
 import traceback
+import Units.Healer as healer_ops
+import Units.Knight as knights_ops
+import Units.Mage as mage_ops
+import Units.Ranger as ranger_ops
+import Units.Worker as worker_ops
+import Structures.Factory as factory_ops
+import Structures.Rocket as rocket_ops
 
 
 print("pystarting")
