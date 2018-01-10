@@ -2,11 +2,11 @@ import battlecode as bc
 import random
 import sys
 import traceback
-import Units.healer as healer
-import Units.knight as knight
-import Units.mage as mage
-import Units.ranger as ranger
-import Units.worker as worker
+import Units.Healer as healer
+import Units.Knight as knight
+import Units.Mage as mage
+import Units.Ranger as ranger
+import Units.Worker as worker
 import Units.factory as factory
 import Units.rocket as rocket
 
