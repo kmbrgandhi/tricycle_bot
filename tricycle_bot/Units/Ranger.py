@@ -25,7 +25,12 @@ def timestep(gc, unit,composition):
 
     # if no dudes, pick a random direction:
     if d == None:
-        d = random.choice(directions)
+        if location.is_on_map():
+            close_locations = [x for x in gc.all_locations_within(location.map_location(), 150) if not gc.can_sense_location(x)]
+            rand = random.choice(close_locations)
+            d = location.map_location().direction_to(rand)
+        else:
+            d = random.choice(directions)
 
     if gc.is_move_ready(unit.id) and gc.can_move(unit.id, d):
         gc.move_robot(unit.id, d)

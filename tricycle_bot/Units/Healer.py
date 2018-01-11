@@ -17,9 +17,9 @@ def timestep(gc, unit,composition):
 	if location.is_on_map():
 		nearby = gc.sense_nearby_units(location.map_location(), unit.vision_range)
 		nearby_friendly = min(gc.sense_nearby_units_by_team(location.map_location(), unit.ability_range(), my_team),
-							  key=lambda x: x.health)
+							  key=lambda x: x.health) # find the lowest nearby unit
 		if gc.is_heal_ready(unit.id) and gc.can_heal(unit.id, nearby_friendly.id):
-			gc.heal(unit.id, nearby_friendly.id)
+			gc.heal(unit.id, nearby_friendly.id) # heal it, if possible
 
 	if d == None:
 		d = random.choice(directions)
