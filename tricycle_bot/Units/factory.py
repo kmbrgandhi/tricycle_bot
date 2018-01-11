@@ -6,7 +6,7 @@ import numpy as np
 
 def timestep(gc, unit,composition):
     curr_round = gc.round()
-    optimal_composition = [0.5 - curr_round * (0.4/1000), curr_round*(0.4/1000), 0.05 + curr_round*(0.35/1000), 0, curr_round*(0.1/1000)] # optimal composition, order is Worker, Knight, Ranger, Mage, Healer
+    optimal_composition = [0.55 - curr_round * (0.4/1000), 0.2+curr_round*(0.2/1000), 0.2 + curr_round*(0.2/1000), 0, 0.05+curr_round*(0.05/1000)] # optimal composition, order is Worker, Knight, Ranger, Mage, Healer
     # should alter based on curr_round.  this is a temporary idea.
 
     calculate = [(optimal_composition[i]-composition[i])/(optimal_composition[i]+0.001) for i in range(len(optimal_composition))] #offset from optimal
@@ -26,4 +26,5 @@ def timestep(gc, unit,composition):
     elif gc.can_produce_robot(unit.id, bc.UnitType.Worker): # otherwise produce a unit, based on most_off_optimal
         most_off_optimal = np.argmax(calculate)
         gc.produce_robot(unit.id, order[most_off_optimal])
-        print('produced a unit!')
+        if order[most_off_optimal]==bc.UnitType.Healer:
+            print('produced a healer!')
