@@ -14,32 +14,31 @@ def timestep(gc, unit):
 
 	# find all karbonite deposits close to current unit
 	print("KARBONITE COUNT: ",gc.karbonite())
-	
-	position = unit.location.map_location()	
-	closest_deposit = get_closest_deposit(gc,unit)			
+	location = unit.location
+	if location.is_on_map():
+		position = unit.location.map_location()
+		closest_deposit = get_closest_deposit(gc, unit)
 
-	#check to see if there even are deposits
-	if start_map.on_map(closest_deposit):
-		direction_to_deposit = position.direction_to(closest_deposit)
-		if position.is_adjacent_to(closest_deposit) or position == closest_deposit: 			
-			# mine if adjacent to deposit
-			if not unit.worker_has_acted():
-				gc.harvest(unit.id,direction_to_deposit)	
-				print("harvested!")
+		#check to see if there even are deposits
+		if start_map.on_map(closest_deposit):
+			direction_to_deposit = position.direction_to(closest_deposit)
+			if position.is_adjacent_to(closest_deposit) or position == closest_deposit:
+				# mine if adjacent to deposit
+				if not unit.worker_has_acted():
+					gc.harvest(unit.id,direction_to_deposit)
+					print("harvested!")
+			else:
+				# move toward deposit
+				if gc.is_move_ready(unit.id) and gc.can_move(unit.id, direction_to_deposit):
+					gc.move_robot(unit.id, direction_to_deposit)
+					print("moving toward deposit")
 		else:
-			# move toward deposit 
-			if gc.is_move_ready(unit.id) and gc.can_move(unit.id, direction_to_deposit):
-				gc.move_robot(unit.id, direction_to_deposit)	
-				print("moving toward deposit")
-	else: 
-		d = random.choice(list(bc.Direction))
-		if gc.is_move_ready(unit.id) and gc.can_move(unit.id,d):
-			gc.move_robot(unit.id,d)
-
+			d = random.choice(list(bc.Direction))
+			if gc.is_move_ready(unit.id) and gc.can_move(unit.id,d):
+				gc.move_robot(unit.id,d)
 
 	"""
-	# first, let's look for nearby blueprints to work on
-	location = unit.location
+
 	space_out_factories = True
 	if location.is_on_map():
 		nearby = gc.sense_nearby_units(location.map_location(), 5)
