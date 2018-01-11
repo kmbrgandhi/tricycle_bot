@@ -68,9 +68,9 @@ def knight_sense(gc, unit, my_team):
 
     if len(enemies) == 0: 
         # Sense allied knights and find direction to approach them
-        ally_knights = gc.sense_nearby_units_by_type(unit_loc, unit.vision_range, unit.unit_type) 
+        ally_knights = gc.sense_nearby_units_by_type(unit_loc, unit.vision_range, bc.UnitType.Knight) 
         if len(ally_knights) > 0:
-            ally_knights.sort(key=lambda x: x.location.map_location().distance_squared_to(unit_loc), reverse=True)
+            ally_knights = sorted(ally_knights, key=lambda x: x.location.map_location().distance_squared_to(unit_loc), reverse=True)
             new_direction = unit_loc.direction_to(ally_knights[0].location.map_location())
 
     else: 
