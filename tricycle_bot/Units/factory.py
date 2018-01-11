@@ -5,8 +5,9 @@ import traceback
 import numpy as np
 
 def timestep(gc, unit,composition):
-    optimal_composition = [0.5 - x/1000 * , 0.4, 0.4, 0, 0.1] # optimal composition, order is Worker, Knight, Ranger, Mage, Healer
-    # should alter based on num_rounds, maybe piecewise or linear, idk.
+    curr_round = gc.round()
+    optimal_composition = [0.5 - curr_round * (0.4/1000), curr_round*(0.4/1000), 0.05 + curr_round*(0.35/1000), 0, curr_round*(0.1/1000)] # optimal composition, order is Worker, Knight, Ranger, Mage, Healer
+    # should alter based on curr_round.  this is a temporary idea.
 
     calculate = [(optimal_composition[i]-composition[i])/(optimal_composition[i]+0.001) for i in range(len(optimal_composition))] #offset from optimal
     order = [bc.UnitType.Worker, bc.UnitType.Knight, bc.UnitType.Ranger, bc.UnitType.Mage, bc.UnitType.Healer] # storing order of units
