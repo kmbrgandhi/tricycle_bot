@@ -32,6 +32,10 @@ random.seed(6137)
 
 my_team = gc.team()
 
+# we should make this a global variable later
+building_queue = []
+current_worker_roles = {"miner":[],"builder":[],"blueprinter":[]}
+
 while True:
     # We only support Python 3, which means brackets around print()
 	print('pyround:', gc.round())
@@ -58,7 +62,7 @@ while True:
 		for unit in gc.my_units():
 			# resepective unit types execute their own AI
 			if unit.unit_type == bc.UnitType.Worker:
-				worker.timestep(gc,unit)
+				worker.timestep(gc,unit,building_queue,current_worker_roles)
 			elif unit.unit_type == bc.UnitType.Knight:
 				knight.timestep(gc,unit,info)
 			elif unit.unit_type == bc.UnitType.Ranger:
