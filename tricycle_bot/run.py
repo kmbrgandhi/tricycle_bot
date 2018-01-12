@@ -45,6 +45,13 @@ current_worker_roles = {"miner":[],"builder":[],"blueprinter":[]}
 knight_clusters = set()
 knight_to_cluster = {} ## Remove knights not in cluster 
 
+# RANGER
+ranger_roles = {}
+ranger_to_cluster = {}
+ranger_clusters = set()
+
+#FIGHTERS
+battle_locs = []
 
 ##AI EXECUTION##
 while True:
