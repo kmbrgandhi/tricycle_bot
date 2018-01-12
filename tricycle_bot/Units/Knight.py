@@ -5,7 +5,7 @@ import traceback
 from Units.sense_util import enemy_team
 
 
-def timestep(gc, unit,composition):
+def timestep(gc, unit,composition,knight_cluster):
     # last check to make sure the right unit type is running this
     if unit.unit_type != bc.UnitType.Knight:
         # prob should return some kind of error
