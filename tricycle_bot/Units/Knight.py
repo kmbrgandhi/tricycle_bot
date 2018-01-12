@@ -3,6 +3,7 @@ import random
 import sys
 import traceback
 import Units.sense_util as sense_util
+import Units.clusters as clusters
 
 
 def timestep(gc, unit,composition, knight_to_cluster, knight_clusters):
@@ -47,46 +48,6 @@ def timestep(gc, unit,composition, knight_to_cluster, knight_clusters):
     except:
         print('movement didnt go through')
 
-def create_knight_cluster(gc, unit, knight_to_cluster, knight_clusters, distress=False):
-    """
-    This function assumes that current unit received distress signal from nearby worker 
-                                        OR
-    has sensed a "relevant" enemy and has chosen to set it as its attack target. 
-
-    It creates a knight cluster given nearby knights that will have a common goal: either
-    defend the worker or attack a specific target. 
-
-    The distress parameter dictates whether the cluster will be used to protect a worker 
-    vs. attack an enemy. 
-    """
-    ## Create new cluster for this unit only if unit not already in cluster
-    if unit not in knight_to_cluster:
-        ## Find all nearby allied knights 
-        ally_knights = gc.sense_nearby_units_by_type(unit_loc, unit.vision_range, bc.UnitType.Knight) 
-        if len(ally_knights) > 0:
-            ally_knights = sorted(ally_knights, key=lambda x: x.location.map_location().distance_squared_to(unit_loc))
-
-        ## Create a cluster of nearby allied knights
-        new_knight_cluster = Knight_Cluster()
-        new_knight_cluster.add_knight(unit)
-        for knight in ally_knights: 
-            if knight not in knight_to_cluster: 
-                new_knight_cluster.add_knight(knight)
-                knight_to_cluster[knight] = new_knight_cluster # Modify knight clustering data structure
-
-        ## If detected distress signal then read from wherever its from
-        if distress: 
-            print('distress')
-        else: 
-            enemies = gc.sense_nearby_units_by_team(unit_loc, unit.vision_range, sense_util.enemy_team(gc))
-            if len(enemies) > 0: 
-                enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(unit_loc))   
-                new_knight_cluster.set_target_loc(enemies[0].location.map_location())
-                new_knight_cluster.set_target_unit(enemies[0])
-
-        ## Modify knight clustering data structures
-        knight_clusters.add(new_knight_cluster)
-
 def knight_sense(gc, unit, my_team): 
     """
     This function chooses the direction the knight should move in. If it senses enemies nearby 
@@ -104,18 +65,7 @@ def knight_sense(gc, unit, my_team):
     unit_loc = unit.location.map_location()
     enemies = gc.sense_nearby_units_by_team(unit_loc, unit.vision_range, sense_util.enemy_team(gc))
 
-    # if len(enemies) == 0: 
-    #     # Sense allied knights and find direction to approach them
-    #     ally_knights = gc.sense_nearby_units_by_type(unit_loc, unit.vision_range, bc.UnitType.Knight) 
-    #     if len(ally_knights) > 0:
-    #         ally_knights = sorted(ally_knights, key=lambda x: x.location.map_location().distance_squared_to(unit_loc), reverse=True)
-    #         new_direction = unit_loc.direction_to(ally_knights[0].location.map_location())
-
-    # else: 
-
     if len(enemies) > 0:
-        # Broadcast enemy location? 
-
         # Check if in attack range / javelin range
         sorted_enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(unit_loc))   
         attack_range = unit.attack_range()
@@ -160,40 +110,4 @@ def knight_protect_workers(gc, unit, my_team):
     return (new_direction, worker_in_danger)
 
 
-class Knight_Cluster:
-    def __init__(self):
-        self.knights = set()
-        self.target_loc = None
-        self.target_unit = None
-        self.protect_loc = None 
-        self.protect_unit = None
 
-    def add_knight(self, knight):
-        self.knights.add(knight)
-
-    def remove_knight(self, knight):
-        if knight in self.knights:
-            self.knights.remove(knight)
-
-    def knight_set(self): ## MUTABLE 
-        return self.knights
-
-    def set_target_loc(self, loc):
-        self.target_loc = loc
-
-    def set_target_unit(self, unit):
-        self.target_unit = unit
-
-    def set_protect_loc(self, loc):
-        self.protect_loc = loc
-
-    def set_protect_unit(self, unit):
-        self.protect_unit = unit
-
-    def reset_target(self):
-        self.target_loc = None
-        self.target_unit = None
-
-    def reset_protect(self):
-        self.protect_loc = None
-        self.protect_unit = None
