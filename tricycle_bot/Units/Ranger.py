@@ -38,7 +38,7 @@ def get_attack(gc, unit, location):
     vuln_enemies = gc.sense_nearby_units_by_team(location, unit.attack_range(), sense_util.enemy_team(gc))
     if len(vuln_enemies)==0:
         return None
-    return max(vuln_enemies, key=lambda x: attack_coefficient(gc, unit, x))
+    return max(vuln_enemies, key=lambda x: coefficient_computation(gc, unit, x))
 
 def exists_bad_enemy(enemies):
     for enemy in enemies:
@@ -99,9 +99,25 @@ def closest_among_ungarrisoned(sorted_units):
             return sorted_units[index]
     return None
 
-def attack_coefficient(gc, our_unit, their_unit):
+
+def coefficient_computation(gc, our_unit, their_unit):
     if not gc.can_attack(our_unit.id, their_unit.id):
         return 0
+    coeff = attack_coefficient(gc, our_unit, their_unit)
+    if our_unit.unit_type != bc.UnitType.Mage:
+        return coeff
+    else:
+        for neighbor in explore.neighbors(their_unit.location.map_location()):
+            try:
+                new_unit = gc.sense_unit_at_location(neighbor)
+            except:
+                new_unit = None
+            if new_unit is not None and new_unit.team!=our_unit.team:
+                coeff = coeff + attack_coefficient(gc, our_unit, new_unit)
+
+        return coeff
+
+def attack_coefficient(gc, our_unit, their_unit):
     our_location = our_unit.location.map_location()
     distance = their_unit.location.map_location().distance_squared_to(our_location)
     coeff = ranger_unit_priority[their_unit.unit_type]
