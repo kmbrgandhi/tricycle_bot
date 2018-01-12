@@ -31,6 +31,8 @@ random.seed(6137)
 
 
 my_team = gc.team()
+knight_clusters = set()
+knight_to_cluster = {}
 
 # we should make this a global variable later
 building_queue = []
@@ -64,7 +66,7 @@ while True:
 			if unit.unit_type == bc.UnitType.Worker:
 				worker.timestep(gc,unit,building_queue,current_worker_roles)
 			elif unit.unit_type == bc.UnitType.Knight:
-				knight.timestep(gc,unit,info)
+				knight.timestep(gc,unit,info,knight_to_cluster)
 			elif unit.unit_type == bc.UnitType.Ranger:
 				ranger.timestep(gc,unit,info)
 			elif unit.unit_type == bc.UnitType.Mage:
@@ -80,11 +82,30 @@ while True:
 		# use this to show where the error was
 		traceback.print_exc()
 
-	# send the actions we've performed, and wait for our next turn.
-	gc.next_turn()
+    # send the actions we've performed, and wait for our next turn.
+    gc.next_turn()
 
-	# these lines are not strictly necessary, but it helps make the logs make more sense.
-	# it forces everything we've written this turn to be written to the manager.
-	sys.stdout.flush()
-	sys.stderr.flush()
+    # these lines are not strictly necessary, but it helps make the logs make more sense.
+    # it forces everything we've written this turn to be written to the manager.
+    sys.stdout.flush()
+    sys.stderr.flush()
 
+
+class Knight_Cluster():
+    def __init__(self):
+        self.knight_ids = set()
+        self.target_loc = None
+        self.target_unit = None
+
+    def add_knight(self, knight_id):
+        self.knight_ids.add(knight_id)
+
+    def remove_knight(self, knight_id):
+        if knight_id in self.knight_ids:
+            self.knight_ids.remove(knight_id)
+
+    def set_target_loc(self, loc): 
+        self.target_loc = loc
+
+    def set_target_unit(self, unit):
+        self.target_unit = unit
