@@ -2,6 +2,8 @@ import battlecode as bc
 import random
 import sys
 import traceback
+from Units.sense_util import enemy_team
+
 
 def timestep(gc, unit,composition):
     # last check to make sure the right unit type is running this
@@ -16,17 +18,17 @@ def timestep(gc, unit,composition):
         print('direction: ', direction)
         print('attack target: ', attack_target)
         print('javelin target: ', javelin_target)
-    except: 
+    except:
         print('knight sense didnt run')
 
     try:
         ## Check if can javelin
-        if unit.is_ability_unlocked() and javelin_target != None:
+        if unit.is_ability_unlocked() and javelin_target is not None:
             if gc.can_javelin(unit.id, javelin_target.id) and gc.is_javelin_ready(unit.id):
                 gc.javelin(unit.id, javelin_target.id)
 
         ## Check if can attack regularly
-        if attack_target != None:
+        if attack_target is not None:
             if gc.can_attack(unit.id, attack_target.id) and gc. is_attack_ready(unit.id): 
                 gc.attack(unit.id, attack_target.id)
 
@@ -43,11 +45,6 @@ def timestep(gc, unit,composition):
 
     except:
         print('movement didnt go through')
-
-def enemy_team(gc): 
-    teams = bc.Team
-    for team in teams: 
-        if team != gc.team(): return team
 
 def knight_sense(gc, unit, my_team): 
     """
