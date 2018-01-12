@@ -81,9 +81,6 @@ def knight_sense(gc, unit, my_team):
         attack_range = unit.attack_range()
         javelin_range = unit.ability_range()
 
-        print('closest enemy: ', sorted_enemies[0])
-        print('my loc: ', unit_loc)
-
         if unit_loc.is_within_range(attack_range, sorted_enemies[0].location.map_location()):
             target_attack = sorted_enemies[0]
 
