@@ -13,7 +13,7 @@ def timestep(gc, unit, building_queue, blueprinter_assignment, current_roles):
 	my_team = gc.team()	
 
 	print("KARBONITE COUNT: WTF",gc.karbonite())
-	print("unit id: ", unit.id)
+	print("current_roles",current_roles)
 	
 	my_location = unit.location
 	# make sure unit can actually perform actions ie. not in garrison
@@ -24,6 +24,7 @@ def timestep(gc, unit, building_queue, blueprinter_assignment, current_roles):
 
 	# runs this block every turn if unit is miner
 	if role == "miner":
+		print("this unit is a miner: ",unit.id)
 		mine(gc,unit)
 	# if unit is builder
 	elif role == "builder":
@@ -36,14 +37,14 @@ def timestep(gc, unit, building_queue, blueprinter_assignment, current_roles):
 	# if unit is idle
 	elif role == "idle":	
 		print("this unit is idle: ",unit.id)
-		nearby = gc.sense_nearby_units(my_location.map_location(),5)
+		nearby = gc.sense_nearby_units(my_location.map_location(),unit.vision_range)
 		away_from_allies = sense_util.best_available_direction(gc,unit,nearby)
 		try_move(gc,unit,away_from_allies)
 
 # returns whether unit is a miner or builder, currently placeholder until we can use team-shared data to designate unit roles
 def get_role(gc,unit,current_roles):
 	my_location = unit.location	
-	nearby = gc.sense_nearby_units(my_location.map_location(), 8)
+	nearby = gc.sense_nearby_units(my_location.map_location(), unit.vision_range)
 	unfinished_factory_count = 0
 	for other in nearby:
 		if other.unit_type == bc.UnitType.Factory and not other.structure_is_built(): # count unfinished factories
@@ -56,22 +57,20 @@ def get_role(gc,unit,current_roles):
 	
 	# become builder	
 	if unfinished_factory_count > len(current_roles["builder"]):
-		print("created builder")
-		current_roles["builder"].append(unit.id)
 		new_role = "builder"
 	# become blueprinter
 	elif len(current_roles["blueprinter"]) < 2:	
-		print("created blueprinter")
-		current_roles["blueprinter"].append(unit.id)
 		new_role = "blueprinter" 
 	# become miner
 	else:	
-		print("created idle")
-		new_role = "idle"
+		new_role = "miner"
 
 	# if we switched roles, we update current_roles to reflect this	
 	if current_role != "idle" and current_role != new_role:
 		current_roles[current_role].remove(unit.id)
+		current_roles[new_role].append(unit.id)
+	elif current_role == "idle":
+		current_roles[new_role].append(unit.id)
 	return new_role
 	
 
@@ -80,9 +79,7 @@ def try_move(gc,unit,direction):
 	if gc.is_move_ready(unit.id):
 		current_direction = direction
 		can_move = True
-		print("current_direction: ",current_direction)
 		while not gc.can_move(unit.id, current_direction):	
-			print("current_direction: ", current_direction)
 			current_direction = current_direction.rotate_left()
 			if current_direction == direction:
 				# has tried every direction, cannot move
@@ -102,7 +99,6 @@ def get_closest_deposit(gc,unit):
 		distance_to_deposit = position.distance_squared_to(potential_location)	
 		#keep updating current closest deposit to unit	
 		if gc.karbonite_at(potential_location) > 0 and distance_to_deposit < current_distance:
-			print("found one at: ",potential_location.x,potential_location.y)
 			current_distance = distance_to_deposit 
 			closest_deposit = potential_location
 	return closest_deposit	
@@ -129,7 +125,7 @@ def mine(gc,unit):
 def build(gc,unit,building_queue):
 	my_location = unit.location
 	start_map = gc.starting_map(bc.Planet(0))
-	nearby = gc.sense_nearby_units(my_location.map_location(), 10)
+	nearby = gc.sense_nearby_units(my_location.map_location(), unit.vision_range)
 	
 	for other in nearby:
 		if other.unit_type == bc.UnitType.Factory and not other.structure_is_built(): #located an unfinished factory	
@@ -169,7 +165,7 @@ def blueprint(gc,unit,building_queue,blueprinter_assignment):
 	my_location = unit.location
 	start_map = gc.starting_map(bc.Planet(0))
 	directions = list(bc.Direction)
-	nearby = gc.sense_nearby_units(my_location.map_location(), 10)
+	nearby = gc.sense_nearby_units(my_location.map_location(),unit.vision_range)
 	nearby_factories = []
 
 	# if it finds a nice location for factory cluster, put it in queue	
