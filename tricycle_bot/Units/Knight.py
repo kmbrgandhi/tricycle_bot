@@ -2,7 +2,7 @@ import battlecode as bc
 import random
 import sys
 import traceback
-from Units.sense_util import enemy_team
+import Units.sense_util as sense_util
 
 
 def timestep(gc, unit,composition, knight_to_cluster, knight_clusters):
@@ -27,19 +27,22 @@ def timestep(gc, unit,composition, knight_to_cluster, knight_clusters):
 
         ## Check if can attack regularly
         if attack_target is not None:
-            if gc.can_attack(unit.id, attack_target.id) and gc. is_attack_ready(unit.id): 
+            if gc.can_attack(unit.id, attack_target.id) and gc.is_attack_ready(unit.id): 
                 gc.attack(unit.id, attack_target.id)
 
     except:
         print('attacks didnt go through')
   
     try: 
-        ## Knight movement
+        ## Knight movement away from allies
         if direction == None:  
-            direction = random.choice(list(bc.Direction))
+            nearby = gc.sense_nearby_units(unit.location.map_location(),8)
+            direction = sense_util.best_available_direction(gc,unit,nearby)
 
         if gc.is_move_ready(unit.id) and gc.can_move(unit.id, direction):
             gc.move_robot(unit.id, direction)
+
+            print('knight dir: ', direction)
 
     except:
         print('movement didnt go through')
@@ -75,7 +78,7 @@ def create_knight_cluster(gc, unit, knight_to_cluster, knight_clusters, distress
         if distress: 
             print('distress')
         else: 
-            enemies = gc.sense_nearby_units_by_team(unit_loc, unit.vision_range, enemy_team(gc))
+            enemies = gc.sense_nearby_units_by_team(unit_loc, unit.vision_range, sense_util.enemy_team(gc))
             if len(enemies) > 0: 
                 enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(unit_loc))   
                 new_knight_cluster.set_target_loc(enemies[0].location.map_location())
@@ -99,16 +102,18 @@ def knight_sense(gc, unit, my_team):
     target_javelin = None
 
     unit_loc = unit.location.map_location()
-    enemies = gc.sense_nearby_units_by_team(unit_loc, unit.vision_range, enemy_team(gc))
+    enemies = gc.sense_nearby_units_by_team(unit_loc, unit.vision_range, sense_util.enemy_team(gc))
 
-    if len(enemies) == 0: 
-        # Sense allied knights and find direction to approach them
-        ally_knights = gc.sense_nearby_units_by_type(unit_loc, unit.vision_range, bc.UnitType.Knight) 
-        if len(ally_knights) > 0:
-            ally_knights = sorted(ally_knights, key=lambda x: x.location.map_location().distance_squared_to(unit_loc), reverse=True)
-            new_direction = unit_loc.direction_to(ally_knights[0].location.map_location())
+    # if len(enemies) == 0: 
+    #     # Sense allied knights and find direction to approach them
+    #     ally_knights = gc.sense_nearby_units_by_type(unit_loc, unit.vision_range, bc.UnitType.Knight) 
+    #     if len(ally_knights) > 0:
+    #         ally_knights = sorted(ally_knights, key=lambda x: x.location.map_location().distance_squared_to(unit_loc), reverse=True)
+    #         new_direction = unit_loc.direction_to(ally_knights[0].location.map_location())
 
-    else: 
+    # else: 
+
+    if len(enemies) > 0:
         # Broadcast enemy location? 
 
         # Check if in attack range / javelin range
