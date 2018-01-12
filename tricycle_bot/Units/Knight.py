@@ -5,7 +5,7 @@ import traceback
 from Units.sense_util import enemy_team
 
 
-def timestep(gc, unit,composition):
+def timestep(gc, unit,composition, knight_to_cluster):
     # last check to make sure the right unit type is running this
     if unit.unit_type != bc.UnitType.Knight:
         # prob should return some kind of error
@@ -87,3 +87,31 @@ def knight_sense(gc, unit, my_team):
         new_direction = unit_loc.direction_to(sorted_enemies[0].location.map_location())
 
     return (new_direction, target_attack, target_javelin)
+
+def knight_protect_workers(gc, unit, my_team): 
+    """
+    This function senses nearby workers that are in danger. Attempts to attack the attacker. 
+
+    Returns: Direction to the worker being attacked (only works for melee enemies).
+    """
+    new_direction = None
+    worker_in_danger = None
+
+    unit_loc = unit.location.map_location()
+
+    ## Filter workers by team and then if their health is less than max health, 
+    ## assume being attacked
+    ally_workers = gc.sense_nearby_units_by_type(unit_loc, unit.vision_range, bc.UnitType.Worker)
+    if len(ally_workers) > 0: 
+        ally_workers = filter(lambda x: x.team == my_team, ally_workers)
+    if len(ally_workers) > 0:
+        ally_workers = filter(lambda x: x.health < x.max_health, ally_workers)
+
+    ## Sort remaining ally workers by distance from knight
+    ## Get direction of the worker and store worker id, otherwise return None for both params
+    if len(ally_workers) > 0: 
+        ally_workers = sorted(ally_workers, key=lambda x: x.location.map_location().distance_squared_to(unit_loc))
+        new_direction = unit_loc.direction_to(ally_workers[0].location.map_location())
+        worker_in_danger = ally_workers[0]
+
+    return (new_direction, worker_in_danger)

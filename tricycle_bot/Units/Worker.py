@@ -37,7 +37,7 @@ def timestep(gc, unit):
 			if gc.is_move_ready(unit.id) and gc.can_move(unit.id,d):
 				gc.move_robot(unit.id,d)
 
-	"""
+	
 
 	space_out_factories = True
 	if location.is_on_map():
@@ -60,7 +60,7 @@ def timestep(gc, unit):
 	# and if that fails, try to move
 	elif gc.is_move_ready(unit.id) and gc.can_move(unit.id, d):
 		gc.move_robot(unit.id, d)
-	"""
+	
 
 def get_closest_deposit(gc,unit):
 	position = unit.location.map_location()
