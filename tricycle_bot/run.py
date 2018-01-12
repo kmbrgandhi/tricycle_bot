@@ -28,17 +28,23 @@ random.seed(6137)
 
 # let's start off with some research!
 # we can queue as much as we want.
+research.research_step(gc)
 
 
+##SHARED TEAM INFORMATION##
+
+# WORKER
+building_queue = []
+blueprinter_assignment = {}
+current_worker_roles = {"miner":[],"builder":[],"blueprinter":[]}
+
+# KNIGHT
 my_team = gc.team()
 knight_clusters = set()
 knight_to_cluster = {}
 
-# we should make this a global variable later
-building_queue = []
-current_worker_roles = {"miner":[],"builder":[],"blueprinter":[]}
-research.research_step(gc)
 
+##AI EXECUTION##
 while True:
     # We only support Python 3, which means brackets around print()
     print('pyround:', gc.round())
@@ -64,7 +70,7 @@ while True:
         for unit in gc.my_units():
             # resepective unit types execute their own AI
             if unit.unit_type == bc.UnitType.Worker:
-                worker.timestep(gc,unit,building_queue,current_worker_roles)
+                worker.timestep(gc,unit,building_queue,blueprinter_assignment,current_worker_roles)
             elif unit.unit_type == bc.UnitType.Knight:
                 knight.timestep(gc,unit,info,knight_to_cluster)
             elif unit.unit_type == bc.UnitType.Ranger:
