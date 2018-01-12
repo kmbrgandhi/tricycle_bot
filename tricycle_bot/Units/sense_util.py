@@ -47,7 +47,7 @@ def best_available_direction(gc, unit, units, weights = None):
     for option in options:
         if gc.can_move(unit.id, option):
             return option
-    return direction_to_index["Center"]
+    return directions[direction_to_index["Center"]]
 
 def vector_sum(unit, units, weights = None):
     # Computes the vector sum of the map locations of non-garrisoned units in units.
