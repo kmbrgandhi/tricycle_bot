@@ -35,6 +35,7 @@ research.research_step(gc)
 
 # GENERAL
 my_team = gc.team()
+queued_paths = {}
 
 # WORKER
 building_queue = []
