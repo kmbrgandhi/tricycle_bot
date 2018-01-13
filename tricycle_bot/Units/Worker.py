@@ -3,6 +3,7 @@ import random
 import sys
 import traceback
 import Units.sense_util as sense_util
+import Units.movement as movement
 
 def timestep(gc, unit, building_queue, blueprinter_assignment, current_roles):
 
@@ -19,7 +20,7 @@ def timestep(gc, unit, building_queue, blueprinter_assignment, current_roles):
 	if not my_location.is_on_map():
 		return	
 
-	role = get_role(gc,unit,current_roles)
+	role = get_role(gc,unit,building_queue,current_roles)
 
 	# runs this block every turn if unit is miner
 	if role == "miner":
@@ -34,12 +35,12 @@ def timestep(gc, unit, building_queue, blueprinter_assignment, current_roles):
 	elif role == "idle":	
 		nearby = gc.sense_nearby_units(my_location.map_location(),unit.vision_range)
 		away_from_allies = sense_util.best_available_direction(gc,unit,nearby)
-		try_move(gc,unit,away_from_allies)
+		movement.try_move(gc,unit,away_from_allies)
 	
 	print("current_roles",current_roles)
 
 # returns whether unit is a miner or builder, currently placeholder until we can use team-shared data to designate unit roles
-def get_role(gc,my_unit,current_roles):
+def get_role(gc,my_unit,building_queue,current_roles):
 	my_location = my_unit.location	
 	nearby = gc.sense_nearby_units(my_location.map_location(), my_unit.vision_range)
 	unfinished_factory_count = 0
@@ -51,6 +52,16 @@ def get_role(gc,my_unit,current_roles):
 		if unit.unit_type == bc.UnitType.Factory: # count ALL factories
 			all_factory_count += 1	
 	
+	please_move = False	
+	for cluster in building_queue:
+		for building_site in cluster:
+			if my_location.map_location() == building_site:
+				please_move = True
+			
+	if please_move:
+		return "idle"	
+
+
 	for role in current_roles.keys():
 		if my_unit.id in current_roles[role]:
 			return role
@@ -72,21 +83,10 @@ def get_role(gc,my_unit,current_roles):
 		new_role = "miner"
 	current_roles[new_role].append(my_unit.id)
 	return new_role
-	
 
-# placeholder function for pathfinding algorithm
-def try_move(gc,unit,direction):
-	if gc.is_move_ready(unit.id):
-		current_direction = direction
-		can_move = True
-		while not gc.can_move(unit.id, current_direction):	
-			current_direction = current_direction.rotate_left()
-			if current_direction == direction:
-				# has tried every direction, cannot move
-				can_move = False
-				break
-		if can_move:	
-			gc.move_robot(unit.id, current_direction)
+
+
+
 	
 def get_closest_deposit(gc,unit):
 	position = unit.location.map_location()
@@ -106,6 +106,7 @@ def get_closest_deposit(gc,unit):
 def mine(gc,unit,current_roles): 
 	my_location = unit.location
 	position = my_location.map_location()
+	directions = list(bc.Direction)
 	closest_deposit = get_closest_deposit(gc, unit)
 	start_map = gc.starting_map(bc.Planet(0))
 
@@ -120,7 +121,9 @@ def mine(gc,unit,current_roles):
 				print("harvested!")
 		else:
 			# move toward deposit
-			try_move(gc,unit,direction_to_deposit)	
+			movement.try_move(gc,unit,direction_to_deposit)	
+
+
 
 # CHANGE IS_BUILDER() SO IT RETURNS TRUE IF THERE ARE NEARBY BLUEPRINTS
 def build(gc,unit,building_queue,current_roles):
@@ -138,13 +141,15 @@ def build(gc,unit,building_queue,current_roles):
 			# if not adjacent move toward it
 			else:
 				direction_to_blueprint = my_location.map_location().direction_to(other.location.map_location())
-				try_move(gc,unit,direction_to_blueprint)
+				movement.try_move(gc,unit,direction_to_blueprint)
 				return
 
 	# this code is reached only when there are NO unfinished factories around	
 	current_roles["builder"].remove(unit.id)	
 	print("BUILT FACTORY")
 		
+
+
 
 # generates locations to build factories that are arranged in clusters of 4 for space efficiency	
 def generate_factory_locations(start_map,center):
@@ -211,7 +216,7 @@ def blueprint(gc,unit,building_queue,blueprinter_assignment,current_roles):
 			# pick other direction if direction is center
 			if away_from_factories == directions[8]:
 				away_from_factories = directions[1]
-			try_move(gc,unit,away_from_factories)
+			movement.try_move(gc,unit,away_from_factories)
 
 	# build blueprint in assigned square
 	if unit.id in blueprinter_assignment:
@@ -226,10 +231,10 @@ def blueprint(gc,unit,building_queue,blueprinter_assignment,current_roles):
 		elif my_location.map_location() == assigned_site:
 			# when unit is currently on top of the queued building site
 			d = random.choice(list(bc.Direction))
-			try_move(gc,unit,d)
+			movement.try_move(gc,unit,d)
 		else:
 			# move toward queued building site
-			try_move(gc,unit,direction_to_site)	
+			movement.try_move(gc,unit,direction_to_site)	
 		
 	
 
