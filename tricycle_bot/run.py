@@ -87,9 +87,9 @@ while True:
             elif unit.unit_type == bc.UnitType.Knight:
                 knight.timestep(gc,unit,info,knight_to_cluster,knight_clusters)
             elif unit.unit_type == bc.UnitType.Ranger:
-                ranger.timestep(gc,unit,info,last_turn_battle_locs, next_turn_battle_locs)
+                ranger.timestep(gc,unit,info,last_turn_battle_locs, next_turn_battle_locs, queued_paths)
             elif unit.unit_type == bc.UnitType.Mage:
-                mage.timestep(gc,unit,info)
+                mage.timestep(gc,unit,info,last_turn_battle_locs,next_turn_battle_locs, queued_paths)
             elif unit.unit_type == bc.UnitType.Healer:
                 healer.timestep(gc,unit,info)
             elif unit.unit_type == bc.UnitType.Factory:

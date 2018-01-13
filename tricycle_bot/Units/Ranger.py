@@ -10,7 +10,7 @@ order = [bc.UnitType.Worker, bc.UnitType.Knight, bc.UnitType.Ranger, bc.UnitType
 ranger_unit_priority = [0.5, 1, 2, 2, 2, 1, 1]
 directions = list(bc.Direction)
 
-def timestep(gc, unit, composition, last_turn_battle_locs, next_turn_battle_locs):
+def timestep(gc, unit, composition, last_turn_battle_locs, next_turn_battle_locs, queued_paths):
     # last check to make sure the right unit type is running this
     if unit.unit_type != bc.UnitType.Ranger:
         # prob should return some kind of error
@@ -18,7 +18,7 @@ def timestep(gc, unit, composition, last_turn_battle_locs, next_turn_battle_locs
     location = unit.location
     my_team = gc.team()
     if location.is_on_map():
-        dir, attack_target, snipe, move_then_attack, visible_enemies = ranger_sense(gc, unit, last_turn_battle_locs)
+        dir, attack_target, snipe, move_then_attack, visible_enemies = ranger_sense(gc, unit, last_turn_battle_locs, queued_paths)
         print('Ranger movement:',dir)
         print('Ranger attack target:', attack_target)
         map_loc = location.map_location()
@@ -55,7 +55,7 @@ def exists_bad_enemy(enemies):
     return False
 
 
-def ranger_sense(gc, unit, battle_locs):
+def ranger_sense(gc, unit, battle_locs, queued_paths):
     dir = None
     attack = None
     snipe = None
@@ -64,6 +64,8 @@ def ranger_sense(gc, unit, battle_locs):
     location = unit.location.map_location()
     enemies = gc.sense_nearby_units_by_team(location, unit.vision_range, sense_util.enemy_team(gc))
     if len(enemies) > 0:
+        if unit.id in queued_paths:
+            del queued_paths[unit.id]
         visible_enemies= True
         sorted_enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(location))
         closest_enemy = closest_among_ungarrisoned(sorted_enemies)
@@ -91,25 +93,39 @@ def ranger_sense(gc, unit, battle_locs):
 
     else:
         # if there are no enemies in sight, check if there is an ongoing battle.  If so, go there.
+        if unit.id in queued_paths:
+            if location!=queued_paths[unit.id]:
+                dir = optimal_direction_towards(gc, unit, location, queued_paths[unit.id])
+                return dir, attack, snipe, move_then_attack, visible_enemies
+            else:
+                del queued_paths[unit.id]
         if len(battle_locs)>0:
-            dir = go_to_battle(gc, unit, battle_locs)
-
-        # otherwise, explore
-        dir = get_explore_dir(gc, unit)
+            dir, target= go_to_battle(gc, unit, battle_locs)
+            queued_paths[unit.id] = target
+        else:
+            dir = get_explore_dir(gc, unit)
 
     return dir, attack, snipe, move_then_attack, visible_enemies
 
 def go_to_battle(gc, unit, battle_locs):
     # send a unit to battle
     weakest = random.choice(list(battle_locs.keys()))
-    return optimal_direction_towards(gc, unit, unit.location.map_location(), battle_locs[weakest][0])
+    target = battle_locs[weakest][0]
+    return optimal_direction_towards(gc, unit, unit.location.map_location(), target), target
 
 def optimal_direction_towards(gc, unit, location, target):
+
     # return the optimal direction towards a target that is achievable; not A*, but faster.
     shape = [target.x - location.x, target.y - location.y]
     options = sense_util.get_best_option(shape)
+    if unit.unit_type == bc.UnitType.Mage:
+        print(location)
+        print(target)
+        print(options)
     for option in options:
         if gc.can_move(unit.id, option):
+            if unit.unit_type == bc.UnitType.Mage:
+                print(option)
             return option
     return directions[8]
 
