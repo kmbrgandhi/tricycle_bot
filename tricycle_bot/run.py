@@ -35,6 +35,7 @@ research.research_step(gc)
 
 # GENERAL
 my_team = gc.team()
+queued_paths = {}
 
 # WORKER
 building_queue = []
@@ -45,11 +46,21 @@ current_worker_roles = {"miner":[],"builder":[],"blueprinter":[]}
 knight_clusters = set()
 knight_to_cluster = {} ## Remove knights not in cluster 
 
+# RANGER
+ranger_roles = {}
+ranger_to_cluster = {}
+ranger_clusters = set()
+
+#FIGHTERS
+last_turn_battle_locs = {}
+next_turn_battle_locs = {}
 
 ##AI EXECUTION##
 while True:
     # We only support Python 3, which means brackets around print()
     print('pyround:', gc.round())
+    last_turn_battle_locs = next_turn_battle_locs.copy()
+    next_turn_battle_locs = {}
     try:
         # walk through our units:
         num_workers= num_knights=num_rangers= num_mages= num_healers= num_factory= num_rocket = 0
@@ -76,9 +87,9 @@ while True:
             elif unit.unit_type == bc.UnitType.Knight:
                 knight.timestep(gc,unit,info,knight_to_cluster,knight_clusters)
             elif unit.unit_type == bc.UnitType.Ranger:
-                ranger.timestep(gc,unit,info)
+                ranger.timestep(gc,unit,info,last_turn_battle_locs, next_turn_battle_locs, queued_paths)
             elif unit.unit_type == bc.UnitType.Mage:
-                mage.timestep(gc,unit,info)
+                mage.timestep(gc,unit,info,last_turn_battle_locs,next_turn_battle_locs, queued_paths)
             elif unit.unit_type == bc.UnitType.Healer:
                 healer.timestep(gc,unit,info)
             elif unit.unit_type == bc.UnitType.Factory:
