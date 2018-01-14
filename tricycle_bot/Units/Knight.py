@@ -15,11 +15,25 @@ def timestep(gc, unit,composition, knight_to_cluster, knight_clusters):
 
     my_team = gc.team()
 
-    try: 
-        direction, attack_target, javelin_target = knight_sense(gc, unit, my_team)
-    except:
-        print('knight sense didnt run')
+    direction = None
+    attack_target = None
+    javelin_target = None
 
+    ## Clustering: if has a goal location keep moving there
+    if unit in knight_to_cluster: 
+        try:
+            c = knight_to_cluster[unit]
+            direction, attack_target, javelin_target = clusters.knight_cluster_sense(gc, unit, c)
+        except: 
+            print('clustering sense didnt run')
+
+    else: 
+        try: 
+            direction, attack_target, javelin_target = knight_sense(gc, unit, my_team)
+        except:
+            print('knight sense didnt run')
+
+    ## Attack
     try:
         ## Check if can javelin
         if unit.is_ability_unlocked() and javelin_target is not None:
@@ -34,6 +48,7 @@ def timestep(gc, unit,composition, knight_to_cluster, knight_clusters):
     except:
         print('attacks didnt go through')
   
+    ## Movement
     try: 
         ## Knight movement away from allies
         if direction == None:  
