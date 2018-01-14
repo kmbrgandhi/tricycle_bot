@@ -5,7 +5,7 @@ import traceback
 import Units.sense_util as sense_util
 import Units.movement as movement
 
-def timestep(gc, unit, blueprinting_queue, building_assignment, current_roles):
+def timestep(gc, unit, info, blueprinting_queue, building_assignment, current_roles):
 
 	# last check to make sure the right unit type is running this
 	if unit.unit_type != bc.UnitType.Worker:
@@ -25,6 +25,14 @@ def timestep(gc, unit, blueprinting_queue, building_assignment, current_roles):
 		print("current_roles",current_roles)
 		print("blueprinting_queue",blueprinting_queue)
 		print("building_assignment",building_assignment)
+	
+	current_num_workers = info[0]	
+	max_num_workers = 10
+
+	# replicates if unit is able to (cooldowns, available directions etc.)	
+	if current_num_workers < max_num_workers:
+		replicate(gc,unit)	
+		return
 
 	# runs this block every turn if unit is miner
 	if role == "miner":
@@ -37,7 +45,7 @@ def timestep(gc, unit, blueprinting_queue, building_assignment, current_roles):
 		blueprint(gc,unit,blueprinting_queue,building_assignment,current_roles)
 	# if unit is idle
 	elif role == "idle":
-		nearby = gc.sense_nearby_units(my_location.map_location(), unit.vision_range)
+		nearby = gc.sense_nearby_units(my_location.map_location(), 10)
 		away_from_units = sense_util.best_available_direction(gc,unit,nearby)	
 		print(unit.id, "at", unit.location.map_location(), "is trying to move to", away_from_units)
 		movement.try_move(gc,unit,away_from_units)
@@ -75,7 +83,7 @@ def get_role(gc,my_unit,building_assignment,current_roles):
 
 	max_num_blueprinters = 1
 	max_num_factories = 12	
-	
+
 	# become miner
 	if gc.karbonite() < 100 and len(current_roles["miner"]) < 2:
 		new_role = "miner"	
@@ -87,6 +95,14 @@ def get_role(gc,my_unit,building_assignment,current_roles):
 		new_role = "miner"
 	current_roles[new_role].append(my_unit.id)
 	return new_role
+
+
+def replicate(gc,unit):
+	if gc.karbonite() >= bc.UnitType.Worker.replicate_cost():
+		directions = list(bc.Direction)
+		for direction in directions:
+			if gc.can_replicate(unit.id,direction):
+				gc.replicate(unit.id,direction)	
 
 
 	
