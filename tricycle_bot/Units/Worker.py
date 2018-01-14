@@ -105,6 +105,10 @@ def replicate(gc,unit):
 				gc.replicate(unit.id,direction)	
 
 
+
+
+def get_all_initial_deposits(gc):
+	pass
 	
 def get_closest_deposit(gc,unit):
 	position = unit.location.map_location()
@@ -141,6 +145,10 @@ def mine(gc,unit,current_roles):
 		else:
 			# move toward deposit
 			movement.try_move(gc,unit,direction_to_deposit)	
+	else:
+		nearby = gc.sense_nearby_units(unit.location.map_location(),10)
+		away_from_allies = sense_util.best_available_direction(gc,unit,nearby)
+		movement.try_move(gc,unit,away_from_allies)
 
 
 
