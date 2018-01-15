@@ -5,9 +5,6 @@ import traceback
 import Units.sense_util as sense_util
 
 class Cluster: 
-    """
-    Immutable class. 
-    """
 
     def __init__(self, unit_ids, target, target_unit):
         self.units = set()
@@ -25,17 +22,52 @@ class Cluster:
     def cluster_units(self):  
         return self.units
 
-    # def calculate_avg_loc(self): 
-    #     if len(self.units) == 0: 
-    #         return None
-    #     avg_loc = [0,0]
-    #     for unit in self.units: 
-    #         avg_loc[0] += unit.location.map_location().x
-    #         avg_loc[1] += unit.location.map_location().y
-    #     avg_loc[0] = avg_loc[0] // len(self.units)
-    #     avg_loc[1] = avg_loc[1] // len(self.units)
+    # def update_target_location(self, gc): 
+    #     try: 
+    #         enemy = gc.unit(self.target_unit_id)
+    #         self.target_loc = enemy.location.map_location()
+    #         return True
+    #     except: 
+    #         print('target not visible OR died')
+    #         return False
 
-    #     return (avg_loc[0], avg_loc[1])
+    def update_target(self, gc, unit): 
+        """
+        Updates enemy if there is another enemy closer to cluster
+        """
+        try: 
+            unit_loc = unit.location.map_location()
+            enemies = gc.sense_nearby_units_by_team(unit_loc, unit.vision_range, sense_util.enemy_team(gc))
+            enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(unit_loc)) 
+
+            if len(enemies) > 0: 
+                if enemies[0].id != self.target_unit_id: 
+                    self.target_unit_id = enemies[0].id
+                self.target_loc = enemies[0].location.map_location()
+                return True
+        except:
+            return False
+
+    def movement_unit_order(self, gc): 
+        """
+        Find the optimal order in which to move the units to avoid blocking. 
+
+        Returns: list of ordered unit id's.
+        """
+        ordered_units = []
+
+        for unit_id in self.units: 
+            try: 
+                unit = gc.unit(unit_id)
+                ordered_units.append(unit)
+            except: 
+                print(unit_id + ' not found')
+                # self.units.remove(unit_id)
+                continue
+
+        ordered_units = sorted(ordered_units, key=lambda x: x.location.map_location().distance_squared_to(self.target_loc))
+        ordered_units = [x.id for x in ordered_units]
+        return ordered_units
 
     def calculate_unit_direction(self, gc, unit): 
         """
@@ -44,26 +76,16 @@ class Cluster:
         If searching for a target will not always have access to its location. If not 
         visible, just move in direction of last recorded location. 
         """
-        visible = True
         directions = None
 
         if unit.id in self.units: 
-            print('target id: ', self.target_unit_id)
             ## Try to get target's actual location
-            try: 
-                enemy = gc.unit(self.target_unit_id)
-                print('enemy: ', enemy)
-                self.target_loc = enemy.location.map_location()
-            except: 
-                print('target not visible OR died')
-                visible = False 
-
             shape = [self.target_loc.x - unit.location.map_location().x, self.target_loc.y - unit.location.map_location().y]
             
             ## Calculate appropriate direction for unit 
             directions = sense_util.get_best_option(shape)
 
-        return (directions, visible)
+        return directions
 
     def attack_enemy(self, gc, unit):
         """
@@ -106,7 +128,19 @@ class Cluster:
     def __str__(self): 
         return "Units: " + str(self.units) + '\n Target id: ' + str(self.target_unit_id) + ' \n Target loc: ' + str(self.target_loc)
 
-# ******************************************************************************************** #
+# **************************************      GENERAL      ************************************ #
+
+def remove_cluster(cluster, unit_to_cluster): 
+    for unit_id in cluster.cluster_units():
+        if unit_id in unit_to_cluster: 
+            del unit_to_cluster[unit_id]
+
+# **************************************      RANGERS      ************************************ #
+
+def create_ranger_cluster(gc, unit, enemy, unavailable_ranger_ids): 
+    print('hehe')
+
+# **************************************      KNIGHTS      ************************************ #
 
 def create_knight_cluster(gc, unit, enemy, unavailable_knight_ids):
     """
@@ -145,11 +179,6 @@ def create_knight_cluster(gc, unit, enemy, unavailable_knight_ids):
 
         return new_knight_cluster
 
-def remove_cluster(cluster, unit_to_cluster): 
-    for unit_id in cluster.cluster_units():
-        if unit_id in unit_to_cluster: 
-            del unit_to_cluster[unit_id]
-
 def knight_cluster_sense(gc, unit, cluster): 
     """
     Processes movements & attack patterns for all knights in the cluster.
@@ -158,44 +187,49 @@ def knight_cluster_sense(gc, unit, cluster):
     """
     target_dead = True
 
-    for knight_id in cluster.cluster_units():
+    visible = cluster.update_target(gc, unit)
+    cluster_ordered_units = cluster.movement_unit_order(gc)
+
+    for knight_id in cluster_ordered_units:
         try: 
-            knight = gc.unit(knight_id) 
-            print('knight in cluster: ', knight)
+            knight = gc.unit(knight_id)
         except: 
-            print('knight died')
+            print('cant find knight')
             continue
 
         try: 
             ## Move in direction of target / worker
-            directions, visible = cluster.calculate_unit_direction(gc, knight)
+            directions = cluster.calculate_unit_direction(gc, knight)
         except:
             print('KNIGHT CLUSTER cannot calculate unit dir')
-
-        if visible: target_dead = False
 
         try: 
             if directions != None and len(directions) > 0 and gc.is_move_ready(knight.id): 
                 for d in directions: 
                     if gc.can_move(knight.id, d):
                         gc.move_robot(knight.id, d)
+                        print('moved!')
+                        break
         except: 
             print('knight cluster movement errors')
 
         ## Attack if in range (aa or javelin)
         if visible: 
-            enemy_id, attack, javelin = cluster.attack_enemy(gc, knight)
-            if enemy_id != None: 
-                try: 
-                    if attack and gc.is_attack_ready(knight.id): 
-                        gc.attack(knight.id, enemy_id)
-                        print('attacked!')  
-                    if javelin and gc.is_javelin_ready(knight.id):
-                        gc.javelin(knight.id, enemy_id)
-                        print('javelined!')
-                except: 
-                    print('knight cluster sense attack errors')
+            try: 
+                enemy_id, attack, javelin = cluster.attack_enemy(gc, knight)
+                if enemy_id != None: 
+                    try: 
+                        if attack and gc.is_attack_ready(knight.id): 
+                            gc.attack(knight.id, enemy_id)
+                            print('attacked!')  
+                        if javelin and gc.is_javelin_ready(knight.id):
+                            gc.javelin(knight.id, enemy_id)
+                            print('javelined!')
+                    except: 
+                        print('knight cluster sense attack errors')
+            except: 
+                print('attack enemy cluster didnt work')
 
-    ## If cluster target / worker dead, disband cluster
-    if target_dead: return False
-    return True
+    ## If cluster target / worker not visible, disband cluster
+    if not visible: return False
+    else: return True
