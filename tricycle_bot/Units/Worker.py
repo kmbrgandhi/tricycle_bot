@@ -101,7 +101,8 @@ def replicate(gc,unit):
 def update_deposit_info(gc,unit,karbonite_info):
 	position = unit.location.map_location()
 	planet = bc.Planet(0)
-	for x,y in karbonite_info.keys():
+	karbonite_info_keys = list(karbonite_info.keys())[:]
+	for x,y in karbonite_info_keys:
 		map_location = bc.MapLocation(planet,x,y)
 		# we can only update info about deposits we can see with our units
 		if not position.is_within_range(unit.vision_range,map_location):

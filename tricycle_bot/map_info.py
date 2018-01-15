@@ -13,3 +13,14 @@ def get_initial_karbonite_locations(gc):
 			if karbonite_at > 0:
 				deposit_locations[(x,y)] = karbonite_at
 	return deposit_locations
+
+# returns list of MapLocation that are impassable terrain
+def get_impassable_terrain(gc,planet):
+	impassable_terrain = []
+	start_map = gc.starting_map(planet)
+	for x in range(start_map.width):
+		for y in range(start_map.height):
+			map_location = bc.MapLocation(planet,x,y)	
+			if is_passable_terrain_at(map_location):
+				impassable_terrain.append(map_location)
+	return impassable_terrain
