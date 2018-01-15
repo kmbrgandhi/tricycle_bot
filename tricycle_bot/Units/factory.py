@@ -6,10 +6,9 @@ import numpy as np
 
 def timestep(gc, unit,composition, mining_rate = 0, current_production = 0, karbonite_lower_limit = 100):
     curr_round = gc.round()
-    optimal_composition = [0.55 - curr_round * (0.4/1000), 0.2+curr_round*(0.2/1000), 0.2 + curr_round*(0.2/1000), 0, 0.05+curr_round*(0.05/1000)] # optimal composition, order is Worker, Knight, Ranger, Mage, Healer
+    optimal_composition = [0, 0, 1, 0, 0] # optimal composition, order is Worker, Knight, Ranger, Mage, Healer
     # should alter based on curr_round.  this is a temporary idea.
-
-    calculate = [(optimal_composition[i]-composition[i])/(optimal_composition[i]+0.001) for i in range(len(optimal_composition))] #offset from optimal
+    calculate = [max((optimal_composition[i]-composition[i]), 0) for i in range(len(optimal_composition))] #offset from optimal
     order = [bc.UnitType.Worker, bc.UnitType.Knight, bc.UnitType.Ranger, bc.UnitType.Mage, bc.UnitType.Healer] # storing order of units
     # last check to make sure the right unit type is running this
     if unit.unit_type != bc.UnitType.Factory:
@@ -23,11 +22,22 @@ def timestep(gc, unit,composition, mining_rate = 0, current_production = 0, karb
         if optimal_unload_dir is not None:
             gc.unload(unit.id, optimal_unload_dir)
 
-
-    elif gc.can_produce_robot(unit.id, bc.UnitType.Worker): #and should_produce_robot(gc, mining_rate, current_production, karbonite_lower_limit): # otherwise produce a unit, based on most_off_optimal
-        most_off_optimal = np.argmax(calculate)
-        gc.produce_robot(unit.id, order[most_off_optimal])
-        current_production += order[most_off_optimal].factory_cost()
+    if gc.can_produce_robot(unit.id, bc.UnitType.Worker): #and should_produce_robot(gc, mining_rate, current_production, karbonite_lower_limit): # otherwise produce a unit, based on most_off_optimal
+        best = None
+        most = -float('inf')
+        tiebreaker = -float('inf')
+        for i in range(len(calculate)):
+            if calculate[i] > most:
+                best = i
+                tiebreaker = optimal_composition[i]
+                most = calculate[i]
+            elif calculate[i]==most:
+                if optimal_composition[i]> tiebreaker:
+                    best = i
+                    tiebreaker = optimal_composition[i]
+                    most = calculate[i]
+        gc.produce_robot(unit.id, order[best])
+        current_production += order[best].factory_cost()
 
     return current_production
 
@@ -54,11 +64,8 @@ def optimal_unload(gc, unit, directions):
             locs = gc.all_locations_within(unit.location.map_location(), 9)
             locs_good = []
             for loc in locs:
-                if gc.can_sense_location(loc):
-                    try:
-                        result = gc.sense_unit_at_location(loc)
-                    except:
-                        locs_good.append(loc)
+                if gc.can_sense_location(loc) and gc.has_unit_at_location(loc):
+                    locs_good.append(loc)
             num_good = len(locs_good)
             if num_good > best_val:
                 best_val = num_good

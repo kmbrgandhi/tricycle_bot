@@ -97,7 +97,7 @@ while True:
             elif unit.unit_type == bc.UnitType.Healer:
                 healer.timestep(gc,unit,info)
             elif unit.unit_type == bc.UnitType.Factory:
-                factory.timestep(gc,unit,info)
+                factory.timestep(gc,unit,info, mining_rate = 3*len(current_worker_roles["miner"]))
             elif unit.unit_type == bc.UnitType.Rocket:
                 rocket.timestep(gc,unit,info)
 
