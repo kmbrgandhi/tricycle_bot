@@ -23,7 +23,6 @@ def timestep(gc, unit,composition, knight_to_cluster, seen_knights_ids, KNIGHT_C
         if unit.id in knight_to_cluster: 
             try:
                 c = knight_to_cluster[unit.id]
-                print('cluster units: ', c.cluster_units())
 
                 valid_cluster = clusters.knight_cluster_sense(gc, unit, c)
 
