@@ -49,6 +49,7 @@ current_worker_roles = {"miner":[],"builder":[],"blueprinter":[]}
 knight_clusters = list()
 seen_knights_ids = set()
 knight_to_cluster = {} ## Remove knights not in cluster 
+KNIGHT_CLUSTER_MIN = 2
 
 # RANGER
 ranger_roles = {}
@@ -65,6 +66,19 @@ while True:
     print('pyround:', gc.round())
     last_turn_battle_locs = next_turn_battle_locs.copy()
     next_turn_battle_locs = {}
+
+    #Update knight cluster min 
+    try: 
+        my_knights = list(filter(lambda x: x.unit_type == bc.UnitType.Knight, gc.my_units()))
+        if len(my_knights) > 25: 
+            KNIGHT_CLUSTER_MIN =8
+        elif len(my_knights) > 15:
+            KNIGHT_CLUSTER_MIN = 5
+        else: 
+            KNIGHT_CLUSTER_MIN = 2
+    except: 
+        print('failed to update knight cluster min')
+
     try:
         # walk through our units:
         num_workers= num_knights=num_rangers= num_mages= num_healers= num_factory= num_rocket = 0
@@ -89,7 +103,7 @@ while True:
             if unit.unit_type == bc.UnitType.Worker:
                 worker.timestep(gc,unit,info,initial_karbonite_locations,building_queue,blueprinter_assignment,current_worker_roles)
             elif unit.unit_type == bc.UnitType.Knight:
-                knight.timestep(gc,unit,info,knight_to_cluster,seen_knights_ids)
+                knight.timestep(gc,unit,info,knight_to_cluster,seen_knights_ids, KNIGHT_CLUSTER_MIN)
             elif unit.unit_type == bc.UnitType.Ranger:
                 ranger.timestep(gc,unit,info,last_turn_battle_locs, next_turn_battle_locs, queued_paths)
             elif unit.unit_type == bc.UnitType.Mage:
