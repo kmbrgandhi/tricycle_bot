@@ -51,8 +51,9 @@ def timestep(gc, unit, info, karbonite_info, blueprinting_queue, building_assign
 
 
 # returns whether unit is a miner or builder, currently placeholder until we can use team-shared data to designate unit roles
-def get_role(gc,my_unit,building_assignment,current_roles):
+def get_role(gc,my_unit,blueprinting_queue,current_roles):
 	my_location = my_unit.location	
+	start_map = gc.starting_map(bc.Planet(0))
 	nearby = gc.sense_nearby_units(my_location.map_location(), my_unit.vision_range)
 	all_factory_count = 0	
 	please_move = False	
@@ -72,8 +73,8 @@ def get_role(gc,my_unit,building_assignment,current_roles):
 				print(unit.id, "is", role)
 				return role
 
-	max_num_blueprinters = 1
-	max_num_factories = 12	
+	max_num_blueprinters = len(blueprinting_queue)*2 + 1 # at least 1 blueprinter, 2 blueprinters per cluster
+	max_num_factories = get_cluster_limit(gc)*4	
 
 	# become miner
 	if gc.karbonite() < 100 and len(current_roles["miner"]) < 2:
@@ -204,8 +205,8 @@ def can_blueprint(gc):
 	return gc.karbonite() >= bc.UnitType.Factory.blueprint_cost()
 
 def get_cluster_limit(gc):
-	#TODO
-	return 2
+	start_map = gc.starting_map(bc.Planet(0))
+	return start_map.width * start_map.height / 100 
 
 def get_closest_site(gc,unit,blueprinting_queue):
 	nearby_sites = []	
