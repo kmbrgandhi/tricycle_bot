@@ -161,7 +161,7 @@ def knight_cluster_sense(gc, unit, cluster):
     for knight_id in cluster.cluster_units():
         try: 
             knight = gc.unit(knight_id) 
-            print('knight in cluster: ', knight)
+            # print('knight in cluster: ', knight)
         except: 
             print('knight died')
             continue
@@ -184,17 +184,20 @@ def knight_cluster_sense(gc, unit, cluster):
 
         ## Attack if in range (aa or javelin)
         if visible: 
-            enemy_id, attack, javelin = cluster.attack_enemy(gc, knight)
-            if enemy_id != None: 
-                try: 
-                    if attack and gc.is_attack_ready(knight.id): 
-                        gc.attack(knight.id, enemy_id)
-                        print('attacked!')  
-                    if javelin and gc.is_javelin_ready(knight.id):
-                        gc.javelin(knight.id, enemy_id)
-                        print('javelined!')
-                except: 
-                    print('knight cluster sense attack errors')
+            try: 
+                enemy_id, attack, javelin = cluster.attack_enemy(gc, knight)
+                if enemy_id != None: 
+                    try: 
+                        if attack and gc.is_attack_ready(knight.id): 
+                            gc.attack(knight.id, enemy_id)
+                            print('attacked!')  
+                        if javelin and gc.is_javelin_ready(knight.id):
+                            gc.javelin(knight.id, enemy_id)
+                            print('javelined!')
+                    except: 
+                        print('knight cluster sense attack errors')
+            except: 
+                print('attack enemy cluster didnt work')
 
     ## If cluster target / worker dead, disband cluster
     if target_dead: return False
