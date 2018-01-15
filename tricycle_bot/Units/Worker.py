@@ -5,8 +5,7 @@ import traceback
 import Units.sense_util as sense_util
 import Units.movement as movement
 
-def timestep(gc, unit, info, blueprinting_queue, building_assignment, current_roles):
-
+def timestep(gc, unit, info, karbonite_info, blueprinting_queue, building_assignment, current_roles):
 	# last check to make sure the right unit type is running this
 	if unit.unit_type != bc.UnitType.Worker:
 		# prob should return some kind of error
@@ -36,7 +35,7 @@ def timestep(gc, unit, info, blueprinting_queue, building_assignment, current_ro
 
 	# runs this block every turn if unit is miner
 	if role == "miner":
-		mine(gc,unit,current_roles)
+		mine(gc,unit,karbonite_info,current_roles)
 	# if unit is builder
 	elif role == "builder":
 		build(gc,unit,building_assignment,current_roles)
@@ -49,14 +48,6 @@ def timestep(gc, unit, info, blueprinting_queue, building_assignment, current_ro
 		away_from_units = sense_util.best_available_direction(gc,unit,nearby)	
 		print(unit.id, "at", unit.location.map_location(), "is trying to move to", away_from_units)
 		movement.try_move(gc,unit,away_from_units)
-		"""
-		all_factories = []
-		for other in gc.units():
-			if other.unit_type == bc.UnitType.Factory:
-				all_factories.append(other)	
-		away_from_factories = sense_util.best_available_direction(gc,unit,all_factories)
-		movement.try_move(gc,unit,away_from_factories)
-		"""
 
 
 # returns whether unit is a miner or builder, currently placeholder until we can use team-shared data to designate unit roles
@@ -105,31 +96,44 @@ def replicate(gc,unit):
 				gc.replicate(unit.id,direction)	
 
 
-
-
-def get_all_initial_deposits(gc):
-	pass
-	
-def get_closest_deposit(gc,unit):
+# FOR EARTH ONLY
+def update_deposit_info(gc,unit,karbonite_info):
 	position = unit.location.map_location()
-	vision_range = unit.vision_range	
-	potential_karbonite_locations = gc.all_locations_within(position,vision_range)		
+	planet = bc.Planet(0)
+	for x,y in karbonite_info.keys():
+		map_location = bc.MapLocation(planet,x,y)
+		# we can only update info about deposits we can see with our units
+		if not position.is_within_range(unit.vision_range,map_location):
+			continue	
+		current_karbonite = gc.karbonite_at(map_location)
+		if current_karbonite == 0:
+			del karbonite_info[(x,y)]
+		elif karbonite_info[(x,y)] != current_karbonite:
+			karbonite_info[(x,y)] = current_karbonite
+	
+# returns map location of closest karbonite deposit	
+def get_closest_deposit(gc,unit,karbonite_info):	
+	update_deposit_info(gc,unit,karbonite_info)	
+	
+	planet = bc.Planet(0)	
+	position = unit.location.map_location()
 	
 	current_distance = float('inf')
-	closest_deposit = bc.MapLocation(bc.Planet(0),-1,-1)
-	for potential_location in potential_karbonite_locations:
-		distance_to_deposit = position.distance_squared_to(potential_location)	
+	closest_deposit = bc.MapLocation(planet,-1,-1)
+	for x,y in karbonite_info.keys():
+		map_location = bc.MapLocation(planet,x,y)
+		distance_to_deposit = position.distance_squared_to(map_location)	
 		#keep updating current closest deposit to unit	
-		if gc.karbonite_at(potential_location) > 0 and distance_to_deposit < current_distance:
+		if distance_to_deposit < current_distance:
 			current_distance = distance_to_deposit 
-			closest_deposit = potential_location
+			closest_deposit = map_location
 	return closest_deposit	
 	
-def mine(gc,unit,current_roles): 
+def mine(gc,unit,karbonite_info,current_roles): 
 	my_location = unit.location
 	position = my_location.map_location()
 	directions = list(bc.Direction)
-	closest_deposit = get_closest_deposit(gc, unit)
+	closest_deposit = get_closest_deposit(gc,unit,karbonite_info)
 	start_map = gc.starting_map(bc.Planet(0))
 
 	#check to see if there even are deposits
@@ -176,22 +180,6 @@ def build(gc,unit,building_assignment,current_roles):
 			#print(unit.id, "is trying to move toward factory at ",assigned_site)
 			direction_to_blueprint = my_location.map_location().direction_to(blueprint_at_site.location.map_location())
 			movement.try_move(gc,unit,direction_to_blueprint)
-	"""
-	nearby = gc.sense_nearby_units(my_location.map_location(), unit.vision_range)
-
-	for other in nearby:
-		if other.unit_type == bc.UnitType.Factory and not other.structure_is_built(): #located an unfinished factory	
-			# we need to be adjacent to blueprint to build
-			if my_location.is_adjacent_to(other.location):
-				if gc.can_build(unit.id, other.id):
-					gc.build(unit.id,other.id)
-				return
-			# if not adjacent move toward it
-			else:
-				direction_to_blueprint = my_location.map_location().direction_to(other.location.map_location())
-				movement.try_move(gc,unit,direction_to_blueprint)
-				return
-	"""
 		
 
 
