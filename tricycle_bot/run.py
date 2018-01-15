@@ -43,7 +43,8 @@ blueprinter_assignment = {}
 current_worker_roles = {"miner":[],"builder":[],"blueprinter":[]}
 
 # KNIGHT
-knight_clusters = set()
+knight_clusters = list()
+seen_knights_ids = set()
 knight_to_cluster = {} ## Remove knights not in cluster 
 
 # RANGER
@@ -85,7 +86,7 @@ while True:
             if unit.unit_type == bc.UnitType.Worker:
                 worker.timestep(gc,unit,building_queue,blueprinter_assignment,current_worker_roles)
             elif unit.unit_type == bc.UnitType.Knight:
-                knight.timestep(gc,unit,info,knight_to_cluster,knight_clusters)
+                knight.timestep(gc,unit,info,knight_to_cluster,seen_knights_ids)
             elif unit.unit_type == bc.UnitType.Ranger:
                 ranger.timestep(gc,unit,info,last_turn_battle_locs, next_turn_battle_locs, queued_paths)
             elif unit.unit_type == bc.UnitType.Mage:
@@ -96,6 +97,10 @@ while True:
                 factory.timestep(gc,unit,info)
             elif unit.unit_type == bc.UnitType.Rocket:
                 rocket.timestep(gc,unit,info)
+
+        ## Reset knight turn clusters
+        seen_knights_ids = set()
+
     except Exception as e:
         print('Error:', e)
         # use this to show where the error was
