@@ -31,11 +31,11 @@ def timestep(gc, unit, info, karbonite_locations, locs_next_to_terrain, blueprin
 	# make sure unit can actually perform actions ie. not in garrison
 	if not my_location.is_on_map():
 		return	
-	print()
-	print("ON UNIT #",unit.id, "position: ",unit.location.map_location())
+	#print()
+	#print("ON UNIT #",unit.id, "position: ",unit.location.map_location())
 	role = get_role(gc,unit,blueprinting_queue,current_roles,karbonite_locations)
 	
-	print("KARBONITE: ",gc.karbonite())
+	#print("KARBONITE: ",gc.karbonite())
 	if gc.team() == bc.Team(0):	
 		pass
 		#print("current_roles",current_roles)
@@ -65,7 +65,7 @@ def timestep(gc, unit, info, karbonite_locations, locs_next_to_terrain, blueprin
 	elif role == "idle":
 		nearby = gc.sense_nearby_units(my_location.map_location(), worker_spacing)
 		away_from_units = sense_util.best_available_direction(gc,unit,nearby)	
-		print(unit.id, "at", unit.location.map_location(), "is trying to move to", away_from_units)
+		#print(unit.id, "at", unit.location.map_location(), "is trying to move to", away_from_units)
 		movement.try_move(gc,unit,away_from_units)
 
 
@@ -210,13 +210,13 @@ def build(gc,unit,building_assignment,current_roles):
 	assert blueprint_at_site.unit_type == bc.UnitType.Factory or blueprint_at_site.unit_type == bc.UnitType.Rocket
 
 	if blueprint_at_site.structure_is_built():
-		print(unit.id, "has finished building a structure at ",assigned_site)
+		#print(unit.id, "has finished building a structure at ",assigned_site)
 		current_roles["builder"].remove(unit.id)
 		del building_assignment[unit.id]		
 	else:	
 		if my_location.map_location().is_adjacent_to(assigned_site):
 			if gc.can_build(unit.id,blueprint_at_site.id):
-				print(unit.id, "is building factory at ",assigned_site)
+				#print(unit.id, "is building factory at ",assigned_site)
 				gc.build(unit.id,blueprint_at_site.id)
 			return
 		# if not adjacent move toward it
@@ -357,7 +357,7 @@ def blueprint(gc,unit,blueprinting_queue,building_assignment,current_roles,locs_
 				gc.blueprint(unit.id, bc.UnitType.Factory, direction_to_site)
 				current_roles["blueprinter"].remove(unit.id)
 				current_roles["builder"].append(unit.id)
-				print(unit.id, " just created a blueprint!")
+				#print(unit.id, " just created a blueprint!")
 			else:
 				pass
 				#print(unit.id, "can't build but is right next to assigned site")
@@ -368,7 +368,7 @@ def blueprint(gc,unit,blueprinting_queue,building_assignment,current_roles,locs_
 			#print(unit.id, " is on top of its build site and is moving away")
 		else:
 			# move toward queued building site
-			print(unit.id, "is moving toward building site: ",assigned_site)
+			#print(unit.id, "is moving toward building site: ",assigned_site)
 			next_direction = my_location.map_location().direction_to(assigned_site.map_location)	
 
 			movement.try_move(gc,unit,next_direction)	
