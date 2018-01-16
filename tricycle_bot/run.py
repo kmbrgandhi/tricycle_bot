@@ -44,6 +44,10 @@ locs_next_to_terrain = map_info.get_locations_next_to_terrain(gc,bc.Planet(0))
 
 constants = c.Constants(list(bc.Direction), gc.team(), sense_util.enemy_team(gc), locs_next_to_terrain, karbonite_locations)
 
+#ROCKETS
+rocket_launch_times = {}
+rocket_landing_sites = {}
+
 # WORKER
 blueprinting_queue = []
 building_assignment = {}
@@ -71,7 +75,8 @@ while True:
     last_turn_battle_locs = next_turn_battle_locs.copy()
     next_turn_battle_locs = {}
 
-    #Update knight cluster min 
+    #Update knight cluster min
+    """
     try: 
         my_knights = list(filter(lambda x: x.unit_type == bc.UnitType.Knight, gc.my_units()))
         if len(my_knights) > 25: 
@@ -82,6 +87,7 @@ while True:
             KNIGHT_CLUSTER_MIN = 2
     except: 
         pass
+    """
 
     try:
         # walk through our units:
@@ -102,6 +108,7 @@ while True:
             elif unit.unit_type == bc.UnitType.Rocket:
                 num_rocket+=1
         info = [num_workers, num_knights, num_rangers, num_mages, num_healers, num_factory, num_rocket]
+
         for unit in gc.my_units():
             # resepective unit types execute their own AI
             if unit.unit_type == bc.UnitType.Worker:
@@ -117,7 +124,8 @@ while True:
             elif unit.unit_type == bc.UnitType.Factory:
                 factory.timestep(gc,unit,info, building_assignment, mining_rate = 3*len(current_worker_roles["miner"]))
             elif unit.unit_type == bc.UnitType.Rocket:
-                rocket.timestep(gc,unit,info)
+                print('hi')
+                rocket.timestep(gc,unit,info, rocket_launch_times, rocket_landing_sites)
 
         ## Reset knight turn clusters
         seen_knights_ids = set()

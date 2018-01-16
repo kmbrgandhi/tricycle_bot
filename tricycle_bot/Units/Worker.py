@@ -84,7 +84,7 @@ def get_role(gc,my_unit,blueprinting_queue,current_roles,karbonite_locations):
 	for role in current_roles.keys():
 		if my_unit.id in current_roles[role]:
 			if role == "miner" and please_move: 
-				print(my_unit.id, "NEEDS TO MOVE")
+				#print(my_unit.id, "NEEDS TO MOVE")
 				return "idle"
 			else:
 				return role

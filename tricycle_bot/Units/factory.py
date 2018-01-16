@@ -37,7 +37,7 @@ def timestep(gc, unit,composition, building_assignments, mining_rate = 0, curren
 					tiebreaker = optimal_composition[i]
 					most = calculate[i]
 
-		produce = bc.UnitType.Ranger
+		produce = order[best]
 		gc.produce_robot(unit.id, produce)
 		#current_production += order[best].factory_cost()
 

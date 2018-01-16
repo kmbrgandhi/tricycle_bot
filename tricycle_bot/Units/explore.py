@@ -55,7 +55,7 @@ def exists_movement_path_locs(gc, init_loc, maplocation):
                 priority = new_cost + heuristic(next, maplocation)
                 queue.put(Prioritize(priority, next))
                 parent[coords(next)] = current
-    if maplocation in parent:
+    if (maplocation.x, maplocation.y) in parent:
         return True
     return False
 
@@ -82,8 +82,8 @@ def movement_path(gc, unit, maplocation):
                 queue.put(Prioritize(priority, next))
                 parent[coords(next)] = current
     iter = maplocation
-    if maplocation not in parent:
-        return None
+    if (maplocation.x, maplocation.y) in parent:
+        return True
     path = [maplocation]
     while iter!=init:
         iter = parent[coords(iter)]
