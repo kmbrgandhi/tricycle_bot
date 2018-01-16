@@ -100,7 +100,7 @@ def ranger_sense(gc, unit, composition, battle_locs, queued_paths, ranger_roles)
             if closest_enemy is not None:
                 if check_radius_squares_factories(gc, unit):
                     dir = optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location())
-                elif (exists_bad_enemy(enemies)):
+                elif (exists_bad_enemy(enemies)) or not gc.can_attack(unit.id, closest_enemy.id):
                     dir = sense_util.best_available_direction(gc, unit, enemies)
                 #and (closest_enemy.location.map_location().distance_squared_to(location)) ** (
                 #0.5) + 2 < unit.attack_range() ** (0.5)) or not gc.can_attack(unit.id, attack.id):
@@ -126,8 +126,8 @@ def ranger_sense(gc, unit, composition, battle_locs, queued_paths, ranger_roles)
             #queued_paths[unit.id] = target
         else:
             print('moving away')
-            dir = move_away(gc, unit, battle_locs)
-            #dir = get_explore_dir(gc, unit)
+            #dir = move_away(gc, unit, battle_locs)
+            dir = get_explore_dir(gc, unit)
         """
         elif unit.id in queued_paths:
             if location!=queued_paths[unit.id]:
@@ -276,6 +276,8 @@ def attack_range_non_robots(unit):
     else:
         return unit.attack_range()
 
+def get_explore_dir_updated(gc, unit):
+    return
 def get_explore_dir(gc, unit):
     # function to get a direction to explore by picking locations that are within some distance that are
     # not visible to the team yet, and going towards them.

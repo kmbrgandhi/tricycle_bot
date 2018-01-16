@@ -67,31 +67,31 @@ def get_best_option(optimal_dir):
     if optimal_dir[0]>0:
         if optimal_dir[1]>0:
             if ratio <0.5:
-                return (directions[direction_to_index["North"]], directions[direction_to_index["Northeast"]], directions[direction_to_index["East"]])
+                return (bc.Direction.North, bc.Direction.Northeast, bc.Direction.East, bc.Direction.Northwest, bc.Direction.West, bc.Direction.Southeast, bc.Direction.Southwest, bc.Direction.South)
             elif ratio > 2:
-                return (directions[direction_to_index["East"]], directions[direction_to_index["Northeast"]], directions[direction_to_index["North"]])
+                return (bc.Direction.East, bc.Direction.Northeast, bc.Direction.North, bc.Direction.Southeast, bc.Direction.South, bc.Direction.Northwest, bc.Direction.Southwest, bc.Direction.West)
             else:
-                return (directions[direction_to_index["Northeast"]], directions[direction_to_index["North"]], directions[direction_to_index["East"]])
+                return (bc.Direction.Northeast, bc.Direction.North, bc.Direction.East, bc.Direction.Southeast, bc.Direction.Northwest, bc.Direction.South, bc.Direction.West, bc.Direction.Southwest)
         else:
             if ratio <0.5:
-                return (directions[direction_to_index["South"]], directions[direction_to_index["Southeast"]], directions[direction_to_index["East"]])
+                return (bc.Direction.South, bc.Direction.Southeast, bc.Direction.East, bc.Direction.Southwest, bc.Direction.West, bc.Direction.Northeast, bc.Direction.Northwest, bc.Direction.North)
             elif ratio > 2:
-                return (directions[direction_to_index["East"]], directions[direction_to_index["Southeast"]], directions[direction_to_index["South"]])
+                return (bc.Direction.East, bc.Direction.Southeast, bc.Direction.South, bc.Direction.Northeast, bc.Direction.Southwest, bc.Direction.North, bc.Direction.Northwest, bc.Direction.West)
             else:
-                return (directions[direction_to_index["Southeast"]], directions[direction_to_index["South"]], directions[direction_to_index["East"]])
+                return (bc.Direction.Southeast, bc.Direction.South, bc.Direction.East, bc.Direction.Northeast, bc.Direction.Southwest, bc.Direction.North, bc.Direction.West, bc.Direction.Northwest)
     else:
         if optimal_dir[1]>0:
             if ratio <0.5:
-                return (directions[direction_to_index["North"]], directions[direction_to_index["Northwest"]], directions[direction_to_index["West"]])
+                return (bc.Direction.North, bc.Direction.Northwest, bc.Direction.West, bc.Direction.Northeast, bc.Direction.East, bc.Direction.Southwest, bc.Direction.Southeast, bc.Direction.South)
             elif ratio > 2:
-                return (directions[direction_to_index["West"]], directions[direction_to_index["Northwest"]], directions[direction_to_index["North"]])
+                return (bc.Direction.West, bc.Direction.Northwest, bc.Direction.North, bc.Direction.Southwest, bc.Direction.South, bc.Direction.Northeast, bc.Direction.Southeast, bc.Direction.East)
             else:
-                return (directions[direction_to_index["Northwest"]], directions[direction_to_index["North"]], directions[direction_to_index["West"]])
+                return (bc.Direction.Northwest, bc.Direction.North, bc.Direction.West, bc.Direction.Southwest, bc.Direction.Northeast, bc.Direction.South, bc.Direction.East, bc.Direction.Southeast)
         else:
             if ratio<0.5:
-                return (directions[direction_to_index["South"]], directions[direction_to_index["Southwest"]], directions[direction_to_index["West"]])
+                return (bc.Direction.South, bc.Direction.Southwest, bc.Direction.West, bc.Direction.Southeast, bc.Direction.East, bc.Direction.Northwest, bc.Direction.Northeast, bc.Direction.North)
             elif ratio > 2:
-                return (directions[direction_to_index["West"]], directions[direction_to_index["Southwest"]], directions[direction_to_index["South"]])
+                return (bc.Direction.West, bc.Direction.Southwest, bc.Direction.South, bc.Direction.Northwest, bc.Direction.Southeast, bc.Direction.North, bc.Direction.Northeast, bc.Direction.East)
             else:
-                return (directions[direction_to_index["Southwest"]], directions[direction_to_index["South"]], directions[direction_to_index["West"]])
+                return (bc.Direction.Southwest, bc.Direction.South, bc.Direction.West, bc.Direction.Northwest, bc.Direction.Southeast, bc.Direction.North, bc.Direction.East, bc.Direction.Northwest)
 
