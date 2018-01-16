@@ -37,7 +37,7 @@ def timestep(gc, unit,composition, building_assignments, mining_rate = 0, curren
 					most = calculate[i]
 
 		produce = bc.UnitType.Ranger
-		gc.produce_robot(unit.id, produce)
+		#gc.produce_robot(unit.id, produce)
 		#current_production += order[best].factory_cost()
 
 def should_produce_robot(gc, mining_rate, current_production, karbonite_lower_limit):
