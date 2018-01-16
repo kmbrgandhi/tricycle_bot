@@ -24,8 +24,7 @@ def timestep(gc, unit, info, karbonite_locations, locs_next_to_terrain, blueprin
 	#print("ON UNIT #",unit.id, "position: ",unit.location.map_location())	
 	role = get_role(gc,unit,blueprinting_queue,current_roles,karbonite_locations)
 	
-	#print("KARBONITE: ",gc.karbonite())	
-
+	#print("KARBONITE: ",gc.karbonite())
 	if gc.team() == bc.Team(0):
 		
 		pass
@@ -39,7 +38,7 @@ def timestep(gc, unit, info, karbonite_locations, locs_next_to_terrain, blueprin
 	
 	current_num_workers = info[0]	
 	max_num_workers = get_replication_cap(gc,karbonite_locations)
-	worker_spacing = 10
+	worker_spacing = 8
 
 	#print("REPLICATION CAP: ",max_num_workers)
 	# replicates if unit is able to (cooldowns, available directions etc.)	
@@ -56,9 +55,14 @@ def timestep(gc, unit, info, karbonite_locations, locs_next_to_terrain, blueprin
 	# if unit is blueprinter
 	elif role == "blueprinter":
 		blueprint(gc,unit,blueprinting_queue,building_assignment,current_roles,locs_next_to_terrain)
+	# if unit is boarder
+	elif role == "boarder": 
+		board(gc,unit)
 	# if unit is idle
-	elif role == "idle":
-		nearby = gc.sense_nearby_units(my_location.map_location(), worker_spacing)
+	else: 	
+		role == "idle"
+		nearby= gc.sense_nearby_units_by_team(my_location.map_location(), worker_spacing, gc.team())
+
 		away_from_units = sense_util.best_available_direction(gc,unit,nearby)	
 		#print(unit.id, "at", unit.location.map_location(), "is trying to move to", away_from_units)
 		movement.try_move(gc,unit,away_from_units)
@@ -71,6 +75,7 @@ def get_role(gc,my_unit,blueprinting_queue,current_roles,karbonite_locations):
 	nearby = gc.sense_nearby_units(my_location.map_location(), my_unit.vision_range)
 	factory_count = 0	
 	rocket_count = 0
+	rocket_ready_for_loading = False
 	please_move = False	
 	
 	for unit in gc.my_units():
@@ -79,6 +84,9 @@ def get_role(gc,my_unit,blueprinting_queue,current_roles,karbonite_locations):
 				please_move = True
 			factory_count += 1
 		if unit.unit_type == bc.UnitType.Rocket:
+			if unit.structure_is_built():
+				rocket_ready_for_loading += True
+				#print("UNITS IN GARRISON",unit.structure_garrison())
 			rocket_count += 1
 	
 	for role in current_roles.keys():
@@ -107,26 +115,39 @@ def get_role(gc,my_unit,blueprinting_queue,current_roles,karbonite_locations):
 	# default to becoming miner mid game
 	elif num_miners_per_deposit * len(karbonite_locations) > num_miners:
 		new_role = "miner"
+	elif rocket_ready_for_loading:
+		new_role = "boarder"
 	else:
 		return "idle"
 	current_roles[new_role].append(my_unit.id)
 	return new_role
 
-# function to get all unit types in a certain detection radius
-def get_all_units_within_range(gc,unit,type_of_unit,detection_radius=None):
-	my_position = unit.location.map_location()
-	if detection_radius == None:
-		nearby = gc.my_units()
-	elif detection_radius >= 0:
-		nearby = gc.sense_nearby_units(my_position,detection_radius)
-	else:
-		return []
 
-	units_in_radius = []
-	for unit in nearby:
-		if unit.unit_type == type_of_unit:
-			units_in_radius.append(unit)
-	return units_in_radius
+def board(gc,my_unit):
+	my_location = my_unit.location.map_location()
+	finished_rockets = []
+	for unit in gc.my_units():
+		if unit.unit_type == bc.UnitType.Rocket and unit.structure_is_built():
+			finished_rockets.append(unit)
+
+	minimum_distance = float('inf')
+	closest_rocket = None
+	for rocket in finished_rockets:
+		dist_to_rocket = my_location.distance_squared_to(rocket.location.map_location())
+		if dist_to_rocket < minimum_distance:
+			minimum_distance = dist_to_rocket
+			closest_rocket = rocket
+
+	rocket_location = closest_rocket.location.map_location()
+	if my_location.is_adjacent_to(rocket_location):
+		if gc.can_load(closest_rocket.id,my_unit.id):
+			#print(unit.id, 'loaded')
+			gc.load(closest_rocket.id,my_unit.id)
+			current_roles["boarder"].remove(my_unit.id)
+	else:
+		#print(unit.id, 'moving toward rocket')
+		direction_to_rocket = my_location.direction_to(rocket_location)
+		movement.try_move(gc,my_unit,direction_to_rocket)
 		
 	
 def get_replication_cap(gc,karbonite_locations):
@@ -276,11 +297,16 @@ def generate_factory_locations(start_map,center,locs_next_to_terrain):
 # function to flexibly determine when a good time to expand factories
 def can_blueprint_factory(gc,blueprinting_queue):
 	#TODO
-	return gc.karbonite() >= bc.UnitType.Factory.blueprint_cost()
+	factory_count = 0
+	max_num_factories = 4 * get_cluster_limit(gc)
+	for unit in gc.my_units():
+		if unit.unit_type == bc.UnitType.Factory:
+			factory_count += 1
+	return factory_count < max_num_factories
 
 def can_blueprint_rocket(gc,blueprinting_queue):
 	rocket_count = 0
-	max_num_rockets = 5
+	max_num_rockets = get_rocket_limit(gc)
 	for unit in gc.my_units():
 		if unit.unit_type == bc.UnitType.Rocket:
 			rocket_count += 1
