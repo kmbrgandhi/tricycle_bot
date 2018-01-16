@@ -16,23 +16,23 @@ def timestep(gc, unit, composition, last_turn_battle_locs, next_turn_battle_locs
     if unit.unit_type != bc.UnitType.Ranger:
         # prob should return some kind of error
         return
-
     if unit.id not in ranger_roles["fighter"] and unit.id not in ranger_roles["sniper"]:
         c = 13
         if len(ranger_roles["fighter"]) > c * len(ranger_roles["sniper"]) and gc.research_info().get_level(
             bc.UnitType.Ranger) == 3:
             print('produced sniper')
-            ranger_roles["sniper"].append(unit)
+            ranger_roles["sniper"].append(unit.id)
         else:
             ranger_roles["fighter"].append(unit.id)
 
     location = unit.location
     my_team = gc.team()
     if location.is_on_map():
-        dir, attack_target, snipe, move_then_attack, visible_enemies, signals = ranger_sense(gc, unit, composition, last_turn_battle_locs, queued_paths, ranger_roles)
+        dir, attack_target, snipe, move_then_attack, visible_enemies, closest_enemy, signals = ranger_sense(gc, unit, composition, last_turn_battle_locs, queued_paths, ranger_roles)
         map_loc = location.map_location()
-        f_f_quad = (int(map_loc.x/5), int(map_loc.y/5))
         if visible_enemies:
+            enemy_loc = closest_enemy.location.map_location()
+            f_f_quad = (int(enemy_loc.x / 5), int(enemy_loc.y / 5))
             if f_f_quad not in next_turn_battle_locs:
                 next_turn_battle_locs[f_f_quad] = (map_loc, 1)
             else:
@@ -83,6 +83,7 @@ def ranger_sense(gc, unit, composition, battle_locs, queued_paths, ranger_roles)
     dir = None
     attack = None
     snipe = None
+    closest_enemy = None
     move_then_attack = False
     visible_enemies = False
     location = unit.location.map_location()
@@ -120,19 +121,25 @@ def ranger_sense(gc, unit, composition, battle_locs, queued_paths, ranger_roles)
     else:
         # if there are no enemies in sight, check if there is an ongoing battle.  If so, go there.
         if len(battle_locs)>0:
+            print('moving towards battle')
             dir, target= go_to_battle(gc, unit, battle_locs)
-            queued_paths[unit.id] = target
+            #queued_paths[unit.id] = target
+        else:
+            print('moving away')
+            dir = move_away(gc, unit, battle_locs)
+            #dir = get_explore_dir(gc, unit)
+        """
         elif unit.id in queued_paths:
             if location!=queued_paths[unit.id]:
                 dir = optimal_direction_towards(gc, unit, location, queued_paths[unit.id])
                 return dir, attack, snipe, move_then_attack, visible_enemies, signals
             else:
                 del queued_paths[unit.id]
+        """
 
-        else:
-            dir = get_explore_dir(gc, unit)
 
-    return dir, attack, snipe, move_then_attack, visible_enemies, signals
+
+    return dir, attack, snipe, move_then_attack, visible_enemies, closest_enemy, signals
 
 
 snipe_priority = {"Rocket": 5, "Factory": 4, "Ranger": 3, "Healer": 2, "Knight": 1, "Worker": 0, "Mage": -1}
@@ -192,9 +199,11 @@ def snipe_sense(gc, unit, composition, battle_locs, queued_paths):
 def move_away(gc, unit, battle_locs):
     map_loc = unit.location.map_location()
     lst = []
-    for nearby_loc in gc.sense_nearby_units(map_loc, 10):
-        if gc.can_sense_location(nearby_loc) and gc.has_unit_at_location(nearby_loc) and gc.sense_unit_at_location(nearby_loc).unit_type == bc.UnitType.Factory:
-            lst.append(nearby_loc)
+    for nearby_unit in gc.sense_nearby_units(map_loc, 10):
+        if nearby_unit.location.is_on_map():
+            nearby_loc = nearby_unit.location.map_location()
+            if gc.can_sense_location(nearby_loc) and gc.has_unit_at_location(nearby_loc) and gc.sense_unit_at_location(nearby_loc).unit_type == bc.UnitType.Factory:
+                lst.append(nearby_unit)
 
     return sense_util.best_available_direction(gc, unit, lst)
 
