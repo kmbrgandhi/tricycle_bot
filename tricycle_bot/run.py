@@ -41,8 +41,8 @@ initial_karbonite_locations = map_info.get_initial_karbonite_locations(gc)
 print(initial_karbonite_locations)
 
 # WORKER
-building_queue = []
-blueprinter_assignment = {}
+blueprinting_queue = []
+building_assignment = {}
 current_worker_roles = {"miner":[],"builder":[],"blueprinter":[]}
 
 # KNIGHT
@@ -101,7 +101,7 @@ while True:
         for unit in gc.my_units():
             # resepective unit types execute their own AI
             if unit.unit_type == bc.UnitType.Worker:
-                worker.timestep(gc,unit,info,initial_karbonite_locations,building_queue,blueprinter_assignment,current_worker_roles)
+                worker.timestep(gc,unit,info,initial_karbonite_locations,blueprinting_queue,building_assignment,current_worker_roles)
             elif unit.unit_type == bc.UnitType.Knight:
                 knight.timestep(gc,unit,info,knight_to_cluster,seen_knights_ids, KNIGHT_CLUSTER_MIN)
             elif unit.unit_type == bc.UnitType.Ranger:
@@ -111,7 +111,7 @@ while True:
             elif unit.unit_type == bc.UnitType.Healer:
                 healer.timestep(gc,unit,info)
             elif unit.unit_type == bc.UnitType.Factory:
-                factory.timestep(gc,unit,info, mining_rate = 3*len(current_worker_roles["miner"]))
+                factory.timestep(gc,unit,info, building_assignment, mining_rate = 3*len(current_worker_roles["miner"]))
             elif unit.unit_type == bc.UnitType.Rocket:
                 rocket.timestep(gc,unit,info)
 
