@@ -4,6 +4,7 @@ import sys
 import traceback
 import Units.sense_util as sense_util
 import Units.movement as movement
+import Units.explore as explore
 
 def timestep(gc, unit, info, karbonite_info, blueprinting_queue, building_assignment, current_roles):
 	# last check to make sure the right unit type is running this
@@ -20,10 +21,10 @@ def timestep(gc, unit, info, karbonite_info, blueprinting_queue, building_assign
 	print("ON UNIT #",unit.id, "position: ",unit.location.map_location())	
 	role = get_role(gc,unit,blueprinting_queue,current_roles,karbonite_info)
 
-	if gc.team() == bc.Team(1):	
+	if gc.team() == bc.Team(0):	
 		print("current_roles",current_roles)
-		#print("blueprinting_queue",blueprinting_queue)
-		#print("building_assignment",building_assignment)
+		print("blueprinting_queue",blueprinting_queue)
+		print("building_assignment",building_assignment)
 	
 	current_num_workers = info[0]	
 	max_num_workers = 10
@@ -323,7 +324,14 @@ def blueprint(gc,unit,blueprinting_queue,building_assignment,current_roles):
 			#print(unit.id, " is on top of its build site and is moving away")
 		else:
 			# move toward queued building site
-			movement.try_move(gc,unit,direction_to_site)	
+			print(assigned_site)
+			next_direction = my_location.map_location().direction_to(assigned_site)	
+			movement.try_move(gc,unit,next_direction)	
+			"""
+			path = explore.movement_path(gc,unit,assigned_site)
+			next_direction = my_location.map_location().direction_to(path[0])	
+			movement.try_move(gc,unit,next_direction)	
+			"""
 			#print(unit.id, " is moving to its assigned build site")
 		
 	
