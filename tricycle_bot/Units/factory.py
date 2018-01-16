@@ -4,7 +4,7 @@ import sys
 import traceback
 import numpy as np
 
-def timestep(gc, unit,composition, mining_rate = 0, current_production = 0, karbonite_lower_limit = 100):
+def timestep(gc, unit,composition, building_assignments, mining_rate = 0, current_production = 0, karbonite_lower_limit = 100):
     curr_round = gc.round()
     optimal_composition = [0, 0, 1, 0, 0] # optimal composition, order is Worker, Knight, Ranger, Mage, Healer
     # should alter based on curr_round.  this is a temporary idea.
@@ -14,11 +14,12 @@ def timestep(gc, unit,composition, mining_rate = 0, current_production = 0, karb
     if unit.unit_type != bc.UnitType.Factory:
         # prob should return some kind of error
         return
-
+    print(gc.karbonite())
     garrison = unit.structure_garrison() # units inside of factory
+    print('garrison length:', len(garrison))
     directions = list(bc.Direction)
     if len(garrison) > 0: # try to unload a unit if there exists one in the garrison
-        optimal_unload_dir = optimal_unload(gc, unit, directions)
+        optimal_unload_dir = optimal_unload(gc, unit, directions, building_assignments)
         if optimal_unload_dir is not None:
             gc.unload(unit.id, optimal_unload_dir)
 
@@ -36,7 +37,7 @@ def timestep(gc, unit,composition, mining_rate = 0, current_production = 0, karb
                     best = i
                     tiebreaker = optimal_composition[i]
                     most = calculate[i]
-        gc.produce_robot(unit.id, order[best])
+        gc.produce_robot(unit.id, bc.UnitType.Ranger)
         current_production += order[best].factory_cost()
 
     return current_production
@@ -56,11 +57,11 @@ def gain_rate(gc):
     decrease = int(curr/40)
     return max(10 -decrease, 0)
 
-def optimal_unload(gc, unit, directions):
+def optimal_unload(gc, unit, directions, building_assignments):
     best = None
     best_val = -float('inf')
     for d in directions:
-        if gc.can_unload(unit.id, d):
+        if gc.can_unload(unit.id, d) and unit.location.map_location().add(d) not in building_assignments.values():
             locs = gc.all_locations_within(unit.location.map_location(), 9)
             locs_good = []
             for loc in locs:
