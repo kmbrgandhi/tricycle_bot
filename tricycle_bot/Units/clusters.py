@@ -62,7 +62,7 @@ class Cluster:
                 unit = gc.unit(unit_id)
                 ordered_units.append(unit)
             except: 
-                print('not found: ', unit_id)
+                # print('not found: ', unit_id)
                 self.units.remove(unit_id)
                 # continue
 
@@ -106,7 +106,8 @@ class Cluster:
                     if gc.can_javelin(unit.id, self.target_unit_id): javelin = True
                     enemy_id = self.target_unit_id
                 except: 
-                    print('cannot attack or javelin self.target_unit')
+                    # print('cannot attack or javelin self.target_unit')
+                    pass
 
             # else: 
             #     enemies = gc.sense_nearby_units_by_team(unit_loc, unit.vision_range, sense_util.enemy_team(gc))
@@ -156,7 +157,7 @@ def create_knight_cluster(gc, unit, enemy, unavailable_knight_ids):
     vs. attack an enemy. 
     """
     ## Create new cluster for this unit only if unit not already in cluster
-    print('creating new cluster')
+    # print('creating new cluster')
 
     unit_loc = unit.location.map_location()
 
@@ -166,7 +167,8 @@ def create_knight_cluster(gc, unit, enemy, unavailable_knight_ids):
             nearby_ally_units = gc.sense_nearby_units_by_type(unit_loc, unit.vision_range, unit.unit_type) 
             nearby_ally_units = list(filter(lambda x: x.team == gc.team(), nearby_ally_units))
         except:
-            print('fuck it')
+            # print('fuck it')
+            pass
 
         ## Create a cluster of nearby allied units
         cluster_allies = set()
@@ -191,12 +193,13 @@ def knight_cluster_sense(gc, unit, cluster):
     try:
         visible = cluster.update_target(gc, unit)
     except:
-        print('cannot update target')
+        # print('cannot update target')
+        pass
 
     try: 
         ordered_units = cluster.movement_unit_order(gc)
     except:
-        print('cannot find movement order')
+        # print('cannot find movement order')
         ordered_units = list(cluster.cluster_units())
 
 
@@ -204,24 +207,26 @@ def knight_cluster_sense(gc, unit, cluster):
         try: 
             knight = gc.unit(knight_id)
         except: 
-            print('cant find knight')
+            # print('cant find knight')
             continue
 
         try: 
             ## Move in direction of target / worker
             directions = cluster.calculate_unit_direction(gc, knight)
         except:
-            print('KNIGHT CLUSTER cannot calculate unit dir')
+            # print('KNIGHT CLUSTER cannot calculate unit dir')
+            pass
 
         try: 
             if directions != None and len(directions) > 0 and gc.is_move_ready(knight.id): 
                 for d in directions: 
                     if gc.can_move(knight.id, d):
                         gc.move_robot(knight.id, d)
-                        print('moved!')
+                        # print('moved!')
                         break
         except: 
-            print('knight cluster movement errors')
+            # print('knight cluster movement errors')
+            pass
 
         ## Attack if in range (aa or javelin)
         if visible: 
@@ -231,14 +236,16 @@ def knight_cluster_sense(gc, unit, cluster):
                     try: 
                         if attack and gc.is_attack_ready(knight.id): 
                             gc.attack(knight.id, enemy_id)
-                            print('attacked!')  
+                            # print('attacked!')  
                         if javelin and gc.is_javelin_ready(knight.id):
                             gc.javelin(knight.id, enemy_id)
-                            print('javelined!')
+                            # print('javelined!')
                     except: 
-                        print('knight cluster sense attack errors')
+                        # print('knight cluster sense attack errors')
+                        pass
             except: 
-                print('attack enemy cluster didnt work')
+                # print('attack enemy cluster didnt work')
+                pass
 
     ## If cluster target / worker not visible, disband cluster
     if not visible: return False
