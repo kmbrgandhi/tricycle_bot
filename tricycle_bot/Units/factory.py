@@ -6,7 +6,7 @@ import numpy as np
 
 def timestep(gc, unit,composition, building_assignments, mining_rate = 0, current_production = 0, karbonite_lower_limit = 100):
     curr_round = gc.round()
-    optimal_composition = [0, 0, 1 0, 0] # optimal composition, order is Worker, Knight, Ranger, Mage, Healer
+    optimal_composition = [0, 0, 1, 0, 0] # optimal composition, order is Worker, Knight, Ranger, Mage, Healer
     # should alter based on curr_round.  this is a temporary idea.
     calculate = [max((optimal_composition[i]-composition[i]), 0) for i in range(len(optimal_composition))] #offset from optimal
     order = [bc.UnitType.Worker, bc.UnitType.Knight, bc.UnitType.Ranger, bc.UnitType.Mage, bc.UnitType.Healer] # storing order of units
