@@ -20,16 +20,15 @@ def timestep(gc, unit, composition, last_turn_battle_locs, next_turn_battle_locs
         c = 13
         if len(ranger_roles["fighter"]) > c * len(ranger_roles["sniper"]) and gc.research_info().get_level(
             bc.UnitType.Ranger) == 3:
-            print('produced sniper')
             ranger_roles["sniper"].append(unit.id)
         else:
             ranger_roles["fighter"].append(unit.id)
 
     location = unit.location
-    my_team = gc.team()
+    my_team = gc.team() #constants.team
     if location.is_on_map():
-        dir, attack_target, snipe, move_then_attack, visible_enemies, closest_enemy, signals = ranger_sense(gc, unit, composition, last_turn_battle_locs, queued_paths, ranger_roles)
         map_loc = location.map_location()
+        dir, attack_target, snipe, move_then_attack, visible_enemies, closest_enemy, signals = ranger_sense(gc, unit, last_turn_battle_locs, queued_paths, ranger_roles, map_loc)
         if visible_enemies:
             enemy_loc = closest_enemy.location.map_location()
             f_f_quad = (int(enemy_loc.x / 5), int(enemy_loc.y / 5))
@@ -59,7 +58,7 @@ def get_attack(gc, unit, location):
     vuln_enemies = gc.sense_nearby_units_by_team(location, unit.attack_range(), sense_util.enemy_team(gc))
     if len(vuln_enemies)==0:
         return None
-    return max(vuln_enemies, key=lambda x: coefficient_computation(gc, unit, x))
+    return max(vuln_enemies, key=lambda x: coefficient_computation(gc, unit, x, location))
 
 def exists_bad_enemy(enemies):
     for enemy in enemies:
@@ -76,9 +75,9 @@ def check_radius_squares_factories(gc, unit, radius=1):
 
 
 
-def ranger_sense(gc, unit, composition, battle_locs, queued_paths, ranger_roles):
+def ranger_sense(gc, unit, battle_locs, queued_paths, ranger_roles, location):
     if unit.id in ranger_roles["sniper"]:
-        return snipe_sense(gc, unit, composition, battle_locs, queued_paths)
+        return snipe_sense(gc, unit, battle_locs, queued_paths, location)
     signals = {}
     dir = None
     attack = None
@@ -86,7 +85,6 @@ def ranger_sense(gc, unit, composition, battle_locs, queued_paths, ranger_roles)
     closest_enemy = None
     move_then_attack = False
     visible_enemies = False
-    location = unit.location.map_location()
     enemies = gc.sense_nearby_units_by_team(location, unit.vision_range, sense_util.enemy_team(gc))
     if len(enemies) > 0:
         if unit.id in queued_paths:
@@ -95,7 +93,6 @@ def ranger_sense(gc, unit, composition, battle_locs, queued_paths, ranger_roles)
         sorted_enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(location))
         closest_enemy = closest_among_ungarrisoned(sorted_enemies)
         attack = get_attack(gc, unit, location)
-        #print(attack)
         if attack is not None:
             if closest_enemy is not None:
                 if check_radius_squares_factories(gc, unit):
@@ -116,18 +113,16 @@ def ranger_sense(gc, unit, composition, battle_locs, queued_paths, ranger_roles)
                     if attack is not None:
                         move_then_attack = True
                 else:
-                    dir = get_explore_dir(gc, unit)
+                    dir = get_explore_dir(gc, unit, location)
 
     else:
         # if there are no enemies in sight, check if there is an ongoing battle.  If so, go there.
         if len(battle_locs)>0:
-            print('moving towards battle')
             dir, target= go_to_battle(gc, unit, battle_locs)
             #queued_paths[unit.id] = target
         else:
-            print('moving away')
             #dir = move_away(gc, unit, battle_locs)
-            dir = get_explore_dir(gc, unit)
+            dir = get_explore_dir(gc, unit, location)
         """
         elif unit.id in queued_paths:
             if location!=queued_paths[unit.id]:
@@ -159,14 +154,13 @@ def snipe_priority(unit):
     else:
         return -1
 
-def snipe_sense(gc, unit, composition, battle_locs, queued_paths):
+def snipe_sense(gc, unit, battle_locs, queued_paths, location):
     signals = {}
     dir = None
     attack = None
     snipe = None
     move_then_attack = False
     visible_enemies = False
-    location = unit.location.map_location()
     enemies = gc.sense_nearby_units_by_team(location, unit.vision_range, sense_util.enemy_team(gc))
     if not unit.ranger_is_sniping():
         if len(enemies) > 0:
@@ -174,7 +168,7 @@ def snipe_sense(gc, unit, composition, battle_locs, queued_paths):
             attack = get_attack(gc, unit, location)
 
         if len(enemies)>0 or check_radius_squares_factories(gc, unit, 2) or not gc.is_begin_snipe_ready(unit.id): #or how_many_adjacent(gc, unit)>5
-            dir = move_away(gc, unit, battle_locs)
+            dir = move_away(gc, unit, battle_locs, location)
 
         else:
             try:
@@ -191,13 +185,11 @@ def snipe_sense(gc, unit, composition, battle_locs, queued_paths):
 
                 snipe = best_unit
             except:
-                print('sniper cannot snipe sadface')
-
+                pass
 
     return dir, attack, snipe, move_then_attack, visible_enemies, signals
 
-def move_away(gc, unit, battle_locs):
-    map_loc = unit.location.map_location()
+def move_away(gc, unit, battle_locs, map_loc):
     lst = []
     for nearby_unit in gc.sense_nearby_units(map_loc, 10):
         if nearby_unit.location.is_on_map():
@@ -241,11 +233,11 @@ def closest_among_ungarrisoned(sorted_units):
     return None
 
 
-def coefficient_computation(gc, our_unit, their_unit):
+def coefficient_computation(gc, our_unit, their_unit, location):
     # compute the relative appeal of attacking a unit.  Use AOE computation if attacking unit is mage.
     if not gc.can_attack(our_unit.id, their_unit.id):
         return 0
-    coeff = attack_coefficient(gc, our_unit, their_unit)
+    coeff = attack_coefficient(gc, our_unit, their_unit, location)
     if our_unit.unit_type != bc.UnitType.Mage:
         return coeff
     else:
@@ -259,7 +251,7 @@ def coefficient_computation(gc, our_unit, their_unit):
 
         return coeff
 
-def attack_coefficient(gc, our_unit, their_unit):
+def attack_coefficient(gc, our_unit, their_unit, location):
     # generic: how appealing is their_unit to attack
     our_location = our_unit.location.map_location()
     distance = their_unit.location.map_location().distance_squared_to(our_location)
@@ -276,13 +268,10 @@ def attack_range_non_robots(unit):
     else:
         return unit.attack_range()
 
-def get_explore_dir_updated(gc, unit):
-    return
-def get_explore_dir(gc, unit):
+def get_explore_dir(gc, unit, location):
     # function to get a direction to explore by picking locations that are within some distance that are
     # not visible to the team yet, and going towards them.
     dir = None
-    location = unit.location.map_location()
     close_locations = [x for x in gc.all_locations_within(location, 150) if
                        not gc.can_sense_location(x)]
     if len(close_locations) > 0:

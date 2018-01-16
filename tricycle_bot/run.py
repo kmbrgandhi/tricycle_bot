@@ -81,7 +81,7 @@ while True:
         else: 
             KNIGHT_CLUSTER_MIN = 2
     except: 
-        print('failed to update knight cluster min')
+        pass
 
     try:
         # walk through our units:

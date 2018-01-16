@@ -14,9 +14,7 @@ def timestep(gc, unit,composition, building_assignments, mining_rate = 0, curren
 	if unit.unit_type != bc.UnitType.Factory:
 		# prob should return some kind of error
 		return
-	print(gc.karbonite())
 	garrison = unit.structure_garrison() # units inside of factory
-	print('garrison length:', len(garrison))
 	directions = list(bc.Direction)
 	if len(garrison) > 0: # try to unload a unit if there exists one in the garrison
 		optimal_unload_dir = optimal_unload(gc, unit, directions, building_assignments)
@@ -40,9 +38,7 @@ def timestep(gc, unit,composition, building_assignments, mining_rate = 0, curren
 
 		produce = bc.UnitType.Ranger
 		gc.produce_robot(unit.id, produce)
-		current_production += order[best].factory_cost()
-
-	return current_production
+		#current_production += order[best].factory_cost()
 
 def should_produce_robot(gc, mining_rate, current_production, karbonite_lower_limit):
 	# produce a robot if net karbonite at the end of the turn will be more than karbonite_lower_limit
@@ -63,7 +59,6 @@ def optimal_unload(gc, unit, directions, building_assignments):
 	best = None
 	best_val = -float('inf')
 	for d in directions:
-		print('BUILDING ASSIGNMENT',building_assignments)
 		build_sites = list(map(lambda site : site.map_location,list(building_assignments.values())))
 		if gc.can_unload(unit.id, d) and unit.location.map_location().add(d) not in build_sites:
 			locs = gc.all_locations_within(unit.location.map_location(), 9)

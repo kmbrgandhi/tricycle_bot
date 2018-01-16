@@ -7,7 +7,6 @@ import Units.explore as explore
 import Units.sense_util as sense_util
 
 def timestep(gc, unit, composition, last_turn_battle_locs, next_turn_battle_locs, queued_paths):
-    print('last turn battle locs:', last_turn_battle_locs)
     # last check to make sure the right unit type is running this
     if unit.unit_type != bc.UnitType.Mage:
         # prob should return some kind of error
@@ -54,11 +53,9 @@ def mage_sense(gc, unit, battle_locs, queued_paths):
         visible_enemies = True
         sorted_enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(location))
         closest_enemy = ranger.closest_among_ungarrisoned(sorted_enemies)
-        print('closest enemy:', closest_enemy)
         attack = ranger.get_attack(gc, unit, location)
         print(attack)
         if attack is not None:
-            print('found it here')
             if closest_enemy is not None:
                 if (ranger.exists_bad_enemy(enemies) and (closest_enemy.location.map_location().distance_squared_to(location)) ** (
                 0.5) + 2 < unit.attack_range() ** (0.5)) or not gc.can_attack(unit.id, attack.id):
