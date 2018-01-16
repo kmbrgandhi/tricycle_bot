@@ -6,7 +6,7 @@ import numpy as np
 
 def timestep(gc, unit,composition, building_assignments, mining_rate = 0, current_production = 0, karbonite_lower_limit = 100):
 	curr_round = gc.round()
-	optimal_composition = [0, 0, 1, 0, 0] # optimal composition, order is Worker, Knight, Ranger, Mage, Healer
+	optimal_composition = [0, 0, 0, 0, 1] # optimal composition, order is Worker, Knight, Ranger, Mage, Healer
 	# should alter based on curr_round.  this is a temporary idea.
 	calculate = [max((optimal_composition[i]-composition[i]), 0) for i in range(len(optimal_composition))] #offset from optimal
 	order = [bc.UnitType.Worker, bc.UnitType.Knight, bc.UnitType.Ranger, bc.UnitType.Mage, bc.UnitType.Healer] # storing order of units
@@ -39,7 +39,7 @@ def timestep(gc, unit,composition, building_assignments, mining_rate = 0, curren
 					most = calculate[i]
 
 		produce = bc.UnitType.Ranger
-		gc.produce_robot(unit.id, produce)
+		#gc.produce_robot(unit.id, produce)
 		current_production += order[best].factory_cost()
 
 	return current_production
@@ -63,7 +63,6 @@ def optimal_unload(gc, unit, directions, building_assignments):
 	best = None
 	best_val = -float('inf')
 	for d in directions:
-		print('BUILDING ASSIGNMENT',building_assignments)
 		build_sites = list(map(lambda site : site.map_location,list(building_assignments.values())))
 		if gc.can_unload(unit.id, d) and unit.location.map_location().add(d) not in build_sites:
 			locs = gc.all_locations_within(unit.location.map_location(), 9)
