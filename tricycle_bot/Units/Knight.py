@@ -24,7 +24,8 @@ def timestep(gc, unit, composition, knight_to_cluster, seen_knights_ids, KNIGHT_
                 # print('cluster units: ', c.cluster_units())
                 valid_cluster = clusters.knight_cluster_sense(gc, unit, c)
             except: 
-                print('KNIGHT clustering sense didnt run')
+                # print('KNIGHT clustering sense didnt run')
+                pass
 
             try:
                 if not valid_cluster: 
@@ -33,13 +34,15 @@ def timestep(gc, unit, composition, knight_to_cluster, seen_knights_ids, KNIGHT_
                 else: 
                     seen_knights_ids.update(c.cluster_units())
             except: 
-                print('cannot remove cluster OR add units to seen')
+                # print('cannot remove cluster OR add units to seen')
+                pass
 
         else: 
             try: 
                 enemy = knight_sense(gc, unit, knight_to_cluster, KNIGHT_CLUSTER_MIN)
             except:
-                print('KNIGHT sense didnt run')
+                # print('KNIGHT sense didnt run')
+                pass
 
         ## Movement
         try: 
@@ -53,7 +56,8 @@ def timestep(gc, unit, composition, knight_to_cluster, seen_knights_ids, KNIGHT_
                 # print('moved no cluster')
 
         except:
-            print('KNIGHT movement didnt go through')
+            # print('KNIGHT movement didnt go through')
+            pass
 
 def knight_sense(gc, unit, knight_to_cluster, KNIGHT_CLUSTER_MIN): 
     """
@@ -74,7 +78,8 @@ def knight_sense(gc, unit, knight_to_cluster, KNIGHT_CLUSTER_MIN):
     try:
         enemies = gc.sense_nearby_units_by_team(unit_loc, unit.vision_range, sense_util.enemy_team(gc))
     except: 
-        print('KNIGHTS ARE SAD')
+        # print('KNIGHTS ARE SAD')
+        pass
 
     if len(enemies) > 0:        
         enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(unit_loc))
