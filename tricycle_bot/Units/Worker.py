@@ -19,15 +19,13 @@ def timestep(gc, unit, info, karbonite_locations, locs_next_to_terrain, blueprin
 	my_location = unit.location
 	# make sure unit can actually perform actions ie. not in garrison
 	if not my_location.is_on_map():
-		return	
-
+		return
 	#print()
 	#print("ON UNIT #",unit.id, "position: ",unit.location.map_location())	
 	role = get_role(gc,unit,blueprinting_queue,current_roles,karbonite_locations)
 	
-	#print("KARBONITE: ",gc.karbonite())	
-	#print("current_roles", current_roles)
-	if gc.team() == bc.Team(0):	
+	#print("KARBONITE: ",gc.karbonite())
+	if gc.team() == bc.Team(0):
 		
 		pass
 		output_list = []
@@ -245,7 +243,7 @@ def build(gc,unit,building_assignment,current_roles):
 	else:	
 		if my_location.map_location().is_adjacent_to(assigned_site):
 			if gc.can_build(unit.id,blueprint_at_site.id):
-				print(unit.id, "is building factory at ",assigned_site)
+				#print(unit.id, "is building factory at ",assigned_site)
 				gc.build(unit.id,blueprint_at_site.id)
 			return
 		# if not adjacent move toward it
