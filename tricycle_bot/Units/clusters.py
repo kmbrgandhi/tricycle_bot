@@ -55,18 +55,21 @@ class Cluster:
         Returns: list of ordered unit id's.
         """
         ordered_units = []
+        # to_remove = set()
 
         for unit_id in self.units: 
             try: 
                 unit = gc.unit(unit_id)
                 ordered_units.append(unit)
             except: 
-                print(unit_id + ' not found')
-                # self.units.remove(unit_id)
-                continue
+                print('not found: ', unit_id)
+                self.units.remove(unit_id)
+                # continue
 
         ordered_units = sorted(ordered_units, key=lambda x: x.location.map_location().distance_squared_to(self.target_loc))
         ordered_units = [x.id for x in ordered_units]
+
+        # to_remove = 
         return ordered_units
 
     def calculate_unit_direction(self, gc, unit): 
@@ -185,10 +188,19 @@ def knight_cluster_sense(gc, unit, cluster):
     """
     target_dead = True
 
-    visible = cluster.update_target(gc, unit)
-    cluster_ordered_units = cluster.movement_unit_order(gc)
+    try:
+        visible = cluster.update_target(gc, unit)
+    except:
+        print('cannot update target')
 
-    for knight_id in cluster_ordered_units:
+    try: 
+        ordered_units = cluster.movement_unit_order(gc)
+    except:
+        print('cannot find movement order')
+        ordered_units = list(cluster.cluster_units())
+
+
+    for knight_id in ordered_units:
         try: 
             knight = gc.unit(knight_id)
         except: 

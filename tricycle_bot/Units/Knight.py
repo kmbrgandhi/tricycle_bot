@@ -21,17 +21,19 @@ def timestep(gc, unit, composition, knight_to_cluster, seen_knights_ids, KNIGHT_
         if unit.id in knight_to_cluster: 
             try:
                 c = knight_to_cluster[unit.id]
-
+                print('cluster units: ', c.cluster_units())
                 valid_cluster = clusters.knight_cluster_sense(gc, unit, c)
-
-                if not valid_cluster: 
-                    clusters.remove_cluster(c, knight_to_cluster)
-                else: 
-                    for cluster_unit_id in c.cluster_units(): 
-                        seen_knights_ids.add(cluster_unit_id)
-
             except: 
                 print('KNIGHT clustering sense didnt run')
+
+            try:
+                if not valid_cluster: 
+                    clusters.remove_cluster(c, knight_to_cluster)
+                    print('removed cluster')
+                else: 
+                    seen_knights_ids.update(c.cluster_units())
+            except: 
+                print('cannot remove cluster OR add units to seen')
 
         else: 
             try: 
@@ -48,6 +50,7 @@ def timestep(gc, unit, composition, knight_to_cluster, seen_knights_ids, KNIGHT_
 
             if gc.is_move_ready(unit.id) and gc.can_move(unit.id, direction):
                 gc.move_robot(unit.id, direction)
+                print('moved no cluster')
 
         except:
             print('KNIGHT movement didnt go through')
@@ -90,8 +93,8 @@ def knight_sense(gc, unit, knight_to_cluster, KNIGHT_CLUSTER_MIN):
         for unit_id in cluster_unit_ids: 
             knight_to_cluster[unit_id] = new_cluster
 
-    else:
-        print('KNIGHT no enemies')
+    # else:
+    #     print('KNIGHT no enemies')
 
     #     # Check if in attack range / javelin range
     #     sorted_enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(unit_loc))   
