@@ -47,7 +47,8 @@ constants = c.Constants(list(bc.Direction), gc.team(), sense_util.enemy_team(gc)
 # WORKER
 blueprinting_queue = []
 building_assignment = {}
-current_worker_roles = {"miner":[],"builder":[],"blueprinter":[]}
+
+current_worker_roles = {"miner":[],"builder":[],"blueprinter":[],"boarder":[]}
 
 # KNIGHT
 knight_clusters = list()
