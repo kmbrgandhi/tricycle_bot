@@ -19,8 +19,8 @@ def timestep(gc, unit, composition, last_turn_battle_locs, next_turn_battle_locs
     my_team = gc.team()
     if location.is_on_map():
         dir, attack_target, snipe, move_then_attack, visible_enemies = ranger_sense(gc, unit, last_turn_battle_locs, queued_paths)
-        print('Ranger movement:',dir)
-        print('Ranger attack target:', attack_target)
+        #print('Ranger movement:',dir)
+        #print('Ranger attack target:', attack_target)
         map_loc = location.map_location()
         f_f_quad = (int(map_loc.x/5), int(map_loc.y/5))
         if visible_enemies:
@@ -69,9 +69,9 @@ def ranger_sense(gc, unit, battle_locs, queued_paths):
         visible_enemies= True
         sorted_enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(location))
         closest_enemy = closest_among_ungarrisoned(sorted_enemies)
-        print('closest enemy:', closest_enemy)
+        #print('closest enemy:', closest_enemy)
         attack = get_attack(gc, unit, location)
-        print(attack)
+        #print(attack)
         if attack is not None:
             print('found it here')
             if closest_enemy is not None:
@@ -118,10 +118,10 @@ def optimal_direction_towards(gc, unit, location, target):
     # return the optimal direction towards a target that is achievable; not A*, but faster.
     shape = [target.x - location.x, target.y - location.y]
     options = sense_util.get_best_option(shape)
-    if unit.unit_type == bc.UnitType.Mage:
-        print(location)
-        print(target)
-        print(options)
+    #if unit.unit_type == bc.UnitType.Mage:
+    #    print(location)
+    #    print(target)
+    #    print(options)
     for option in options:
         if gc.can_move(unit.id, option):
             if unit.unit_type == bc.UnitType.Mage:
