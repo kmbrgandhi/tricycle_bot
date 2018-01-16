@@ -9,6 +9,8 @@ import Units.Ranger as ranger
 import Units.Worker as worker
 import Units.factory as factory
 import Units.rocket as rocket
+import Units.sense_util as sense_util
+import Units.constants as c
 import research
 import map_info
 
@@ -35,11 +37,13 @@ research.research_step(gc)
 ##SHARED TEAM INFORMATION##
 
 # GENERAL
-my_team = gc.team()
 queued_paths = {}
 karbonite_locations = map_info.get_initial_karbonite_locations(gc)
 locs_next_to_terrain = map_info.get_locations_next_to_terrain(gc,bc.Planet(0))
-print('NEXT TO TERRAIN',locs_next_to_terrain)
+# print('NEXT TO TERRAIN',locs_next_to_terrain)
+
+constants = c.Constants(list(bc.Direction), gc.team(), sense_util.enemy_team(gc), locs_next_to_terrain, karbonite_locations)
+
 # WORKER
 blueprinting_queue = []
 building_assignment = {}
@@ -77,7 +81,7 @@ while True:
         else: 
             KNIGHT_CLUSTER_MIN = 2
     except: 
-        print('failed to update knight cluster min')
+        pass
 
     try:
         # walk through our units:
@@ -103,13 +107,13 @@ while True:
             if unit.unit_type == bc.UnitType.Worker:
                 worker.timestep(gc,unit,info,karbonite_locations,locs_next_to_terrain,blueprinting_queue,building_assignment,current_worker_roles)
             elif unit.unit_type == bc.UnitType.Knight:
-                knight.timestep(gc,unit,info,knight_to_cluster,seen_knights_ids, KNIGHT_CLUSTER_MIN)
+                knight.timestep(gc,unit,info,knight_to_cluster,seen_knights_ids, KNIGHT_CLUSTER_MIN, constants)
             elif unit.unit_type == bc.UnitType.Ranger:
                 ranger.timestep(gc,unit,info,last_turn_battle_locs, next_turn_battle_locs, queued_paths, ranger_roles)
             elif unit.unit_type == bc.UnitType.Mage:
                 mage.timestep(gc,unit,info,last_turn_battle_locs,next_turn_battle_locs, queued_paths)
             elif unit.unit_type == bc.UnitType.Healer:
-                healer.timestep(gc,unit,info)
+                healer.timestep(gc,unit,info,last_turn_battle_locs)
             elif unit.unit_type == bc.UnitType.Factory:
                 factory.timestep(gc,unit,info, building_assignment, mining_rate = 3*len(current_worker_roles["miner"]))
             elif unit.unit_type == bc.UnitType.Rocket:

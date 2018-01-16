@@ -20,19 +20,21 @@ def timestep(gc, unit, info, karbonite_locations, locs_next_to_terrain, blueprin
 	# make sure unit can actually perform actions ie. not in garrison
 	if not my_location.is_on_map():
 		return	
+
 	#print()
 	#print("ON UNIT #",unit.id, "position: ",unit.location.map_location())	
 	role = get_role(gc,unit,blueprinting_queue,current_roles,karbonite_locations)
 	
 	#print("KARBONITE: ",gc.karbonite())	
+
 	if gc.team() == bc.Team(0):	
 		
 		pass
 		output_list = []
 		for site in blueprinting_queue:
 			output_list.append(str(site))
-		print(output_list)
-		print("current_roles",current_roles)
+		#print(output_list)
+		#print("current_roles",current_roles)
 		#print("blueprinting_queue",blueprinting_queue)
 		#print("building_assignment",str(building_assignment))
 	
@@ -221,7 +223,7 @@ def build(gc,unit,building_assignment,current_roles):
 	else:	
 		if my_location.map_location().is_adjacent_to(assigned_site):
 			if gc.can_build(unit.id,blueprint_at_site.id):
-				#print(unit.id, "is building factory at ",assigned_site)
+				print(unit.id, "is building factory at ",assigned_site)
 				gc.build(unit.id,blueprint_at_site.id)
 			return
 		# if not adjacent move toward it
@@ -405,6 +407,7 @@ def blueprint(gc,unit,blueprinting_queue,building_assignment,current_roles,locs_
 			# move toward queued building site
 			#print(unit.id, "is moving toward building site: ",assigned_site)
 			next_direction = my_location.map_location().direction_to(assigned_site.map_location)	
+
 			movement.try_move(gc,unit,next_direction)	
 			"""
 			next_direction = my_location.map_location().direction_to(path[0])	

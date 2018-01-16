@@ -33,9 +33,8 @@ def heuristic(maploc1, maploc2):
 def coords(maploc):
     return (maploc.x, maploc.y)
 
-
-def movement_path_without_units(gc, unit, maplocation):
-    init = unit.location.map_location()
+def exists_movement_path_locs(gc, init_loc, maplocation):
+    init = init_loc
     planet_map = gc.starting_map(init.planet)
     queue = PriorityQueue()
     queue.put(Prioritize(0, init))
@@ -56,15 +55,9 @@ def movement_path_without_units(gc, unit, maplocation):
                 priority = new_cost + heuristic(next, maplocation)
                 queue.put(Prioritize(priority, next))
                 parent[coords(next)] = current
-    iter = maplocation
-    path = [current]
-    while iter!=init:
-        iter = parent[coords(iter)]
-        path.append(iter)
-    path.reverse()
-    return path
-    # initial greedy
-    return unit.location.map_location().direction_to(maplocation)
+    if maplocation in parent:
+        return True
+    return False
 
 def movement_path(gc, unit, maplocation):
     init = unit.location.map_location()
@@ -89,7 +82,9 @@ def movement_path(gc, unit, maplocation):
                 queue.put(Prioritize(priority, next))
                 parent[coords(next)] = current
     iter = maplocation
-    path = [current]
+    if maplocation not in parent:
+        return None
+    path = [maplocation]
     while iter!=init:
         iter = parent[coords(iter)]
         path.append(iter)

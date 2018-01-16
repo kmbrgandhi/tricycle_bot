@@ -5,7 +5,7 @@ import traceback
 import Units.sense_util as sense_util
 import Units.clusters as clusters
 
-def timestep(gc, unit,composition, knight_to_cluster, seen_knights_ids, KNIGHT_CLUSTER_MIN):
+def timestep(gc, unit, composition, knight_to_cluster, seen_knights_ids, KNIGHT_CLUSTER_MIN, constants):
 
     # last check to make sure the right unit type is running this
     if unit.unit_type != bc.UnitType.Knight:
@@ -13,9 +13,7 @@ def timestep(gc, unit,composition, knight_to_cluster, seen_knights_ids, KNIGHT_C
         return
 
     my_team = gc.team()
-
     direction = None
-
     location = unit.location
 
     if location.is_on_map() and unit.id not in seen_knights_ids: 
@@ -23,23 +21,28 @@ def timestep(gc, unit,composition, knight_to_cluster, seen_knights_ids, KNIGHT_C
         if unit.id in knight_to_cluster: 
             try:
                 c = knight_to_cluster[unit.id]
-
+                # print('cluster units: ', c.cluster_units())
                 valid_cluster = clusters.knight_cluster_sense(gc, unit, c)
+            except: 
+                # print('KNIGHT clustering sense didnt run')
+                pass
 
+            try:
                 if not valid_cluster: 
                     clusters.remove_cluster(c, knight_to_cluster)
+                    # print('removed cluster')
                 else: 
-                    for cluster_unit_id in c.cluster_units(): 
-                        seen_knights_ids.add(cluster_unit_id)
-
+                    seen_knights_ids.update(c.cluster_units())
             except: 
-                print('KNIGHT clustering sense didnt run')
+                # print('cannot remove cluster OR add units to seen')
+                pass
 
         else: 
             try: 
                 enemy = knight_sense(gc, unit, knight_to_cluster, KNIGHT_CLUSTER_MIN)
             except:
-                print('KNIGHT sense didnt run')
+                # print('KNIGHT sense didnt run')
+                pass
 
         ## Movement
         try: 
@@ -50,19 +53,11 @@ def timestep(gc, unit,composition, knight_to_cluster, seen_knights_ids, KNIGHT_C
 
             if gc.is_move_ready(unit.id) and gc.can_move(unit.id, direction):
                 gc.move_robot(unit.id, direction)
-
-        # ## Attack 
-        # try: 
-        #     enemies = gc.sense_nearby_units_by_team()
-        #     if attack and gc.is_attack_ready(knight.id): 
-        #         gc.attack(knight.id, enemy_id)
-        #         print('attacked!')  
-        #     if javelin and gc.is_javelin_ready(knight.id):
-        #         gc.javelin(knight.id, enemy_id)
-        #         print('javelined!')
+                # print('moved no cluster')
 
         except:
-            print('KNIGHT movement didnt go through')
+            # print('KNIGHT movement didnt go through')
+            pass
 
 def knight_sense(gc, unit, knight_to_cluster, KNIGHT_CLUSTER_MIN): 
     """
@@ -83,7 +78,8 @@ def knight_sense(gc, unit, knight_to_cluster, KNIGHT_CLUSTER_MIN):
     try:
         enemies = gc.sense_nearby_units_by_team(unit_loc, unit.vision_range, sense_util.enemy_team(gc))
     except: 
-        print('KNIGHTS ARE FUCKERS')
+        # print('KNIGHTS ARE SAD')
+        pass
 
     if len(enemies) > 0:        
         enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(unit_loc))
@@ -102,8 +98,8 @@ def knight_sense(gc, unit, knight_to_cluster, KNIGHT_CLUSTER_MIN):
         for unit_id in cluster_unit_ids: 
             knight_to_cluster[unit_id] = new_cluster
 
-    else:
-        print('KNIGHT no enemies')
+    # else:
+    #     print('KNIGHT no enemies')
 
     #     # Check if in attack range / javelin range
     #     sorted_enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(unit_loc))   
