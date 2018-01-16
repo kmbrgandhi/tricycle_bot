@@ -37,9 +37,9 @@ research.research_step(gc)
 # GENERAL
 my_team = gc.team()
 queued_paths = {}
-initial_karbonite_locations = map_info.get_initial_karbonite_locations(gc)
-print(initial_karbonite_locations)
-
+karbonite_locations = map_info.get_initial_karbonite_locations(gc)
+locs_next_to_terrain = map_info.get_locations_next_to_terrain(gc,bc.Planet(0))
+print('NEXT TO TERRAIN',locs_next_to_terrain)
 # WORKER
 blueprinting_queue = []
 building_assignment = {}
@@ -52,7 +52,7 @@ knight_to_cluster = {} ## Remove knights not in cluster
 KNIGHT_CLUSTER_MIN = 2
 
 # RANGER
-ranger_roles = {}
+ranger_roles = {"fighter":[],"sniper":[]}
 ranger_to_cluster = {}
 ranger_clusters = set()
 
@@ -101,11 +101,11 @@ while True:
         for unit in gc.my_units():
             # resepective unit types execute their own AI
             if unit.unit_type == bc.UnitType.Worker:
-                worker.timestep(gc,unit,info,initial_karbonite_locations,blueprinting_queue,building_assignment,current_worker_roles)
+                worker.timestep(gc,unit,info,karbonite_locations,locs_next_to_terrain,blueprinting_queue,building_assignment,current_worker_roles)
             elif unit.unit_type == bc.UnitType.Knight:
                 knight.timestep(gc,unit,info,knight_to_cluster,seen_knights_ids, KNIGHT_CLUSTER_MIN)
             elif unit.unit_type == bc.UnitType.Ranger:
-                ranger.timestep(gc,unit,info,last_turn_battle_locs, next_turn_battle_locs, queued_paths)
+                ranger.timestep(gc,unit,info,last_turn_battle_locs, next_turn_battle_locs, queued_paths, ranger_roles)
             elif unit.unit_type == bc.UnitType.Mage:
                 mage.timestep(gc,unit,info,last_turn_battle_locs,next_turn_battle_locs, queued_paths)
             elif unit.unit_type == bc.UnitType.Healer:
@@ -131,17 +131,6 @@ while True:
     sys.stdout.flush()
     sys.stderr.flush()
 
-	
-def get_initial_karbonite_locations(gc):
-	deposit_locations = {}
-	start_map = gc.start_map(bc.Planet(0))
-	for x in range(start_map.width):
-		for y in range(start_map.height):
-			map_location = bc.MapLocation(x,y,bc.Planet(0))
-			karbonite_at = start_map.initial_karbonite_at(map_location)
-			if karbonite_at > 0:
-				deposit_locations[map_location] = karbonite_at
-	return deposit_locations
 				
 				
 

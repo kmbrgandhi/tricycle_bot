@@ -6,7 +6,8 @@ import Units.sense_util as sense_util
 import Units.movement as movement
 import Units.explore as explore
 
-def timestep(gc, unit, info, karbonite_info, blueprinting_queue, building_assignment, current_roles):
+def timestep(gc, unit, info, karbonite_locations, locs_next_to_terrain, blueprinting_queue, building_assignment, current_roles):
+	
 	# last check to make sure the right unit type is running this
 	if unit.unit_type != bc.UnitType.Worker:
 		# prob should return some kind of error
@@ -17,19 +18,22 @@ def timestep(gc, unit, info, karbonite_info, blueprinting_queue, building_assign
 	# make sure unit can actually perform actions ie. not in garrison
 	if not my_location.is_on_map():
 		return	
-
+	print()
 	print("ON UNIT #",unit.id, "position: ",unit.location.map_location())	
-	role = get_role(gc,unit,blueprinting_queue,current_roles,karbonite_info)
-
+	role = get_role(gc,unit,blueprinting_queue,current_roles,karbonite_locations)
+	
+	print("KARBONITE: ",gc.karbonite())	
 	if gc.team() == bc.Team(0):	
-		print("current_roles",current_roles)
-		print("blueprinting_queue",blueprinting_queue)
-		print("building_assignment",building_assignment)
+		pass
+		#print("current_roles",current_roles)
+		#print("blueprinting_queue",blueprinting_queue)
+		#print("building_assignment",building_assignment)
 	
 	current_num_workers = info[0]	
-	max_num_workers = 10
+	max_num_workers = get_replication_cap(gc,karbonite_locations)
 	worker_spacing = 10
 
+	#print("REPLICATION CAP: ",max_num_workers)
 	# replicates if unit is able to (cooldowns, available directions etc.)	
 	if current_num_workers < max_num_workers:
 		replicate(gc,unit)	
@@ -37,13 +41,13 @@ def timestep(gc, unit, info, karbonite_info, blueprinting_queue, building_assign
 
 	# runs this block every turn if unit is miner
 	if role == "miner":
-		mine(gc,unit,karbonite_info,current_roles)
+		mine(gc,unit,karbonite_locations,current_roles)
 	# if unit is builder
 	elif role == "builder":
 		build(gc,unit,building_assignment,current_roles)
 	# if unit is blueprinter
 	elif role == "blueprinter":
-		blueprint(gc,unit,blueprinting_queue,building_assignment,current_roles)
+		blueprint(gc,unit,blueprinting_queue,building_assignment,current_roles,locs_next_to_terrain)
 	# if unit is idle
 	elif role == "idle":
 		nearby = gc.sense_nearby_units(my_location.map_location(), worker_spacing)
@@ -53,7 +57,7 @@ def timestep(gc, unit, info, karbonite_info, blueprinting_queue, building_assign
 
 
 # returns whether unit is a miner or builder, currently placeholder until we can use team-shared data to designate unit roles
-def get_role(gc,my_unit,blueprinting_queue,current_roles,karbonite_info):
+def get_role(gc,my_unit,blueprinting_queue,current_roles,karbonite_locations):
 	my_location = my_unit.location	
 	start_map = gc.starting_map(bc.Planet(0))
 	nearby = gc.sense_nearby_units(my_location.map_location(), my_unit.vision_range)
@@ -89,7 +93,7 @@ def get_role(gc,my_unit,blueprinting_queue,current_roles,karbonite_info):
 	elif num_blueprinters < max_num_blueprinters and all_factory_count < max_num_factories:	
 		new_role = "blueprinter" 
 	# default to becoming miner mid game
-	elif num_miners_per_deposit * len(karbonite_info) > num_miners:
+	elif num_miners_per_deposit * len(karbonite_locations) > num_miners:
 		new_role = "miner"
 	else:
 		return "idle"
@@ -111,42 +115,46 @@ def get_all_units_within_range(gc,unit,type_of_unit,detection_radius=None):
 		if unit.unit_type == type_of_unit:
 			units_in_radius.append(unit)
 	return units_in_radius
-			
+		
+	
+def get_replication_cap(gc,karbonite_locations):
+	#print("KARBONITE INFO LENGTH: ",len(karbonite_locations))
+	return min(3 + (gc.round()/1000) * len(karbonite_locations),15)
 
 def replicate(gc,unit):
 	if gc.karbonite() >= bc.UnitType.Worker.replicate_cost():
 		directions = list(bc.Direction)
 		for direction in directions:
 			if gc.can_replicate(unit.id,direction):
-				gc.replicate(unit.id,direction)	
 
+				gc.replicate(unit.id,direction)
 
 # FOR EARTH ONLY
-def update_deposit_info(gc,unit,karbonite_info):
+def update_deposit_info(gc,unit,karbonite_locations):
 	position = unit.location.map_location()
 	planet = bc.Planet(0)
-	karbonite_info_keys = list(karbonite_info.keys())[:]
-	for x,y in karbonite_info_keys:
+	karbonite_locations_keys = list(karbonite_locations.keys())[:]
+	for x,y in karbonite_locations_keys:
 		map_location = bc.MapLocation(planet,x,y)
 		# we can only update info about deposits we can see with our units
 		if not position.is_within_range(unit.vision_range,map_location):
 			continue	
 		current_karbonite = gc.karbonite_at(map_location)
 		if current_karbonite == 0:
-			del karbonite_info[(x,y)]
-		elif karbonite_info[(x,y)] != current_karbonite:
-			karbonite_info[(x,y)] = current_karbonite
+			del karbonite_locations[(x,y)]
+		elif karbonite_locations[(x,y)] != current_karbonite:
+			karbonite_locations[(x,y)] = current_karbonite
 	
 # returns map location of closest karbonite deposit	
-def get_closest_deposit(gc,unit,karbonite_info):	
-	update_deposit_info(gc,unit,karbonite_info)	
+def get_closest_deposit(gc,unit,karbonite_locations):	
+	update_deposit_info(gc,unit,karbonite_locations)	
 	
 	planet = bc.Planet(0)	
 	position = unit.location.map_location()
 	
 	current_distance = float('inf')
 	closest_deposit = bc.MapLocation(planet,-1,-1)
-	for x,y in karbonite_info.keys():
+	for x,y in karbonite_locations.keys():
 		map_location = bc.MapLocation(planet,x,y)
 		distance_to_deposit = position.distance_squared_to(map_location)	
 		#keep updating current closest deposit to unit	
@@ -155,23 +163,23 @@ def get_closest_deposit(gc,unit,karbonite_info):
 			closest_deposit = map_location
 	return closest_deposit	
 	
-def mine(gc,unit,karbonite_info,current_roles): 
+def mine(gc,unit,karbonite_locations,current_roles): 
 	my_location = unit.location
 	position = my_location.map_location()
 	directions = list(bc.Direction)
-	closest_deposit = get_closest_deposit(gc,unit,karbonite_info)
+	closest_deposit = get_closest_deposit(gc,unit,karbonite_locations)
 	start_map = gc.starting_map(bc.Planet(0))
 
 	#check to see if there even are deposits
 	if start_map.on_map(closest_deposit):
 		direction_to_deposit = position.direction_to(closest_deposit)
-		print(unit.id, "is trying to mine at", direction_to_deposit)
+		#print(unit.id, "is trying to mine at", direction_to_deposit)
 		if position.is_adjacent_to(closest_deposit) or position == closest_deposit:
 			# mine if adjacent to deposit
 			if gc.can_harvest(unit.id,direction_to_deposit):
 				gc.harvest(unit.id,direction_to_deposit)
 				current_roles["miner"].remove(unit.id)	
-				print(unit.id," just harvested!")
+				#print(unit.id," just harvested!")
 		else:
 			# move toward deposit
 			movement.try_move(gc,unit,direction_to_deposit)	
@@ -205,25 +213,40 @@ def build(gc,unit,building_assignment,current_roles):
 			movement.try_move(gc,unit,direction_to_blueprint)
 		
 
+def is_valid_blueprint_location(start_map,block_location,locs_next_to_terrain):
 
+	if start_map.on_map(block_location) and start_map.is_passable_terrain_at(block_location):
+		is_next_to_terrain = False
+		for loc in locs_next_to_terrain:
+			if loc == block_location:
+				is_next_to_terrain = True
+				break
+		if not is_next_to_terrain:	
+			return True
+	return False
 
 # generates locations to build factories that are arranged in clusters of 4 for space efficiency	
-def generate_factory_locations(start_map,center):
+def generate_factory_locations(start_map,center,locs_next_to_terrain):
 	x = center.x
 	y = center.y
 	planet = center.planet
 	biggest_cluster = []
 	relative_block_locations = [(0,1),(1,1),(1,0),(1,-1),(0,-1),(-1,-1),(-1,0),(-1,1)]
-
+	
+	if not is_valid_blueprint_location(start_map,center,locs_next_to_terrain):
+		return [] 
+	
 	for i in range(4):
 		cluster = [center]
 		for j in range(3):
 			d = relative_block_locations[(2*i + j) % 8]
 			block_location = bc.MapLocation(planet,x+d[0],y+d[1])
-			if start_map.on_map(block_location) and start_map.is_passable_terrain_at(block_location):
+			if is_valid_blueprint_location(start_map,block_location,locs_next_to_terrain):			
 				cluster.append(block_location)
 		if len(cluster) > len(biggest_cluster):
 			biggest_cluster = cluster
+	#print("center: ",center)
+	#print("BIGGEST CLUSTER",biggest_cluster)
 	return biggest_cluster
 
 
@@ -234,7 +257,7 @@ def can_blueprint(gc,structure_type):
 
 def get_cluster_limit(gc):
 	start_map = gc.starting_map(bc.Planet(0))
-	return 1
+	return 2
 	return start_map.width * start_map.height / 100 
 
 def get_closest_site(gc,unit,blueprinting_queue):
@@ -253,7 +276,7 @@ def get_closest_site(gc,unit,blueprinting_queue):
 	return closest_site
 		
  
-def blueprint(gc,unit,blueprinting_queue,building_assignment,current_roles):
+def blueprint(gc,unit,blueprinting_queue,building_assignment,current_roles,locs_next_to_terrain):
 	my_location = unit.location
 	start_map = gc.starting_map(bc.Planet(0))
 	directions = list(bc.Direction)
@@ -275,8 +298,9 @@ def blueprint(gc,unit,blueprinting_queue,building_assignment,current_roles):
 					is_nearby_potential_factories = True
 					break
 		if not (is_nearby_factories or is_nearby_potential_factories):
-			future_factory_locations = generate_factory_locations(start_map,my_location.map_location())
-			blueprinting_queue.extend([future_factory_locations])	
+			future_factory_locations = generate_factory_locations(start_map,my_location.map_location(),locs_next_to_terrain)
+			if len(future_factory_locations) > 0:
+				blueprinting_queue.extend([future_factory_locations])	
 			#print(unit.id," just added to building queue")
 
 
@@ -324,7 +348,7 @@ def blueprint(gc,unit,blueprinting_queue,building_assignment,current_roles):
 			#print(unit.id, " is on top of its build site and is moving away")
 		else:
 			# move toward queued building site
-			print(assigned_site)
+			print(unit.id, "is moving toward building site: ",assigned_site)
 			next_direction = my_location.map_location().direction_to(assigned_site)	
 			movement.try_move(gc,unit,next_direction)	
 			"""
