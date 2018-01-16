@@ -5,20 +5,31 @@ import traceback
 import Units.sense_util as sense_util
 import Units.explore as explore
 
+
 order = [bc.UnitType.Worker, bc.UnitType.Knight, bc.UnitType.Ranger, bc.UnitType.Mage,
          bc.UnitType.Healer, bc.UnitType.Factory, bc.UnitType.Rocket]  # storing order of units
 ranger_unit_priority = [0.5, 1, 2, 2, 2, 1, 1]
 directions = list(bc.Direction)
 
-def timestep(gc, unit, composition, last_turn_battle_locs, next_turn_battle_locs, queued_paths):
+def timestep(gc, unit, composition, last_turn_battle_locs, next_turn_battle_locs, queued_paths, ranger_roles):
     # last check to make sure the right unit type is running this
     if unit.unit_type != bc.UnitType.Ranger:
         # prob should return some kind of error
         return
+
+    if unit.id not in ranger_roles["fighter"] and unit.id not in ranger_roles["sniper"]:
+        c = 13
+        if len(ranger_roles["fighter"]) > c * len(ranger_roles["sniper"]) and gc.research_info().get_level(
+            bc.UnitType.Ranger) == 3:
+            print('produced sniper')
+            ranger_roles["sniper"].append(unit)
+        else:
+            ranger_roles["fighter"].append(unit.id)
+
     location = unit.location
     my_team = gc.team()
     if location.is_on_map():
-        dir, attack_target, snipe, move_then_attack, visible_enemies, signals = ranger_sense(gc, unit, composition, last_turn_battle_locs, queued_paths)
+        dir, attack_target, snipe, move_then_attack, visible_enemies, signals = ranger_sense(gc, unit, composition, last_turn_battle_locs, queued_paths, ranger_roles)
         map_loc = location.map_location()
         f_f_quad = (int(map_loc.x/5), int(map_loc.y/5))
         if visible_enemies:
@@ -40,6 +51,10 @@ def timestep(gc, unit, composition, last_turn_battle_locs, next_turn_battle_locs
             if dir != None and gc.is_move_ready(unit.id) and gc.can_move(unit.id, dir):
                 gc.move_robot(unit.id, dir)
 
+        if snipe!=None and gc.can_begin_snipe(unit.id, snipe.location.map_location()) and gc.is_begin_snipe_ready(unit.id):
+            gc.begin_snipe(unit.id, snipe.location)
+
+
 def get_attack(gc, unit, location):
     vuln_enemies = gc.sense_nearby_units_by_team(location, unit.attack_range(), sense_util.enemy_team(gc))
     if len(vuln_enemies)==0:
@@ -52,15 +67,18 @@ def exists_bad_enemy(enemies):
             return True
     return False
 
-def check_adjacent_squares(gc, unit):
+def check_radius_squares_factories(gc, unit, radius=1):
     is_factory = False
-    for dir in directions:
-        nearby_loc = unit.location.map_location().add(dir)
-        if gc.has_unit_at_location(nearby_loc) and gc.sense_unit_at_location(nearby_loc).unit_type == bc.UnitType.Factory:
+    for nearby_loc in gc.all_locations_within(unit.location.map_location(), radius):
+        if gc.can_sense_location(nearby_loc) and gc.has_unit_at_location(nearby_loc) and gc.sense_unit_at_location(nearby_loc).unit_type == bc.UnitType.Factory:
             return True
     return False
 
-def ranger_sense(gc, unit, composition, battle_locs, queued_paths):
+
+
+def ranger_sense(gc, unit, composition, battle_locs, queued_paths, ranger_roles):
+    if unit.id in ranger_roles["sniper"]:
+        return snipe_sense(gc, unit, composition, battle_locs, queued_paths)
     signals = {}
     dir = None
     attack = None
@@ -70,8 +88,6 @@ def ranger_sense(gc, unit, composition, battle_locs, queued_paths):
     location = unit.location.map_location()
     enemies = gc.sense_nearby_units_by_team(location, unit.vision_range, sense_util.enemy_team(gc))
     if len(enemies) > 0:
-        if location.x == 20 and location.y==4:
-            print('hi')
         if unit.id in queued_paths:
             del queued_paths[unit.id]
         visible_enemies= True
@@ -81,15 +97,12 @@ def ranger_sense(gc, unit, composition, battle_locs, queued_paths):
         #print(attack)
         if attack is not None:
             if closest_enemy is not None:
-                if check_adjacent_squares(gc, unit):
+                if check_radius_squares_factories(gc, unit):
                     dir = optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location())
                 elif (exists_bad_enemy(enemies)):
                     dir = sense_util.best_available_direction(gc, unit, enemies)
                 #and (closest_enemy.location.map_location().distance_squared_to(location)) ** (
                 #0.5) + 2 < unit.attack_range() ** (0.5)) or not gc.can_attack(unit.id, attack.id):
-
-
-
         else:
             if gc.is_move_ready(unit.id):
 
@@ -120,6 +133,79 @@ def ranger_sense(gc, unit, composition, battle_locs, queued_paths):
             dir = get_explore_dir(gc, unit)
 
     return dir, attack, snipe, move_then_attack, visible_enemies, signals
+
+
+snipe_priority = {"Rocket": 5, "Factory": 4, "Ranger": 3, "Healer": 2, "Knight": 1, "Worker": 0, "Mage": -1}
+def snipe_priority(unit):
+    if unit.unit_type == bc.UnitType.bc.UnitType.Rocket:
+        return 5
+    elif unit.unit_type == bc.UnitType.bc.UnitType.Factory:
+        return 4
+    elif unit.unit_type == bc.UnitType.bc.UnitType.Ranger:
+        return 3
+    elif unit.unit_type == bc.UnitType.bc.UnitType.Healer:
+        return 2
+    elif unit.unit_type == bc.UnitType.bc.UnitType.Knight:
+        return 1
+    elif unit.unit_type == bc.UnitType.bc.UnitType.Worker:
+        return 0
+    else:
+        return -1
+
+def snipe_sense(gc, unit, composition, battle_locs, queued_paths):
+    signals = {}
+    dir = None
+    attack = None
+    snipe = None
+    move_then_attack = False
+    visible_enemies = False
+    location = unit.location.map_location()
+    enemies = gc.sense_nearby_units_by_team(location, unit.vision_range, sense_util.enemy_team(gc))
+    if not unit.ranger_is_sniping():
+        if len(enemies) > 0:
+            visible_enemies= True
+            attack = get_attack(gc, unit, location)
+
+        if len(enemies)>0 or check_radius_squares_factories(gc, unit, 2) or not gc.is_begin_snipe_ready(unit.id): #or how_many_adjacent(gc, unit)>5
+            dir = move_away(gc, unit, battle_locs)
+
+        else:
+            try:
+                best_unit =  None
+                best_priority = -float("inf")
+                for poss_enemy in gc.units():
+                    if poss_enemy.location.is_on_map() and poss_enemy.team!=gc.team() and snipe_priority(poss_enemy)>best_priority:
+                        best_unit = poss_enemy
+                        best_priority = snipe_priority(poss_enemy)
+
+                    # temporary always target rockets
+                    if best_priority == 5:
+                        break
+
+                snipe = best_unit
+            except:
+                print('sniper cannot snipe sadface')
+
+
+    return dir, attack, snipe, move_then_attack, visible_enemies, signals
+
+def move_away(gc, unit, battle_locs):
+    map_loc = unit.location.map_location()
+    lst = []
+    for nearby_loc in gc.sense_nearby_units(map_loc, 10):
+        if gc.can_sense_location(nearby_loc) and gc.has_unit_at_location(nearby_loc) and gc.sense_unit_at_location(nearby_loc).unit_type == bc.UnitType.Factory:
+            lst.append(nearby_loc)
+
+    return sense_util.best_available_direction(gc, unit, lst)
+
+
+def how_many_adjacent(gc, unit):
+    total = 0
+    for dir in directions:
+        nearby_loc = unit.location.map_location().add(dir)
+        if gc.has_unit_at_location(nearby_loc):
+            total+=1
+    return total
 
 def go_to_battle(gc, unit, battle_locs):
     # send a unit to battle

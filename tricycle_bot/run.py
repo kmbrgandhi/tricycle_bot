@@ -52,7 +52,7 @@ knight_to_cluster = {} ## Remove knights not in cluster
 KNIGHT_CLUSTER_MIN = 2
 
 # RANGER
-ranger_roles = {}
+ranger_roles = {"fighter":[],"sniper":[]}
 ranger_to_cluster = {}
 ranger_clusters = set()
 
@@ -105,7 +105,7 @@ while True:
             elif unit.unit_type == bc.UnitType.Knight:
                 knight.timestep(gc,unit,info,knight_to_cluster,seen_knights_ids, KNIGHT_CLUSTER_MIN)
             elif unit.unit_type == bc.UnitType.Ranger:
-                ranger.timestep(gc,unit,info,last_turn_battle_locs, next_turn_battle_locs, queued_paths)
+                ranger.timestep(gc,unit,info,last_turn_battle_locs, next_turn_battle_locs, queued_paths, ranger_roles)
             elif unit.unit_type == bc.UnitType.Mage:
                 mage.timestep(gc,unit,info,last_turn_battle_locs,next_turn_battle_locs, queued_paths)
             elif unit.unit_type == bc.UnitType.Healer:
