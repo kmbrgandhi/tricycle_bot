@@ -79,10 +79,8 @@ class Cluster:
         directions = None
 
         if unit.id in self.units: 
-            ## Try to get target's actual location
-            shape = [self.target_loc.x - unit.location.map_location().x, self.target_loc.y - unit.location.map_location().y]
-            
             ## Calculate appropriate direction for unit 
+            shape = [self.target_loc.x - unit.location.map_location().x, self.target_loc.y - unit.location.map_location().y]
             directions = sense_util.get_best_option(shape)
 
         return directions

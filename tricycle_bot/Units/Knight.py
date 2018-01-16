@@ -5,7 +5,7 @@ import traceback
 import Units.sense_util as sense_util
 import Units.clusters as clusters
 
-def timestep(gc, unit,composition, knight_to_cluster, seen_knights_ids, KNIGHT_CLUSTER_MIN):
+def timestep(gc, unit, composition, knight_to_cluster, seen_knights_ids, KNIGHT_CLUSTER_MIN):
 
     # last check to make sure the right unit type is running this
     if unit.unit_type != bc.UnitType.Knight:
@@ -13,9 +13,7 @@ def timestep(gc, unit,composition, knight_to_cluster, seen_knights_ids, KNIGHT_C
         return
 
     my_team = gc.team()
-
     direction = None
-
     location = unit.location
 
     if location.is_on_map() and unit.id not in seen_knights_ids: 
@@ -50,16 +48,6 @@ def timestep(gc, unit,composition, knight_to_cluster, seen_knights_ids, KNIGHT_C
 
             if gc.is_move_ready(unit.id) and gc.can_move(unit.id, direction):
                 gc.move_robot(unit.id, direction)
-
-        # ## Attack 
-        # try: 
-        #     enemies = gc.sense_nearby_units_by_team()
-        #     if attack and gc.is_attack_ready(knight.id): 
-        #         gc.attack(knight.id, enemy_id)
-        #         print('attacked!')  
-        #     if javelin and gc.is_javelin_ready(knight.id):
-        #         gc.javelin(knight.id, enemy_id)
-        #         print('javelined!')
 
         except:
             print('KNIGHT movement didnt go through')
