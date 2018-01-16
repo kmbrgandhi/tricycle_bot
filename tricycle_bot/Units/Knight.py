@@ -17,12 +17,12 @@ def timestep(gc, unit, composition, knight_to_cluster, seen_knights_ids, KNIGHT_
     location = unit.location
 
     if location.is_on_map() and unit.id not in seen_knights_ids: 
+        unit_loc = unit.location.map_location()
         ## Clustering: if has a goal location keep moving there
         if unit.id in knight_to_cluster: 
             try:
                 c = knight_to_cluster[unit.id]
-                # print('cluster units: ', c.cluster_units())
-                valid_cluster = clusters.knight_cluster_sense(gc, unit, c)
+                valid_cluster = clusters.knight_cluster_sense(gc, unit, unit_loc, c)
             except: 
                 # print('KNIGHT clustering sense didnt run')
                 pass
@@ -39,7 +39,7 @@ def timestep(gc, unit, composition, knight_to_cluster, seen_knights_ids, KNIGHT_
 
         else: 
             try: 
-                enemy = knight_sense(gc, unit, knight_to_cluster, KNIGHT_CLUSTER_MIN)
+                enemy = knight_sense(gc, unit, unit_loc, knight_to_cluster, KNIGHT_CLUSTER_MIN)
             except:
                 # print('KNIGHT sense didnt run')
                 pass
@@ -48,7 +48,7 @@ def timestep(gc, unit, composition, knight_to_cluster, seen_knights_ids, KNIGHT_
         try: 
             ## Knight movement away from allies
             if direction == None:  
-                nearby = gc.sense_nearby_units(unit.location.map_location(),8)
+                nearby = gc.sense_nearby_units(unit_loc,8)
                 direction = sense_util.best_available_direction(gc,unit,nearby)
 
             if gc.is_move_ready(unit.id) and gc.can_move(unit.id, direction):
@@ -59,7 +59,7 @@ def timestep(gc, unit, composition, knight_to_cluster, seen_knights_ids, KNIGHT_
             # print('KNIGHT movement didnt go through')
             pass
 
-def knight_sense(gc, unit, knight_to_cluster, KNIGHT_CLUSTER_MIN): 
+def knight_sense(gc, unit, unit_loc, knight_to_cluster, KNIGHT_CLUSTER_MIN): 
     """
     This function chooses the direction the knight should move in. If it senses enemies nearby 
     then will return direction that it can move to. If it can attack it will say if it is in
@@ -70,10 +70,6 @@ def knight_sense(gc, unit, knight_to_cluster, KNIGHT_CLUSTER_MIN):
     Returns: New desired direction. 
     """
     new_direction = None
-    try:
-        unit_loc = unit.location.map_location()
-    except: 
-        return 
 
     try:
         enemies = gc.sense_nearby_units_by_team(unit_loc, unit.vision_range, sense_util.enemy_team(gc))
@@ -92,30 +88,8 @@ def knight_sense(gc, unit, knight_to_cluster, KNIGHT_CLUSTER_MIN):
                 unavailable_knight_ids.add(u_knight_id)
 
         ## Create cluster! 
-        new_cluster = clusters.create_knight_cluster(gc, unit, enemies[0], unavailable_knight_ids)
+        new_cluster = clusters.create_knight_cluster(gc, unit, unit_loc, enemies[0], unavailable_knight_ids)
 
         cluster_unit_ids = new_cluster.cluster_units()
         for unit_id in cluster_unit_ids: 
             knight_to_cluster[unit_id] = new_cluster
-
-    # else:
-    #     print('KNIGHT no enemies')
-
-    #     # Check if in attack range / javelin range
-    #     sorted_enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(unit_loc))   
-    #     attack_range = unit.attack_range()
-    #     javelin_range = unit.ability_range()
-
-    #     if unit_loc.can_attack(unit.id, sorted_enemies[0].id):
-    #         target_attack = sorted_enemies[0]
-
-    #     if unit_loc.can_javelin(unit.id, sorted_enemies[0].id):
-    #         target_javelin = sorted_enemies[0]
-
-    #     shape = [sorted_enemies[0].location.map_location().x - unit_loc.x, sorted_enemies[0].location.map_location().y - unit_loc.y]
-    #     directions = sense_util.get_best_option(shape)
-    #     for d in directions: 
-    #         if gc.can_move(unit.id, d):
-    #             new_direction = d
-
-    # return (new_direction, target_attack, target_javelin)
