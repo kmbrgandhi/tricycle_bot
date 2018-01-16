@@ -139,8 +139,8 @@ def replicate(gc,unit):
 		directions = list(bc.Direction)
 		for direction in directions:
 			if gc.can_replicate(unit.id,direction):
-				gc.replicate(unit.id,direction)	
 
+				gc.replicate(unit.id,direction)
 
 # FOR EARTH ONLY
 def update_deposit_info(gc,unit,karbonite_locations):
