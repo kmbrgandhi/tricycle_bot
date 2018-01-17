@@ -256,7 +256,7 @@ def mine_mars(gc,unit):
 			if gc.can_harvest(unit.id,direction_to_deposit):
 				gc.harvest(unit.id,direction_to_deposit)
 
-				print(unit.id," just harvested on Mars!")
+				#print(unit.id," just harvested on Mars!")
 		else:
 			# move toward deposit
 			movement.try_move(gc,unit,direction_to_deposit)	 

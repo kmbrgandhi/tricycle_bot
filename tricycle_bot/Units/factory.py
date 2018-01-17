@@ -38,7 +38,7 @@ def timestep(gc, unit,composition, building_assignments, mining_rate = 0, curren
 					most = calculate[i]
 
 		produce = order[best]
-		#gc.produce_robot(unit.id, produce)
+		gc.produce_robot(unit.id, produce)
 
 		#current_production += order[best].factory_cost()
 
