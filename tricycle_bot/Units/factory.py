@@ -75,11 +75,8 @@ def optimal_unload(gc, unit, directions, building_assignments, battle_locs):
 		shape = [target_loc.x - unit_loc.x, target_loc.y - unit_loc.y]
 		unload_dirs = sense_util.get_best_option(shape) ## never returns None or empty list
 
-		print('unload dirs: ', unload_dirs)
-
 		for d in unload_dirs: 
 			if unit_loc.add(d) not in build_sites and gc.can_unload(unit.id, d): 
-				print('chosen d: ', d)
 				return d
 
 	## Use previous optimal location
