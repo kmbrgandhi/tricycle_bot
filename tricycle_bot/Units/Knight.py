@@ -22,18 +22,14 @@ def timestep(gc, unit, composition, knight_to_cluster, seen_knights_ids, battle_
                 print('cluster!')
                 c = knight_to_cluster[unit.id]
                 valid_cluster = clusters.knight_cluster_sense(gc, unit, unit_loc, c, knight_to_cluster)
-            except: 
-                print('KNIGHT clustering sense didnt run')
-                pass
-
-            try:
                 if not valid_cluster: 
                     clusters.remove_cluster(c, knight_to_cluster)
                     # print('removed cluster')
                 else: 
                     seen_knights_ids.update(c.cluster_units())
+                    
             except: 
-                print('cannot remove cluster OR add units to seen')
+                print('KNIGHT clustering sense didnt run')
                 pass
 
         elif len(list(knight_to_cluster.keys())) < 20: 
