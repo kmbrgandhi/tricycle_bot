@@ -57,7 +57,7 @@ def timestep(gc, unit, info, karbonite_locations, locs_next_to_terrain, blueprin
 		blueprint(gc,unit,blueprinting_queue,building_assignment,current_roles,locs_next_to_terrain)
 	# if unit is boarder
 	elif role == "boarder": 
-		board(gc,unit)
+		board(gc,unit,current_roles)
 	# if unit is idle
 	else: 	
 		role == "idle"
@@ -84,8 +84,8 @@ def get_role(gc,my_unit,blueprinting_queue,current_roles,karbonite_locations):
 				please_move = True
 			factory_count += 1
 		if unit.unit_type == bc.UnitType.Rocket:
-			if unit.structure_is_built():
-				rocket_ready_for_loading += True
+			if unit.structure_is_built() and len(unit.structure_garrison()) < unit.structure_max_capacity():
+				rocket_ready_for_loading = True
 				#print("UNITS IN GARRISON",unit.structure_garrison())
 			rocket_count += 1
 	
@@ -119,15 +119,17 @@ def get_role(gc,my_unit,blueprinting_queue,current_roles,karbonite_locations):
 		new_role = "boarder"
 	else:
 		return "idle"
+
 	current_roles[new_role].append(my_unit.id)
+	
 	return new_role
 
 
-def board(gc,my_unit):
+def board(gc,my_unit,current_roles):
 	my_location = my_unit.location.map_location()
 	finished_rockets = []
 	for unit in gc.my_units():
-		if unit.unit_type == bc.UnitType.Rocket and unit.structure_is_built():
+		if unit.unit_type == bc.UnitType.Rocket and unit.structure_is_built() and len(unit.structure_garrison()) < unit.structure_max_capacity():
 			finished_rockets.append(unit)
 
 	minimum_distance = float('inf')
@@ -137,6 +139,10 @@ def board(gc,my_unit):
 		if dist_to_rocket < minimum_distance:
 			minimum_distance = dist_to_rocket
 			closest_rocket = rocket
+
+	if closest_rocket is None:
+		current_roles["boarder"].remove(my_unit.id)
+		return
 
 	rocket_location = closest_rocket.location.map_location()
 	if my_location.is_adjacent_to(rocket_location):

@@ -26,6 +26,7 @@ def timestep(gc, unit,composition, rocket_launch_times, rocket_launch_site):
             gc.launch_rocket(unit.id, rocket_launch_site[unit.id])
 
     else:
+        print('GARRISON LENGHT',len(garrison))
         if len(garrison) > 0:  # try to unload a unit if there exists one in the garrison
             optimal_unload_dir = rocket_unload(gc, unit, directions)
             if optimal_unload_dir is not None:
