@@ -68,10 +68,6 @@ def optimal_unload(gc, unit, directions, building_assignments, battle_locs):
 	build_sites = list(map(lambda site: site.map_location,list(building_assignments.values())))
 
 	## Find list of best unload towards battle_locs and use best dir that doesn't interfere with building
-	print('battle locs: ', battle_locs)
-	print('my loc: ', unit_loc)
-	print('building assignments: ', building_assignments)
-
 	if len(battle_locs) > 0: 
 		weakest = random.choice(list(battle_locs.keys()))
 		target_loc = battle_locs[weakest][0]
