@@ -17,9 +17,15 @@ def timestep(gc, unit, info, karbonite_locations, locs_next_to_terrain, blueprin
 	my_team = gc.team()	
 
 	my_location = unit.location
+
 	# make sure unit can actually perform actions ie. not in garrison
 	if not my_location.is_on_map():
 		return
+
+	if my_location.map_location().planet is bc.Planet.Mars:
+		mine_mars(gc,unit)
+		return
+
 	#print()
 	#print("ON UNIT #",unit.id, "position: ",unit.location.map_location())	
 	role = get_role(gc,unit,blueprinting_queue,current_roles,karbonite_locations)
@@ -60,7 +66,6 @@ def timestep(gc, unit, info, karbonite_locations, locs_next_to_terrain, blueprin
 		board(gc,unit,current_roles)
 	# if unit is idle
 	else: 	
-		role == "idle"
 		nearby= gc.sense_nearby_units_by_team(my_location.map_location(), worker_spacing, gc.team())
 
 		away_from_units = sense_util.best_available_direction(gc,unit,nearby)	
@@ -205,7 +210,6 @@ def get_closest_deposit(gc,unit,karbonite_locations):
 def mine(gc,unit,karbonite_locations,current_roles): 
 	my_location = unit.location
 	position = my_location.map_location()
-	directions = list(bc.Direction)
 	closest_deposit = get_closest_deposit(gc,unit,karbonite_locations)
 	start_map = gc.starting_map(bc.Planet(0))
 
@@ -225,6 +229,43 @@ def mine(gc,unit,karbonite_locations,current_roles):
 	else:
 		current_roles["miner"].remove(unit.id)
 
+def mine_mars(gc,unit):
+	my_location = unit.location.map_location()
+	all_locations = gc.all_locations_within(my_location,unit.vision_range)
+	planet = bc.Planet.Mars
+	start_map = gc.starting_map(planet)
+	worker_spacing = 8
+
+	current_distance = float('inf')
+	closest_deposit = bc.MapLocation(planet,-1,-1)
+	for deposit_location in all_locations:
+		if gc.karbonite_at(deposit_location) == 0:
+			continue
+		distance_to_deposit = my_location.distance_squared_to(deposit_location)	
+		#keep updating current closest deposit to unit	
+		if distance_to_deposit < current_distance:
+			current_distance = distance_to_deposit 
+			closest_deposit = deposit_location
+		#check to see if there even are deposits
+	
+	if start_map.on_map(closest_deposit):
+		direction_to_deposit = my_location.direction_to(closest_deposit)
+		#print(unit.id, "is trying to mine at", direction_to_deposit)
+		if my_location.is_adjacent_to(closest_deposit) or my_location == closest_deposit:
+			# mine if adjacent to deposit
+			if gc.can_harvest(unit.id,direction_to_deposit):
+				gc.harvest(unit.id,direction_to_deposit)
+
+				print(unit.id," just harvested on Mars!")
+		else:
+			# move toward deposit
+			movement.try_move(gc,unit,direction_to_deposit)	 
+	else:
+		nearby = gc.sense_nearby_units_by_team(my_location.map_location(), worker_spacing, gc.team())
+
+		away_from_units = sense_util.best_available_direction(gc,unit,nearby)	
+		#print(unit.id, "at", unit.location.map_location(), "is trying to move to", away_from_units)
+		movement.try_move(gc,unit,away_from_units)
 
 
 def build(gc,unit,building_assignment,current_roles):
