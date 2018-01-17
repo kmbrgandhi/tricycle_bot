@@ -5,6 +5,7 @@ import traceback
 import Units.sense_util as sense_util
 import Units.movement as movement
 import Units.explore as explore
+import Units.Ranger as Ranger
 
 
 
@@ -216,16 +217,22 @@ def mine(gc,unit,karbonite_locations,current_roles):
 	#check to see if there even are deposits
 	if start_map.on_map(closest_deposit):
 		direction_to_deposit = position.direction_to(closest_deposit)
-		#print(unit.id, "is trying to mine at", direction_to_deposit)
+		print(unit.id, "is trying to mine at", direction_to_deposit)
 		if position.is_adjacent_to(closest_deposit) or position == closest_deposit:
 			# mine if adjacent to deposit
 			if gc.can_harvest(unit.id,direction_to_deposit):
 				gc.harvest(unit.id,direction_to_deposit)
-				current_roles["miner"].remove(unit.id)	
+				current_roles["miner"].remove(unit.id)
 				#print(unit.id," just harvested!")
 		else:
 			# move toward deposit
-			movement.try_move(gc,unit,direction_to_deposit)	
+			enemies = gc.sense_nearby_units_by_team(position, unit.vision_range, sense_util.enemy_team(gc))
+			if len(enemies) > 0:
+				dir = sense_util.best_available_direction(gc, unit, enemies)
+				movement.try_move(gc, unit, dir)
+				current_roles["miner"].remove(unit.id)
+			else:
+				movement.try_move(gc,unit,direction_to_deposit)
 	else:
 		current_roles["miner"].remove(unit.id)
 
