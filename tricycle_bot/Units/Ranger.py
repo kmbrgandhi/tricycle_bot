@@ -9,9 +9,8 @@ import Units.explore as explore
 order = [bc.UnitType.Worker, bc.UnitType.Knight, bc.UnitType.Ranger, bc.UnitType.Mage,
          bc.UnitType.Healer, bc.UnitType.Factory, bc.UnitType.Rocket]  # storing order of units
 ranger_unit_priority = [0.5, 1, 2, 2, 2, 1, 1]
-directions = list(bc.Direction)
 
-def timestep(gc, unit, composition, last_turn_battle_locs, next_turn_battle_locs, queued_paths, ranger_roles):
+def timestep(gc, unit, composition, last_turn_battle_locs, next_turn_battle_locs, queued_paths, ranger_roles, constants):
     # last check to make sure the right unit type is running this
     if unit.unit_type != bc.UnitType.Ranger:
         # prob should return some kind of error
@@ -28,7 +27,7 @@ def timestep(gc, unit, composition, last_turn_battle_locs, next_turn_battle_locs
     my_team = gc.team() #constants.team
     if location.is_on_map():
         map_loc = location.map_location()
-        dir, attack_target, snipe, move_then_attack, visible_enemies, closest_enemy, signals = ranger_sense(gc, unit, last_turn_battle_locs, queued_paths, ranger_roles, map_loc)
+        dir, attack_target, snipe, move_then_attack, visible_enemies, closest_enemy, signals = ranger_sense(gc, unit, last_turn_battle_locs, queued_paths, ranger_roles, map_loc, constants)
         if visible_enemies:
             enemy_loc = closest_enemy.location.map_location()
             f_f_quad = (int(enemy_loc.x / 5), int(enemy_loc.y / 5))
@@ -75,7 +74,7 @@ def check_radius_squares_factories(gc, unit, radius=1):
 
 
 
-def ranger_sense(gc, unit, battle_locs, queued_paths, ranger_roles, location):
+def ranger_sense(gc, unit, battle_locs, queued_paths, ranger_roles, location, constants):
     if unit.id in ranger_roles["sniper"]:
         return snipe_sense(gc, unit, battle_locs, queued_paths, location)
     signals = {}
@@ -96,7 +95,7 @@ def ranger_sense(gc, unit, battle_locs, queued_paths, ranger_roles, location):
         if attack is not None:
             if closest_enemy is not None:
                 if check_radius_squares_factories(gc, unit):
-                    dir = optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location())
+                    dir = optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location(), constants.directions)
                 elif (exists_bad_enemy(enemies)) or not gc.can_attack(unit.id, closest_enemy.id):
                     dir = sense_util.best_available_direction(gc, unit, enemies)
                 #and (closest_enemy.location.map_location().distance_squared_to(location)) ** (
@@ -105,7 +104,7 @@ def ranger_sense(gc, unit, battle_locs, queued_paths, ranger_roles, location):
             if gc.is_move_ready(unit.id):
 
                 if closest_enemy is not None:
-                    dir = optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location())
+                    dir = optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location(), constants.directions)
 
 
                     next_turn_loc = location.add(dir)
@@ -113,16 +112,16 @@ def ranger_sense(gc, unit, battle_locs, queued_paths, ranger_roles, location):
                     if attack is not None:
                         move_then_attack = True
                 else:
-                    dir = get_explore_dir(gc, unit, location)
+                    dir = get_explore_dir(gc, unit, location, constants.directions)
 
     else:
         # if there are no enemies in sight, check if there is an ongoing battle.  If so, go there.
         if len(battle_locs)>0:
-            dir, target= go_to_battle(gc, unit, battle_locs)
+            dir, target= go_to_battle(gc, unit, battle_locs, constants.directions)
             #queued_paths[unit.id] = target
         else:
             #dir = move_away(gc, unit, battle_locs)
-            dir = get_explore_dir(gc, unit, location)
+            dir = get_explore_dir(gc, unit, location, constants.directions)
         """
         elif unit.id in queued_paths:
             if location!=queued_paths[unit.id]:
@@ -200,7 +199,7 @@ def move_away(gc, unit, battle_locs, map_loc):
     return sense_util.best_available_direction(gc, unit, lst)
 
 
-def how_many_adjacent(gc, unit):
+def how_many_adjacent(gc, unit, directions):
     total = 0
     for dir in directions:
         nearby_loc = unit.location.map_location().add(dir)
@@ -208,13 +207,13 @@ def how_many_adjacent(gc, unit):
             total+=1
     return total
 
-def go_to_battle(gc, unit, battle_locs):
+def go_to_battle(gc, unit, battle_locs, directions):
     # send a unit to battle
     weakest = random.choice(list(battle_locs.keys()))
     target = battle_locs[weakest][0]
-    return optimal_direction_towards(gc, unit, unit.location.map_location(), target), target
+    return optimal_direction_towards(gc, unit, unit.location.map_location(), target, directions), target
 
-def optimal_direction_towards(gc, unit, location, target):
+def optimal_direction_towards(gc, unit, location, target, directions):
 
     # return the optimal direction towards a target that is achievable; not A*, but faster.
     shape = [target.x - location.x, target.y - location.y]
@@ -268,7 +267,7 @@ def attack_range_non_robots(unit):
     else:
         return unit.attack_range()
 
-def get_explore_dir(gc, unit, location):
+def get_explore_dir(gc, unit, location, directions):
     # function to get a direction to explore by picking locations that are within some distance that are
     # not visible to the team yet, and going towards them.
     dir = None

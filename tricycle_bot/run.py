@@ -112,13 +112,13 @@ while True:
             elif unit.unit_type == bc.UnitType.Knight:
                 knight.timestep(gc,unit,info,knight_to_cluster,seen_knights_ids,last_turn_battle_locs,KNIGHT_CLUSTER_MIN,constants)
             elif unit.unit_type == bc.UnitType.Ranger:
-                ranger.timestep(gc,unit,info,last_turn_battle_locs, next_turn_battle_locs, queued_paths, ranger_roles)
+                ranger.timestep(gc,unit,info,last_turn_battle_locs, next_turn_battle_locs, queued_paths, ranger_roles, constants)
             elif unit.unit_type == bc.UnitType.Mage:
                 mage.timestep(gc,unit,info,last_turn_battle_locs,next_turn_battle_locs, queued_paths)
             elif unit.unit_type == bc.UnitType.Healer:
                 healer.timestep(gc,unit,info,last_turn_battle_locs)
             elif unit.unit_type == bc.UnitType.Factory:
-                factory.timestep(gc,unit,info, building_assignment, mining_rate = 3*len(current_worker_roles["miner"]))
+                factory.timestep(gc,unit,info, building_assignment, last_turn_battle_locs, constants, mining_rate = 3*len(current_worker_roles["miner"]))
             elif unit.unit_type == bc.UnitType.Rocket:
                 print('hi')
                 rocket.timestep(gc,unit,info, rocket_launch_times, rocket_landing_sites)

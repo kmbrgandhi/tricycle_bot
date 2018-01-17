@@ -3,8 +3,9 @@ import random
 import sys
 import traceback
 import numpy as np
+import Units.sense_util as sense_util
 
-def timestep(gc, unit,composition, building_assignments, mining_rate = 0, current_production = 0, karbonite_lower_limit = 100):
+def timestep(gc, unit,composition, building_assignments, battle_locs, constants, mining_rate = 0, current_production = 0, karbonite_lower_limit = 100):
 	curr_round = gc.round()
 	optimal_composition = [0, 0, 0.9, 0, 0.1] # optimal composition, order is Worker, Knight, Ranger, Mage, Healer
 
@@ -16,9 +17,8 @@ def timestep(gc, unit,composition, building_assignments, mining_rate = 0, curren
 		# prob should return some kind of error
 		return
 	garrison = unit.structure_garrison() # units inside of factory
-	directions = list(bc.Direction)
 	if len(garrison) > 0: # try to unload a unit if there exists one in the garrison
-		optimal_unload_dir = optimal_unload(gc, unit, directions, building_assignments)
+		optimal_unload_dir = optimal_unload(gc, unit, constants.directions, building_assignments, battle_locs)
 		if optimal_unload_dir is not None:
 			gc.unload(unit.id, optimal_unload_dir)
 
@@ -57,9 +57,32 @@ def gain_rate(gc):
 	decrease = int(curr/40)
 	return max(10 -decrease, 0)
 
-def optimal_unload(gc, unit, directions, building_assignments):
+def optimal_unload(gc, unit, directions, building_assignments, battle_locs):
+	"""
+	Tries to find unload direction towards a battle location, otherwise finds another optimal
+	direction with previous logic.
+
+	Returns direction or None.
+	"""
+	unit_loc = unit.location.map_location()
+	build_sites = list(map(lambda site: site.map_location,list(building_assignments.values())))
+
+	## Find list of best unload towards battle_locs and use best dir that doesn't interfere with building
+	if len(battle_locs) > 0: 
+		weakest = random.choice(list(battle_locs.keys()))
+		target_loc = battle_locs[weakest][0]
+
+		shape = [target_loc.x - unit_loc.x, target_loc.y - unit_loc.y]
+		unload_dirs = sense_util.get_best_option(shape) ## never returns None or empty list
+
+		for d in unload_dirs: 
+			if unit_loc.add(d) not in build_sites and gc.can_unload(unit.id, d): 
+				return d
+
+	## Use previous optimal location
 	best = None
 	best_val = -float('inf')
+
 	for d in directions:
 		build_sites = list(map(lambda site : site.map_location,list(building_assignments.values())))
 		if gc.can_unload(unit.id, d) and unit.location.map_location().add(d) not in build_sites:
@@ -72,6 +95,7 @@ def optimal_unload(gc, unit, directions, building_assignments):
 			if num_good > best_val:
 				best_val = num_good
 				best = d
+
 	return best
 
 
