@@ -22,7 +22,7 @@ def timestep(gc, unit,composition, rocket_launch_times, rocket_launch_site):
             if unit.id not in rocket_launch_site:
                 rocket_launch_site[unit.id] = compute_optimal_landing_site(gc, curr_round, time, rocket_launch_site)
 
-        elif len(garrison)>-1 and gc.round() == rocket_launch_times[unit.id] and gc.can_launch_rocket(unit.id, rocket_launch_site[unit.id]):
+        elif len(garrison)>5 and gc.round() == rocket_launch_times[unit.id] and gc.can_launch_rocket(unit.id, rocket_launch_site[unit.id]):
             gc.launch_rocket(unit.id, rocket_launch_site[unit.id])
 
     else:
