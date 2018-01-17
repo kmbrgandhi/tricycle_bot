@@ -163,7 +163,7 @@ def board(gc,my_unit,current_roles):
 	
 def get_replication_cap(gc,karbonite_locations):
 	#print("KARBONITE INFO LENGTH: ",len(karbonite_locations))
-	return min(3 + (gc.round()/1000) * len(karbonite_locations),15)
+	return min(3 + float(1000-gc.round())/1000 * len(karbonite_locations),15)
 
 def replicate(gc,unit):
 	if gc.karbonite() >= bc.UnitType.Worker.replicate_cost():
