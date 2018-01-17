@@ -5,26 +5,25 @@ import traceback
 import Units.sense_util as sense_util
 import Units.clusters as clusters
 
-def timestep(gc, unit, composition, knight_to_cluster, seen_knights_ids, KNIGHT_CLUSTER_MIN, constants):
-
+def timestep(gc, unit, composition, knight_to_cluster, seen_knights_ids, battle_locs, KNIGHT_CLUSTER_MIN, constants):
     # last check to make sure the right unit type is running this
     if unit.unit_type != bc.UnitType.Knight:
         # prob should return some kind of error
         return
 
-    my_team = gc.team()
     direction = None
     location = unit.location
 
-    if location.is_on_map() and unit.id not in seen_knights_ids: 
-        unit_loc = unit.location.map_location()
+    if unit.id not in seen_knights_ids and location.is_on_map(): 
+        unit_loc = location.map_location()
         ## Clustering: if has a goal location keep moving there
         if unit.id in knight_to_cluster: 
             try:
+                print('cluster!')
                 c = knight_to_cluster[unit.id]
-                valid_cluster = clusters.knight_cluster_sense(gc, unit, unit_loc, c)
+                valid_cluster = clusters.knight_cluster_sense(gc, unit, unit_loc, c, knight_to_cluster)
             except: 
-                # print('KNIGHT clustering sense didnt run')
+                print('KNIGHT clustering sense didnt run')
                 pass
 
             try:
@@ -34,32 +33,46 @@ def timestep(gc, unit, composition, knight_to_cluster, seen_knights_ids, KNIGHT_
                 else: 
                     seen_knights_ids.update(c.cluster_units())
             except: 
-                # print('cannot remove cluster OR add units to seen')
+                print('cannot remove cluster OR add units to seen')
                 pass
 
-        else: 
+        elif len(list(knight_to_cluster.keys())) < 20: 
             try: 
-                enemy = knight_sense(gc, unit, unit_loc, knight_to_cluster, KNIGHT_CLUSTER_MIN)
+                enemy = knight_sense(gc, unit, unit_loc, knight_to_cluster, KNIGHT_CLUSTER_MIN, constants)
             except:
-                # print('KNIGHT sense didnt run')
+                print('KNIGHT sense didnt run')
                 pass
 
-        ## Movement
-        try: 
-            ## Knight movement away from allies
-            if direction == None:  
-                nearby = gc.sense_nearby_units(unit_loc,8)
-                direction = sense_util.best_available_direction(gc,unit,nearby)
+            ## Movement
+            if len(battle_locs) > 0: 
+                weakest = random.choice(list(battle_locs.keys()))
+                target_loc = battle_locs[weakest][0]
 
-            if gc.is_move_ready(unit.id) and gc.can_move(unit.id, direction):
-                gc.move_robot(unit.id, direction)
-                # print('moved no cluster')
+                shape = [target_loc.x - unit_loc.x, target_loc.y - unit_loc.y]
+                directions = sense_util.get_best_option(shape)
 
-        except:
-            # print('KNIGHT movement didnt go through')
-            pass
+                if directions is not None:
+                    if len(directions) > 0 and gc.is_move_ready(unit.id): 
+                        for d in directions: 
+                            if gc.can_move(unit.id, d):
+                                gc.move_robot(unit.id, d)
+                                #print('HEALER moved to battle loc!')
+                                break
+            else:  
+                ## Knight movement away from allies
+                if direction == None:  
+                    nearby = gc.sense_nearby_units(unit_loc,8)
+                    direction = sense_util.best_available_direction(gc,unit,nearby)
 
-def knight_sense(gc, unit, unit_loc, knight_to_cluster, KNIGHT_CLUSTER_MIN): 
+                if gc.is_move_ready(unit.id) and gc.can_move(unit.id, direction):
+                    gc.move_robot(unit.id, direction)
+                    # print('moved no cluster')
+
+            # except:
+            #     print('KNIGHT movement didnt go through')
+            #     pass
+
+def knight_sense(gc, unit, unit_loc, knight_to_cluster, KNIGHT_CLUSTER_MIN, constants): 
     """
     This function chooses the direction the knight should move in. If it senses enemies nearby 
     then will return direction that it can move to. If it can attack it will say if it is in
@@ -72,9 +85,9 @@ def knight_sense(gc, unit, unit_loc, knight_to_cluster, KNIGHT_CLUSTER_MIN):
     new_direction = None
 
     try:
-        enemies = gc.sense_nearby_units_by_team(unit_loc, unit.vision_range, sense_util.enemy_team(gc))
+        enemies = gc.sense_nearby_units_by_team(unit_loc, int(unit.vision_range/3), constants.enemy_team)
     except: 
-        # print('KNIGHTS ARE SAD')
+        print('KNIGHTS ARE SAD')
         pass
 
     if len(enemies) > 0:        
@@ -93,3 +106,5 @@ def knight_sense(gc, unit, unit_loc, knight_to_cluster, KNIGHT_CLUSTER_MIN):
         cluster_unit_ids = new_cluster.cluster_units()
         for unit_id in cluster_unit_ids: 
             knight_to_cluster[unit_id] = new_cluster
+    # else:
+    #     print('knight no enemies')

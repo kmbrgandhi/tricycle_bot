@@ -72,16 +72,13 @@ while True:
     next_turn_battle_locs = {}
 
     #Update knight cluster min 
-    try: 
-        my_knights = list(filter(lambda x: x.unit_type == bc.UnitType.Knight, gc.my_units()))
-        if len(my_knights) > 25: 
-            KNIGHT_CLUSTER_MIN =8
-        elif len(my_knights) > 15:
-            KNIGHT_CLUSTER_MIN = 5
-        else: 
-            KNIGHT_CLUSTER_MIN = 2
-    except: 
-        pass
+    my_knights = list(filter(lambda x: x.unit_type == bc.UnitType.Knight, gc.my_units()))
+    if len(my_knights) > 25: 
+        KNIGHT_CLUSTER_MIN =8
+    elif len(my_knights) > 15:
+        KNIGHT_CLUSTER_MIN = 5
+    else: 
+        KNIGHT_CLUSTER_MIN = 2
 
     try:
         # walk through our units:
@@ -107,7 +104,7 @@ while True:
             if unit.unit_type == bc.UnitType.Worker:
                 worker.timestep(gc,unit,info,karbonite_locations,locs_next_to_terrain,blueprinting_queue,building_assignment,current_worker_roles)
             elif unit.unit_type == bc.UnitType.Knight:
-                knight.timestep(gc,unit,info,knight_to_cluster,seen_knights_ids, KNIGHT_CLUSTER_MIN, constants)
+                knight.timestep(gc,unit,info,knight_to_cluster,seen_knights_ids,last_turn_battle_locs,KNIGHT_CLUSTER_MIN,constants)
             elif unit.unit_type == bc.UnitType.Ranger:
                 ranger.timestep(gc,unit,info,last_turn_battle_locs, next_turn_battle_locs, queued_paths, ranger_roles)
             elif unit.unit_type == bc.UnitType.Mage:
