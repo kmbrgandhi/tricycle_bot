@@ -66,12 +66,36 @@ def timestep(gc, unit, info, karbonite_locations, locs_next_to_terrain, blueprin
 	elif role == "boarder": 
 		board(gc,unit,current_roles)
 	# if unit is idle
+	elif role == "repairer":
+		repair(gc, unit, current_roles)
 	else: 	
 		nearby= gc.sense_nearby_units_by_team(my_location.map_location(), worker_spacing, gc.team())
 
 		away_from_units = sense_util.best_available_direction(gc,unit,nearby)	
 		#print(unit.id, "at", unit.location.map_location(), "is trying to move to", away_from_units)
 		movement.try_move(gc,unit,away_from_units)
+
+def repair(gc, unit, current_roles):
+	map_loc = unit.location.map_location()
+	closest = None
+	closest_dist = float('inf')
+	for fact in gc.my_units():
+		if fact.unit_type == bc.UnitType.Factory:
+			if fact.structure_is_built() and fact.health < fact.max_health:
+				loc = fact.location.map_location()
+				dist = map_loc.distance_squared_to(loc)
+				if dist < closest_dist:
+					closest = fact
+					closest_dist = dist
+
+	if closest!=None:
+		if gc.can_repair(unit.id, closest.id):
+			gc.repair(unit.id, closest.id)
+		else:
+			dir = map_loc.direction_to(closest.location.map_location())
+			movement.try_move(gc, unit, dir)
+	else:
+		current_roles["repairer"].remove(unit.id)
 
 
 # returns whether unit is a miner or builder, currently placeholder until we can use team-shared data to designate unit roles
@@ -124,7 +148,7 @@ def get_role(gc,my_unit,blueprinting_queue,current_roles,karbonite_locations):
 	elif rocket_ready_for_loading:
 		new_role = "boarder"
 	else:
-		return "idle"
+		new_role = "repairer"
 
 	current_roles[new_role].append(my_unit.id)
 	
@@ -249,6 +273,7 @@ def pick_closest_building_assignment(gc, unit, building_assignment):
 			closest = building
 			min_dist = dist
 	return closest
+
 def mine_mars(gc,unit):
 	my_location = unit.location.map_location()
 	all_locations = gc.all_locations_within(my_location,unit.vision_range)

@@ -52,7 +52,7 @@ rocket_landing_sites = {}
 blueprinting_queue = []
 building_assignment = {}
 
-current_worker_roles = {"miner":[],"builder":[],"blueprinter":[],"boarder":[]}
+current_worker_roles = {"miner":[],"builder":[],"blueprinter":[],"boarder":[], "repairer":[]}
 
 # KNIGHT
 knight_clusters = list()
