@@ -50,8 +50,10 @@ def timestep(gc, unit, info, karbonite_locations, locs_next_to_terrain, blueprin
 	#print("REPLICATION CAP: ",max_num_workers)
 	# replicates if unit is able to (cooldowns, available directions etc.)	
 	if current_num_workers < max_num_workers:
-		replicate(gc,unit)	
-		return
+
+		try_replicate = replicate(gc,unit)
+		if try_replicate:
+			return
 
 	# runs this block every turn if unit is miner
 	if role == "miner":
@@ -192,12 +194,14 @@ def get_replication_cap(gc,karbonite_locations):
 	return min(3 + float(500+gc.round())/7000 * len(karbonite_locations),15)
 
 def replicate(gc,unit):
+	replicated = False
 	if gc.karbonite() >= bc.UnitType.Worker.replicate_cost():
 		directions = list(bc.Direction)
 		for direction in directions:
 			if gc.can_replicate(unit.id,direction):
-
+				replicated = True
 				gc.replicate(unit.id,direction)
+	return replicated
 
 # FOR EARTH ONLY
 def update_deposit_info(gc,unit,karbonite_locations):
