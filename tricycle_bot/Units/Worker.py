@@ -55,7 +55,7 @@ def timestep(gc, unit, info, karbonite_locations, locs_next_to_terrain, blueprin
 
 	# runs this block every turn if unit is miner
 	if role == "miner":
-		mine(gc,unit,karbonite_locations,current_roles)
+		mine(gc,unit,karbonite_locations,current_roles, building_assignment)
 	# if unit is builder
 	elif role == "builder":
 		build(gc,unit,building_assignment,current_roles)
@@ -164,7 +164,8 @@ def board(gc,my_unit,current_roles):
 	
 def get_replication_cap(gc,karbonite_locations):
 	#print("KARBONITE INFO LENGTH: ",len(karbonite_locations))
-	return min(3 + float(1000-gc.round())/1000 * len(karbonite_locations),15)
+	#print(len(karbonite_locations))
+	return min(3 + float(500+gc.round())/7000 * len(karbonite_locations),15)
 
 def replicate(gc,unit):
 	if gc.karbonite() >= bc.UnitType.Worker.replicate_cost():
@@ -208,7 +209,7 @@ def get_closest_deposit(gc,unit,karbonite_locations):
 			closest_deposit = map_location
 	return closest_deposit	
 	
-def mine(gc,unit,karbonite_locations,current_roles): 
+def mine(gc,unit,karbonite_locations,current_roles, building_assignment):
 	my_location = unit.location
 	position = my_location.map_location()
 	closest_deposit = get_closest_deposit(gc,unit,karbonite_locations)
@@ -217,7 +218,7 @@ def mine(gc,unit,karbonite_locations,current_roles):
 	#check to see if there even are deposits
 	if start_map.on_map(closest_deposit):
 		direction_to_deposit = position.direction_to(closest_deposit)
-		print(unit.id, "is trying to mine at", direction_to_deposit)
+		#print(unit.id, "is trying to mine at", direction_to_deposit)
 		if position.is_adjacent_to(closest_deposit) or position == closest_deposit:
 			# mine if adjacent to deposit
 			if gc.can_harvest(unit.id,direction_to_deposit):
@@ -231,11 +232,23 @@ def mine(gc,unit,karbonite_locations,current_roles):
 				dir = sense_util.best_available_direction(gc, unit, enemies)
 				movement.try_move(gc, unit, dir)
 				current_roles["miner"].remove(unit.id)
+				current_roles["builder"].append(unit.id)
+				building_assignment[unit.id] = pick_closest_building_assignment(gc, unit, building_assignment)
 			else:
 				movement.try_move(gc,unit,direction_to_deposit)
 	else:
 		current_roles["miner"].remove(unit.id)
 
+def pick_closest_building_assignment(gc, unit, building_assignment):
+	closest = None
+	min_dist = float('inf')
+	map_loc = unit.location.map_location()
+	for building in building_assignment.values():
+		dist = map_loc.distance_squared_to(building.get_map_location())
+		if dist< min_dist:
+			closest = building
+			min_dist = dist
+	return closest
 def mine_mars(gc,unit):
 	my_location = unit.location.map_location()
 	all_locations = gc.all_locations_within(my_location,unit.vision_range)

@@ -24,7 +24,7 @@ def timestep(gc, unit, composition, last_turn_battle_locs, next_turn_battle_locs
             ranger_roles["fighter"].append(unit.id)
 
     location = unit.location
-    my_team = gc.team() #constants.team
+    my_team = constants.my_team
     if location.is_on_map():
         map_loc = location.map_location()
         dir, attack_target, snipe, move_then_attack, visible_enemies, closest_enemy, signals = ranger_sense(gc, unit, last_turn_battle_locs, queued_paths, ranger_roles, map_loc, constants)

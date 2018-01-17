@@ -26,7 +26,7 @@ def timestep(gc, unit,composition, rocket_launch_times, rocket_launch_site):
             gc.launch_rocket(unit.id, rocket_launch_site[unit.id])
 
     else:
-        print('GARRISON LENGHT',len(garrison))
+        #print('GARRISON LENGHT',len(garrison))
         if len(garrison) > 0:  # try to unload a unit if there exists one in the garrison
             optimal_unload_dir = rocket_unload(gc, unit, directions)
             if optimal_unload_dir is not None:
@@ -46,7 +46,7 @@ def rocket_durations_sorted(gc):
 
 def compute_optimal_launch_time(gc, curr_round):
 	orbit_pattern = gc.orbit_pattern()
-	durations = [(i, orbit_pattern.duration(i)+i) for i in range(curr_round+5, curr_round + 50)]
+	durations = [(i, orbit_pattern.duration(i)+i) for i in range(curr_round+5, curr_round + 30)]
 	return min(durations, key = lambda x: x[1])
 
 def compute_optimal_landing_site(gc, curr_round, time, rocket_landing_sites):
