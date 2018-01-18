@@ -158,7 +158,7 @@ def get_role(gc,my_unit,blueprinting_queue,building_assignment,current_roles,kar
 	if gc.karbonite() < 100 and num_miners < 2:
 		new_role = "miner"
 	# become builder when there are available blueprints
-	elif num_builders < max_num_builders and blueprint_count > 0 and open_slots_to_build:
+	elif blueprint_count > 0 and open_slots_to_build:
 		#print("blueprint_count: ",blueprint_count,"open_slots_to_build",open_slots_to_build)
 		new_role = "builder"
 	# become blueprinter
@@ -565,6 +565,10 @@ def update_blueprinting_queue(closest_building_site,blueprinting_queue):
 			if closest_building_site == site:
 				blueprinting_queue.remove(site)
 
+# controls how many buildings we can have in progress at a time, can modify this to scale with karbonite number, round # or number of units (enemy or ally)
+def building_in_progress_cap(gc):
+	return 2
+
 
 def blueprint(gc,my_unit,blueprinting_queue,building_assignment,blueprinting_assignment,current_roles,locs_next_to_terrain):
 	my_location = my_unit.location.map_location()
@@ -607,7 +611,12 @@ def blueprint(gc,my_unit,blueprinting_queue,building_assignment,blueprinting_ass
 
 	# assign this unit to build a blueprint, if nothing to build just move away from other factories
 	if my_unit.id not in blueprinting_assignment:
-		if len(blueprinting_queue) > 0:
+		building_in_progress_count = len(building_assignment.keys()) + len(blueprinting_assignment.keys())
+		print("blueprinting_assignment",blueprinting_assignment)
+		print("building_assignment",building_assignment)
+		print("building in progress cap",building_in_progress_count)
+		print("blueprint assignment threshold met?",len(blueprinting_queue) > 0 and building_in_progress_count < building_in_progress_cap(gc))
+		if len(blueprinting_queue) > 0 and building_in_progress_count < building_in_progress_cap(gc):
 			closest_building_site = get_closest_site(gc,my_unit,blueprinting_queue)
 			update_blueprinting_queue(closest_building_site,blueprinting_queue)
 			blueprinting_assignment[my_unit.id] = closest_building_site
@@ -629,14 +638,18 @@ def blueprint(gc,my_unit,blueprinting_queue,building_assignment,blueprinting_ass
 		#print(unit.id, "is in the building assignment")
 		assigned_site = blueprinting_assignment[my_unit.id]
 
+		if my_unit.id in blueprinting_assignment:
+			print("unit",my_unit.id,"blueprinting at",blueprinting_assignment[my_unit.id])
 		#print(unit.id, "is assigned to building in", assigned_site.map_location)
 		direction_to_site = my_location.direction_to(assigned_site.map_location)
+
 		if my_location.is_adjacent_to(assigned_site.map_location):
 			if gc.can_blueprint(my_unit.id, assigned_site.building_type, direction_to_site):
 				gc.blueprint(my_unit.id, assigned_site.building_type, direction_to_site)
+				del blueprinting_assignment[my_unit.id]
 				current_roles["blueprinter"].remove(my_unit.id)
 				current_roles["builder"].append(my_unit.id)
-				#print(unit.id, " just created a blueprint!")
+				print(my_unit.id, " just created a blueprint!")
 			#else:
 			#print(unit.id, "can't build but is right next to assigned site")
 		elif my_location == assigned_site.map_location:
