@@ -53,7 +53,7 @@ blueprinting_queue = []
 building_assignment = {}
 blueprinting_assignment = {}
 
-current_worker_roles = {"miner":[],"builder":[],"blueprinter":[],"boarder":[]}
+current_worker_roles = {"miner":[],"builder":[],"blueprinter":[],"boarder":[], "repairer":[]}
 
 # KNIGHT
 knight_clusters = list()
@@ -118,13 +118,17 @@ while True:
             elif unit.unit_type == bc.UnitType.Knight:
                 knight.timestep(gc,unit,info,knight_to_cluster,seen_knights_ids, KNIGHT_CLUSTER_MIN, constants)
             elif unit.unit_type == bc.UnitType.Ranger:
-                ranger.timestep(gc,unit,info,last_turn_battle_locs, next_turn_battle_locs, queued_paths, ranger_roles)
+                ranger.timestep(gc,unit,info,last_turn_battle_locs, next_turn_battle_locs, queued_paths, ranger_roles, constants)
             elif unit.unit_type == bc.UnitType.Mage:
                 mage.timestep(gc,unit,info,last_turn_battle_locs,next_turn_battle_locs, queued_paths)
             elif unit.unit_type == bc.UnitType.Healer:
-                healer.timestep(gc,unit,info,last_turn_battle_locs)
+                healer.timestep(gc,unit,info,last_turn_battle_locs,constants)
             elif unit.unit_type == bc.UnitType.Factory:
+<<<<<<< HEAD
                 factory.timestep(gc,unit,info, blueprinting_assignment, mining_rate = 3*len(current_worker_roles["miner"]))
+=======
+                factory.timestep(gc,unit,info, building_assignment, last_turn_battle_locs, constants, mining_rate = 3*len(current_worker_roles["miner"]))
+>>>>>>> 6b36f3b6e06ccfe2bfc2d7e1ad1fd76bba6722fc
             elif unit.unit_type == bc.UnitType.Rocket:
                 print('hi')
                 rocket.timestep(gc,unit,info, rocket_launch_times, rocket_landing_sites)
