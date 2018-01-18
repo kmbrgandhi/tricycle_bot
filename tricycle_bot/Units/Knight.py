@@ -5,7 +5,7 @@ import traceback
 import Units.sense_util as sense_util
 import Units.clusters as clusters
 
-def timestep(gc, unit, composition, knight_to_cluster, seen_knights_ids, battle_locs, KNIGHT_CLUSTER_MIN, constants):
+def timestep(gc, unit, composition, knight_to_cluster, seen_knights_ids, battle_locs, next_battle_locs, KNIGHT_CLUSTER_MIN, constants):
     # last check to make sure the right unit type is running this
     if unit.unit_type != bc.UnitType.Knight:
         # prob should return some kind of error
@@ -21,18 +21,26 @@ def timestep(gc, unit, composition, knight_to_cluster, seen_knights_ids, battle_
             try:
                 print('cluster!')
                 c = knight_to_cluster[unit.id]
-                valid_cluster = clusters.knight_cluster_sense(gc, unit, unit_loc, c, knight_to_cluster)
+                valid_cluster= clusters.knight_cluster_sense(gc, unit, unit_loc, c, knight_to_cluster)
                 if not valid_cluster: 
                     clusters.remove_cluster(c, knight_to_cluster)
                     # print('removed cluster')
                 else: 
                     seen_knights_ids.update(c.cluster_units())
-                    
+                    ## Update next battle locations
+                    enemy_loc = c.target_loc
+                    f_f_quad = (int(enemy_loc.x / 5), int(enemy_loc.y / 5))
+                    if f_f_quad not in next_battle_locs:
+                        next_battle_locs[f_f_quad] = (unit_loc, 1)
+                    else:
+                        next_battle_locs[f_f_quad] = (next_battle_locs[f_f_quad][0], next_battle_locs[f_f_quad][1]+1)
+
             except: 
                 print('KNIGHT clustering sense didnt run')
                 pass
 
-        elif len(list(knight_to_cluster.keys())) < 20: 
+        # elif len(list(knight_to_cluster.keys())) < 20:
+        else: 
             try: 
                 enemy = knight_sense(gc, unit, unit_loc, knight_to_cluster, KNIGHT_CLUSTER_MIN, constants)
             except:
@@ -81,7 +89,7 @@ def knight_sense(gc, unit, unit_loc, knight_to_cluster, KNIGHT_CLUSTER_MIN, cons
     new_direction = None
 
     try:
-        enemies = gc.sense_nearby_units_by_team(unit_loc, int(unit.vision_range/3), constants.enemy_team)
+        enemies = gc.sense_nearby_units_by_team(unit_loc, int(unit.vision_range/2), constants.enemy_team)
     except: 
         print('KNIGHTS ARE SAD')
         pass

@@ -19,7 +19,7 @@ class Cluster:
         self.target_unit_id = target_unit.id
         self.target_loc = target_unit.location.map_location()
 
-        self.radius = int(unit_vision * (1 + len(self.units)/30))
+        self.radius = int(unit_vision * (1 + len(self.units)/10))
 
     def cluster_units(self):  
         return self.units
@@ -69,7 +69,9 @@ class Cluster:
         if len(enemies) > 0: 
             if enemies[0].id != self.target_unit_id: 
                 self.target_unit_id = enemies[0].id
+                print('new enemy: ', self.target_unit_id)
             self.target_loc = enemies[0].location.map_location()
+
             return True
         else:
             return False
@@ -203,42 +205,28 @@ def knight_cluster_sense(gc, unit, unit_loc, cluster, knight_to_cluster):
     try: 
         ordered_units = cluster.movement_unit_order(gc, units)
     except:
-        print('cannot find movement order')
         ordered_units = list(cluster.cluster_units())
 
 
     for knight in ordered_units:
-        # knight = gc.unit(knight_id) 
         knight_loc = knight.location.map_location()
 
-        # try: 
-        ## Move in direction of target / worker
-        directions = cluster.calculate_unit_direction(gc, knight, knight_loc)
-        # except:
-        #     print('KNIGHT CLUSTER cannot calculate unit dir')
-        #     pass
-
-        if directions != None and len(directions) > 0 and gc.is_move_ready(knight.id): 
-            for d in directions: 
-                if gc.can_move(knight.id, d):
-                    gc.move_robot(knight.id, d)
-                    print('moved!')
-                    break
 
         ## Attack if in range (aa or javelin)
-        if visible: 
-            try: 
-                enemy_id, attack, javelin = cluster.attack_enemy(gc, knight, knight_loc)
-                if enemy_id != None: 
-                    if attack and gc.is_attack_ready(knight.id): 
-                        gc.attack(knight.id, enemy_id)
-                        print('attacked!')  
-                    if javelin and gc.is_javelin_ready(knight.id):
-                        gc.javelin(knight.id, enemy_id)
-                        # print('javelined!')
-            except: 
-                print('attack enemy cluster didnt work')
-                pass
+        if visible and gc.is_attack_ready(knight.id): 
+            enemy_id = cluster.target_unit_id
+            if gc.can_attack(knight.id, enemy_id):
+                gc.attack(knight.id, enemy_id)
+                print('attacked')
+        else: 
+            directions = cluster.calculate_unit_direction(gc, knight, knight_loc)
+            if directions != None and len(directions) > 0 and gc.is_move_ready(knight.id): 
+                for d in directions: 
+                    if gc.can_move(knight.id, d):
+                        gc.move_robot(knight.id, d)
+                        print('moved!')
+                        break
+
 
     ## If cluster target / worker not visible, disband cluster
     return visible
