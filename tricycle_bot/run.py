@@ -115,7 +115,7 @@ while True:
             # resepective unit types execute their own AI
             if unit.unit_type == bc.UnitType.Worker:
                 try:
-                    worker.timestep(gc,unit,info,karbonite_locations,locs_next_to_terrain,blueprinting_queue,building_assignment,blueprinting_assignment,current_worker_roles)
+                    worker.timestep(gc,unit,info,karbonite_locations,locs_next_to_terrain,blueprinting_queue,blueprinting_assignment,building_assignment,current_worker_roles)
                 except Exception as e:
                     print('Error:', e)
                     # use this to show where the error was

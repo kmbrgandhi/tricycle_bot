@@ -9,7 +9,7 @@ import Units.Ranger as Ranger
 
 
 
-def timestep(gc, unit, info, karbonite_locations, locs_next_to_terrain, blueprinting_queue, building_assignment, blueprinting_assignment, current_roles):
+def timestep(gc, unit, info, karbonite_locations, locs_next_to_terrain, blueprinting_queue, blueprinting_assignment, building_assignment, current_roles):
 	#print(building_assignment)
 	# last check to make sure the right unit type is running this
 	if unit.unit_type != bc.UnitType.Worker:
@@ -29,7 +29,7 @@ def timestep(gc, unit, info, karbonite_locations, locs_next_to_terrain, blueprin
 
 	#print()
 	#print("ON UNIT #",unit.id, "position: ",unit.location.map_location())	
-	role = get_role(gc,unit,blueprinting_queue,building_assignment,current_roles,karbonite_locations)
+	role = get_role(gc,unit,blueprinting_queue,blueprinting_assignment,building_assignment,current_roles,karbonite_locations)
 	
 	#print("KARBONITE: ",gc.karbonite()
 	
@@ -68,31 +68,9 @@ def timestep(gc, unit, info, karbonite_locations, locs_next_to_terrain, blueprin
 		#print(unit.id, "at", unit.location.map_location(), "is trying to move to", away_from_units)
 		movement.try_move(gc,unit,away_from_units)
 
-def repair(gc, unit, current_roles):
-	map_loc = unit.location.map_location()
-	closest = None
-	closest_dist = float('inf')
-	for fact in gc.my_units():
-		if fact.unit_type == bc.UnitType.Factory:
-			if fact.structure_is_built() and fact.health < fact.max_health:
-				loc = fact.location.map_location()
-				dist = map_loc.distance_squared_to(loc)
-				if dist < closest_dist:
-					closest = fact
-					closest_dist = dist
-
-	if closest!=None:
-		if gc.can_repair(unit.id, closest.id):
-			gc.repair(unit.id, closest.id)
-		else:
-			dir = map_loc.direction_to(closest.location.map_location())
-			movement.try_move(gc, unit, dir)
-	else:
-		current_roles["repairer"].remove(unit.id)
-
 
 # returns whether unit is a miner or builder, currently placeholder until we can use team-shared data to designate unit roles
-def get_role(gc,my_unit,blueprinting_queue,building_assignment,current_roles,karbonite_locations):
+def get_role(gc,my_unit,blueprinting_queue,blueprinting_assignment,building_assignment,current_roles,karbonite_locations):
 	my_location = my_unit.location.map_location()
 	#print(my_location)
 	start_map = gc.starting_map(bc.Planet(0))
@@ -102,7 +80,8 @@ def get_role(gc,my_unit,blueprinting_queue,building_assignment,current_roles,kar
 	rocket_count = 0
 	rocket_ready_for_loading = False
 	please_move = False	
-	
+
+
 	for unit in gc.my_units():
 		if unit.unit_type == bc.UnitType.Factory: # count ALL factories
 			if my_location.is_adjacent_to(unit.location.map_location()):
@@ -123,6 +102,7 @@ def get_role(gc,my_unit,blueprinting_queue,building_assignment,current_roles,kar
 			rocket_count += 1
 	
 
+	update_for_dead_workers(gc,current_roles,blueprinting_assignment,building_assignment)
 	update_building_assignment(gc,building_assignment)
 	open_slots_to_build = False
 	for building_id in building_assignment:
@@ -176,6 +156,48 @@ def get_role(gc,my_unit,blueprinting_queue,building_assignment,current_roles,kar
 	#print(new_role)
 	return new_role
 
+def update_for_dead_workers(gc,current_roles,blueprinting_assignment,building_assignment):
+	live_unit_ids = list_of_unit_ids(gc)
+	for role in current_roles.keys():
+		for worker_id in current_roles[role][:]:
+
+			if worker_id not in live_unit_ids:
+				current_roles[role].remove(worker_id)
+
+				if role == "builder":
+					for building_id in building_assignment:
+						if worker_id in building_assignment[building_id]:
+							building_assignment[building_id].remove(worker_id)
+							break
+
+				elif role == "blueprinter":
+					if worker_id in blueprinting_assignment:
+						build_site = blueprinting_assignment[worker_id]
+						blueprinting_queue.append(build_site)
+						del blueprinting_assignment[worker_id]
+
+
+def repair(gc, unit, current_roles):
+	map_loc = unit.location.map_location()
+	closest = None
+	closest_dist = float('inf')
+	for fact in gc.my_units():
+		if fact.unit_type == bc.UnitType.Factory:
+			if fact.structure_is_built() and fact.health < fact.max_health:
+				loc = fact.location.map_location()
+				dist = map_loc.distance_squared_to(loc)
+				if dist < closest_dist:
+					closest = fact
+					closest_dist = dist
+
+	if closest!=None:
+		if gc.can_repair(unit.id, closest.id):
+			gc.repair(unit.id, closest.id)
+		else:
+			dir = map_loc.direction_to(closest.location.map_location())
+			movement.try_move(gc, unit, dir)
+	else:
+		current_roles["repairer"].remove(unit.id)
 
 def board(gc,my_unit,current_roles):
 	my_location = my_unit.location.map_location()
