@@ -114,7 +114,12 @@ while True:
         for unit in gc.my_units():
             # resepective unit types execute their own AI
             if unit.unit_type == bc.UnitType.Worker:
-                worker.timestep(gc,unit,info,karbonite_locations,locs_next_to_terrain,blueprinting_queue,building_assignment,blueprinting_assignment,current_worker_roles)
+                try:
+                    worker.timestep(gc,unit,info,karbonite_locations,locs_next_to_terrain,blueprinting_queue,building_assignment,blueprinting_assignment,current_worker_roles)
+                except Exception as e:
+                    print('Error:', e)
+                    # use this to show where the error was
+                    traceback.print_exc()
             elif unit.unit_type == bc.UnitType.Knight:
                 knight.timestep(gc,unit,info,knight_to_cluster,seen_knights_ids, KNIGHT_CLUSTER_MIN, constants)
             elif unit.unit_type == bc.UnitType.Ranger:
@@ -124,11 +129,7 @@ while True:
             elif unit.unit_type == bc.UnitType.Healer:
                 healer.timestep(gc,unit,info,last_turn_battle_locs,constants)
             elif unit.unit_type == bc.UnitType.Factory:
-<<<<<<< HEAD
-                factory.timestep(gc,unit,info, blueprinting_assignment, mining_rate = 3*len(current_worker_roles["miner"]))
-=======
                 factory.timestep(gc,unit,info, building_assignment, last_turn_battle_locs, constants, mining_rate = 3*len(current_worker_roles["miner"]))
->>>>>>> 6b36f3b6e06ccfe2bfc2d7e1ad1fd76bba6722fc
             elif unit.unit_type == bc.UnitType.Rocket:
                 print('hi')
                 rocket.timestep(gc,unit,info, rocket_launch_times, rocket_landing_sites)
