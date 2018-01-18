@@ -4,7 +4,7 @@ import sys
 import traceback
 import numpy as np
 
-def timestep(gc, unit,composition, building_assignments, mining_rate = 0, current_production = 0, karbonite_lower_limit = 100):
+def timestep(gc, unit,composition, blueprinting_assignment, mining_rate = 0, current_production = 0, karbonite_lower_limit = 100):
 	curr_round = gc.round()
 	optimal_composition = [0, 0, 0.9, 0, 0.1] # optimal composition, order is Worker, Knight, Ranger, Mage, Healer
 
@@ -18,7 +18,7 @@ def timestep(gc, unit,composition, building_assignments, mining_rate = 0, curren
 	garrison = unit.structure_garrison() # units inside of factory
 	directions = list(bc.Direction)
 	if len(garrison) > 0: # try to unload a unit if there exists one in the garrison
-		optimal_unload_dir = optimal_unload(gc, unit, directions, building_assignments)
+		optimal_unload_dir = optimal_unload(gc, unit, directions, blueprinting_assignment)
 		if optimal_unload_dir is not None:
 			gc.unload(unit.id, optimal_unload_dir)
 
@@ -57,11 +57,11 @@ def gain_rate(gc):
 	decrease = int(curr/40)
 	return max(10 -decrease, 0)
 
-def optimal_unload(gc, unit, directions, building_assignments):
+def optimal_unload(gc, unit, directions, blueprinting_assignment):
 	best = None
 	best_val = -float('inf')
 	for d in directions:
-		build_sites = list(map(lambda site : site.map_location,list(building_assignments.values())))
+		build_sites = list(map(lambda site : site.map_location,list(blueprinting_assignment.values())))
 		if gc.can_unload(unit.id, d) and unit.location.map_location().add(d) not in build_sites:
 			locs = gc.all_locations_within(unit.location.map_location(), 9)
 			locs_good = []
