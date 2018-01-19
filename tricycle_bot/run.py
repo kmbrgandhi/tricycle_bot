@@ -10,9 +10,12 @@ import Units.Worker as worker
 import Units.factory as factory
 import Units.rocket as rocket
 import Units.sense_util as sense_util
+import Units.explore as explore
 import Units.constants as c
 import research
 import map_info
+import time
+import cProfile
 
 
 print("pystarting")
@@ -20,7 +23,8 @@ print("pystarting")
 # A GameController is the main type that you talk to the game with.
 # Its constructor will connect to a running game.
 gc = bc.GameController()
-directions = list(bc.Direction)
+directions = bc.Direction
+
 
 print("pystarted")
 
@@ -70,7 +74,32 @@ ranger_clusters = set()
 #FIGHTERS
 last_turn_battle_locs = {}
 next_turn_battle_locs = {}
+passable_locations_earth = {}
+earth = bc.Planet.Earth
+earth_map = gc.starting_map(earth)
 
+for x in range(-1, earth_map.width+1):
+    for y in range(-1, earth_map.height + 1):
+        coords = (x, y)
+        if x==-1 or y==-1 or x == earth_map.width or y== earth_map.height:
+            passable_locations_earth[coords]= False
+        elif earth_map.is_passable_terrain_at(bc.MapLocation(earth, x, y)):
+            passable_locations_earth[coords] = True
+        else:
+            passable_locations_earth[coords]= False
+
+coord_to_direction = {(-1, -1): directions.Southwest, (-1, 1): directions.Northwest, (1, -1): directions.Southeast,
+                    (1, 1): directions.Northeast, (0, 1): directions.North, (0, -1): directions.South,
+                    (1, 0): directions.East, (-1, 0): directions.West}
+direction_to_coord = {v: k for k, v in coord_to_direction.items()}
+
+earth_width = earth_map.width
+earth_height = earth_map.height
+print(earth_width)
+print(earth_height)
+start_time = time.time()
+precomputed_bfs = explore.precompute_earth(passable_locations_earth, earth_width, earth_height, coord_to_direction)
+print(time.time()-start_time)
 ##AI EXECUTION##
 while True:
     # We only support Python 3, which means brackets around print()
@@ -124,7 +153,7 @@ while True:
             elif unit.unit_type == bc.UnitType.Knight:
                 knight.timestep(gc,unit,info,knight_to_cluster,seen_knights_ids, KNIGHT_CLUSTER_MIN, constants)
             elif unit.unit_type == bc.UnitType.Ranger:
-                ranger.timestep(gc,unit,info,last_turn_battle_locs, next_turn_battle_locs, queued_paths, ranger_roles, constants)
+                ranger.timestep(gc,unit,info,last_turn_battle_locs, next_turn_battle_locs, queued_paths, ranger_roles, constants, direction_to_coord, precomputed_bfs)
             elif unit.unit_type == bc.UnitType.Mage:
                 mage.timestep(gc,unit,info,last_turn_battle_locs,next_turn_battle_locs, queued_paths)
             elif unit.unit_type == bc.UnitType.Healer:

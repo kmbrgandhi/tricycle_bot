@@ -28,3 +28,4 @@ def optimal_direction_towards(gc, unit, location, target, directions):
         if gc.can_move(unit.id, option):
             return option
     return directions[8]
+

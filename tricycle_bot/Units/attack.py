@@ -2,8 +2,10 @@ import battlecode as bc
 import random
 import sys
 import traceback
-
+import Units.explore as explore
 import Units.sense_util as sense_util
+
+ranger_unit_priority = [1, 0.5, 2, 0.5, 2, 2, 3]
 
 def coefficient_computation(gc, our_unit, their_unit, location):
     # compute the relative appeal of attacking a unit.  Use AOE computation if attacking unit is mage.
