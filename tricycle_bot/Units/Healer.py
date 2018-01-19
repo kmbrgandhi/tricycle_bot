@@ -12,77 +12,99 @@ def timestep(gc, unit, composition, battle_locs, constants):
     if unit.unit_type != bc.UnitType.Healer:
         return
 
-    my_team = gc.team()
-    direction = None
+    best_dir = None
+    best_loc = None
+    best_target = None
     location = unit.location
-
     if location.is_on_map():
         unit_loc = location.map_location()
-        #print('HEALER LOC: ', unit_loc)
-
-        direction, heal_target = healer_sense(gc, unit, unit_loc, battle_locs, constants)
 
         ## Movement
-        try: 
-            if direction is not None and gc.is_move_ready(unit.id):
-                gc.move_robot(unit.id, direction)
-                #print('HEALER moving!')
+        # If sees enemies close enough then tries to move away from them 
+        enemies = gc.sense_nearby_units_by_team(unit_loc, unit.vision_range, constants.enemy_team)
+        if len(enemies) > 0: 
+            enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(unit_loc))
+            best_dir = dir_away_from_enemy(gc, unit, unit_loc, enemies[0].location.map_location())
 
-            ## Healer movement away from allies
-            else:  
-                nearby = gc.sense_nearby_units(unit_loc,8)
-                direction = sense_util.best_available_direction(gc,unit,nearby)
-
-                if gc.is_move_ready(unit.id) and gc.can_move(unit.id, direction):
-                    gc.move_robot(unit.id, direction)
-                    #print('HEALER moved away from allies!')
-
-        except:
-            pass
-            #print('HEALER movement didnt go through')
-
+        # Otherwise, goes to battle locations where they are in need of healers
+        elif len(battle_locs) > 0: 
+            best_loc = get_best_location(gc, unit, unit_loc, battle_locs)
+            print('best loc: ', best_loc)
         ## Healing
-        try:
-            if heal_target is not None: 
-                if gc.is_heal_ready(unit.id) and gc.can_heal(unit.id, heal_target.id):
-                    gc.heal(unit.id, heal_target.id) # heal it, if possible
-                    #print('healed ', heal_target.id)
-        except:
-            pass
-            #print('HEALER healing didnt go through')
+        best_target = get_best_target(gc, unit, unit_loc, constants)
 
-def healer_sense(gc, unit, unit_loc, battle_locs, constants):
-    direction = None
-    heal_target = None
+        ## Do shit
+        if best_target is not None and gc.is_heal_ready(unit.id):
+            gc.heal(unit.id, best_target.id)
+        if best_dir is not None and gc.is_move_ready(unit.id): 
+            gc.move_robot(unit.id, best_dir)
+        elif best_dir is None and best_loc is not None and gc.is_move_ready(unit.id):
+            best_dir = get_best_direction(gc, unit.id, unit_loc, best_loc)
+            if best_dir is not None: 
+                gc.move_robot(unit.id, best_dir)
 
-    ## If healer sees an enemy in vision range, move away from enemy
-    enemies = gc.sense_nearby_units_by_team(unit_loc, unit.vision_range, constants.enemy_team)
-    if len(enemies) > 0: 
-        enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(unit_loc))
-        dir_to_enemy = unit_loc.direction_to(enemies[0].location.map_location())
-        new_loc = unit_loc.subtract(dir_to_enemy)
-        new_dir = unit_loc.direction_to(new_loc)
+def dir_away_from_enemy(gc, unit, unit_loc, enemy_loc):
+    ideal_dir_from_enemy = enemy_loc.direction_to(unit_loc)
 
-        if gc.can_move(unit.id, new_dir):
-            direction = new_dir
+    if gc.can_move(unit.id, ideal_dir_from_enemy):
+        return ideal_dir_from_enemy
+    else:
+        shape = [enemy_loc.x - unit_loc.x, enemy_loc.y - unit_loc.y]
+        directions = sense_util.get_best_option(shape)
+        for d in directions: 
+            if gc.can_move(unit.id, d): 
+                return d
+    return None
 
-    ## Otherwise attempt to send healer to battle location
-    if direction is None and len(battle_locs) > 0: 
-        weakest = random.choice(list(battle_locs.keys()))
-        target_loc = battle_locs[weakest][0]
+def get_best_location(gc, unit, unit_loc, battle_locs): 
+    """
+    Chooses the battle location this knight should aim for
+    """
+    best = None
+    best_coeff = -float('inf')
 
+    for loc in battle_locs: 
+        map_loc = bc.MapLocation(gc.planet(),loc[0],loc[1])
+        distance = float(unit_loc.distance_squared_to(map_loc))
+        units = battle_locs[loc]
+        coeff = calculate_location_coefficient(gc, distance, units)
+        if coeff > best_coeff: 
+            best = map_loc
+            best_coeff = coeff
+
+    return best
+
+def calculate_location_coefficient(gc, distance, units):
+    dist_coeff = 1 - distance/100
+    health_coeff = 0
+
+    for unit_id in units: 
+        unit = gc.unit(unit_id)
+        health_coeff += unit.max_health / unit.health
+
+    if len(units) > 0: health_coeff = health_coeff/len(units)
+
+    return dist_coeff + health_coeff
+
+def get_best_direction(gc, unit_id, unit_loc, target_loc):
+    ideal_dir = unit_loc.direction_to(target_loc)
+
+    if gc.can_move(unit_id, ideal_dir): 
+        return ideal_dir
+    else:
         shape = [target_loc.x - unit_loc.x, target_loc.y - unit_loc.y]
         directions = sense_util.get_best_option(shape)
-
         for d in directions: 
-            if gc.can_move(unit.id, d):
-                direction = d
-                break
+            if gc.can_move(unit_id, d): 
+                return d
+    return None
 
+def get_best_target(gc, unit, unit_loc, constants):
     ## Attempt to heal nearby units
     nearby = gc.sense_nearby_units_by_team(unit_loc, unit.ability_range()-1, constants.my_team)
     if len(nearby) > 0: 
         nearby = sorted(nearby, key=lambda x: x.health/x.max_health)
-        heal_target = nearby[0]
-
-    return direction, heal_target
+        for ally in nearby: 
+            if gc.can_heal(unit.id, ally.id): 
+                return ally
+    return None

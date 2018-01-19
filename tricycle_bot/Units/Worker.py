@@ -33,8 +33,8 @@ def timestep(gc, unit, info, karbonite_locations, blueprinting_queue, blueprinti
 			my_role = role
 	
 
-	print()
-	print("on unit #",unit.id, "position: ",unit.location.map_location(), "role: ",my_role)
+	# print()
+	# print("on unit #",unit.id, "position: ",unit.location.map_location(), "role: ",my_role)
 
 	#print("KARBONITE: ",gc.karbonite()
 	
@@ -175,9 +175,9 @@ def designate_roles(gc,blueprinting_queue,blueprinting_assignment,building_assig
 		closest_workers_to_site[assigned_blueprinting_site] = closest_worker_ids
 
 
-	print("blueprinting_assignment",blueprinting_assignment)
-	print("building_assignment",building_assignment)
-	print("blueprinting_queue",blueprinting_queue)
+	# print("blueprinting_assignment",blueprinting_assignment)
+	# print("building_assignment",building_assignment)
+	# print("blueprinting_queue",blueprinting_queue)
 
 
 	######################
@@ -723,10 +723,9 @@ def blueprint(gc,my_unit,blueprinting_queue,building_assignment,blueprinting_ass
 	is_nearby_building = False
 	is_nearby_potential_buildings = False
 
-
 	# assign this unit to build a blueprint, if nothing to build just move away from other factories
 	if my_unit.id not in blueprinting_assignment:
-		print(my_unit.id,"currently has no assigned site")
+		# print(my_unit.id,"currently has no assigned site")
 		current_roles["blueprinter"].remove(my_unit.id)
 		"""
 		all_buildings = []
@@ -745,8 +744,8 @@ def blueprint(gc,my_unit,blueprinting_queue,building_assignment,blueprinting_ass
 	if my_unit.id in blueprinting_assignment:
 		assigned_site = blueprinting_assignment[my_unit.id]
 
-		if my_unit.id in blueprinting_assignment:
-			print("unit",my_unit.id,"blueprinting at",blueprinting_assignment[my_unit.id])
+		# if my_unit.id in blueprinting_assignment:
+		# 	print("unit",my_unit.id,"blueprinting at",blueprinting_assignment[my_unit.id])
 		#print(unit.id, "is assigned to building in", assigned_site.map_location)
 		direction_to_site = my_location.direction_to(assigned_site.map_location)
 
@@ -756,7 +755,7 @@ def blueprint(gc,my_unit,blueprinting_queue,building_assignment,blueprinting_ass
 				del blueprinting_assignment[my_unit.id]
 				current_roles["blueprinter"].remove(my_unit.id)
 				current_roles["builder"].append(my_unit.id)
-				print(my_unit.id, " just created a blueprint!")
+				# print(my_unit.id, " just created a blueprint!")
 			#else:
 			#print(unit.id, "can't build but is right next to assigned site")
 		elif my_location == assigned_site.map_location:
