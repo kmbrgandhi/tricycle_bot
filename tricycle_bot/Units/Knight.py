@@ -49,6 +49,13 @@ def timestep(gc, unit, composition, battle_locs, assigned_knights, constants):
 
             # Attack
             gc.attack(unit.id, best_target.id)
+        else:
+            new_enemy = get_new_enemies(gc, unit, unit_loc, constants)
+            if new_enemy is not None: 
+                enemy_loc = new_enemy.location.map_location()
+                add_location = evaluate_battle_location(gc, enemy_loc, battle_locs, constants)
+                if add_location: 
+                    battle_locs[(enemy_loc.x,enemy_loc.y)] = set()
 
         if best_loc is not None and gc.is_move_ready(unit.id): 
             best_dir = get_best_direction(gc, unit.id, unit_loc, best_loc)
@@ -100,6 +107,12 @@ def get_best_target(gc, unit, location, priority_order, constants, javelin=False
     best_target = max(vuln_enemies, key=lambda x: attack.coefficient_computation(gc, unit, x, location, priority_order))
     return best_target
 
+def get_new_enemies(gc, unit, unit_loc, constants):
+    new_enemies = gc.sense_nearby_units_by_team(unit_loc, int(unit.vision_range/2), constants.enemy_team)
+    if len(new_enemies)==0:
+        return None
+    return new_enemies[0]
+
 def evaluate_battle_location(gc, loc, battle_locs, constants):
     """
     Chooses whether or not to add this enemy's location as a new battle location.
@@ -116,11 +129,13 @@ def evaluate_battle_location(gc, loc, battle_locs, constants):
 
 def update_battles(gc, battle_locs, assigned_knights, constants):
     """
-    Remove locations that aren't valid anymore.
+    Remove locations & units that aren't valid anymore.
     """
+
+    ## Locations
     remove = set()
     for loc_coords in battle_locs:
-        loc = bc.MapLocation(bc.Planet.Earth,loc_coords[0],loc_coords[1])
+        loc = bc.MapLocation(gc.planet(),loc_coords[0],loc_coords[1])
         if gc.can_sense_location(loc): 
             found_enemy = False 
             locs_near = gc.all_locations_within(loc, battle_radius)
@@ -139,98 +154,16 @@ def update_battles(gc, battle_locs, assigned_knights, constants):
         for unit in units: 
             del assigned_knights[unit]
 
-    # if unit.id not in seen_knights_ids and location.is_on_map(): 
-    #     unit_loc = location.map_location()
-    #     ## Clustering: if has a goal location keep moving there
-    #     if unit.id in knight_to_cluster: 
-    #         try:
-    #             print('cluster!')
-    #             c = knight_to_cluster[unit.id]
-    #             valid_cluster= clusters.knight_cluster_sense(gc, unit, unit_loc, c, knight_to_cluster)
-    #             if not valid_cluster: 
-    #                 clusters.remove_cluster(c, knight_to_cluster)
-    #                 # print('removed cluster')
-    #             else: 
-    #                 seen_knights_ids.update(c.cluster_units())
-    #                 ## Update next battle locations
-    #                 enemy_loc = c.target_loc
-    #                 f_f_quad = (int(enemy_loc.x / 5), int(enemy_loc.y / 5))
-    #                 if f_f_quad not in next_battle_locs:
-    #                     next_battle_locs[f_f_quad] = (unit_loc, 1)
-    #                 else:
-    #                     next_battle_locs[f_f_quad] = (next_battle_locs[f_f_quad][0], next_battle_locs[f_f_quad][1]+1)
+    ## Units
+    remove = set()
+    for knight_id in assigned_knights:
+        try:
+            knight = gc.unit(knight_id)
+        except:
+            loc = assigned_knights[knight_id]
+            remove.add((knight_id,(loc.x,loc.y)))
 
-    #         except: 
-    #             print('KNIGHT clustering sense didnt run')
-    #             pass
-
-    #     # elif len(list(knight_to_cluster.keys())) < 20:
-    #     else: 
-    #         try: 
-    #             enemy = knight_sense(gc, unit, unit_loc, knight_to_cluster, KNIGHT_CLUSTER_MIN, constants)
-    #         except:
-    #             print('KNIGHT sense didnt run')
-    #             pass
-
-    #         ## Movement
-    #         if len(battle_locs) > 0: 
-    #             weakest = random.choice(list(battle_locs.keys()))
-    #             target_loc = battle_locs[weakest][0]
-
-    #             shape = [target_loc.x - unit_loc.x, target_loc.y - unit_loc.y]
-    #             directions = sense_util.get_best_option(shape)
-
-    #             if directions is not None:
-    #                 if len(directions) > 0 and gc.is_move_ready(unit.id): 
-    #                     for d in directions: 
-    #                         if gc.can_move(unit.id, d):
-    #                             gc.move_robot(unit.id, d)
-    #                             #print('HEALER moved to battle loc!')
-    #                             break
-    #         else:  
-    #             ## Knight movement away from allies
-    #             if direction == None:  
-    #                 nearby = gc.sense_nearby_units(unit_loc,8)
-    #                 direction = sense_util.best_available_direction(gc,unit,nearby)
-
-    #             if gc.is_move_ready(unit.id) and gc.can_move(unit.id, direction):
-    #                 gc.move_robot(unit.id, direction)
-    #                 # print('moved no cluster')
-
-
-# def knight_sense(gc, unit, unit_loc, knight_to_cluster, KNIGHT_CLUSTER_MIN, constants): 
-#     """
-#     This function chooses the direction the knight should move in. If it senses enemies nearby 
-#     then will return direction that it can move to. If it can attack it will say if it is in
-#     range for regular attack and/or javelin.
-#     Otherwise, will attempt to group with other allied knights and return a direction to clump
-#     the knights up. 
-
-#     Returns: New desired direction. 
-#     """
-#     new_direction = None
-
-#     try:
-#         enemies = gc.sense_nearby_units_by_team(unit_loc, int(unit.vision_range/2), constants.enemy_team)
-#     except: 
-#         print('KNIGHTS ARE SAD')
-#         pass
-
-#     if len(enemies) > 0:        
-#         enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(unit_loc))
-
-#         ## Remove knights if their clusters are too small
-#         unavailable_knight_ids = set()
-#         for u_knight_id in knight_to_cluster: 
-#             cluster = knight_to_cluster[u_knight_id]
-#             if len(cluster.cluster_units()) >= KNIGHT_CLUSTER_MIN: 
-#                 unavailable_knight_ids.add(u_knight_id)
-
-#         ## Create cluster! 
-#         new_cluster = clusters.create_knight_cluster(gc, unit, unit_loc, enemies[0], unavailable_knight_ids)
-
-#         cluster_unit_ids = new_cluster.cluster_units()
-#         for unit_id in cluster_unit_ids: 
-#             knight_to_cluster[unit_id] = new_cluster
-#     # else:
-#     #     print('knight no enemies')
+    for elem in remove:
+        knight_id, loc_coords = elem
+        battle_locs[loc_coords].remove(knight_id)
+        del assigned_knights[knight_id]
