@@ -152,7 +152,7 @@ while True:
             elif unit.unit_type == bc.UnitType.Mage:
                 mage.timestep(gc,unit,info,last_turn_battle_locs,next_turn_battle_locs, queued_paths)
             elif unit.unit_type == bc.UnitType.Healer:
-                healer.timestep(gc,unit,info,last_turn_battle_locs,constants)
+                healer.timestep(gc,unit,info,fighting_locations,constants)
             elif unit.unit_type == bc.UnitType.Factory:
                 factory.timestep(gc,unit,info, building_assignment, last_turn_battle_locs, constants, mining_rate = 3*len(current_worker_roles["miner"]))
             elif unit.unit_type == bc.UnitType.Rocket:
