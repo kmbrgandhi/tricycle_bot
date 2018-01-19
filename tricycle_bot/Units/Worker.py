@@ -175,7 +175,6 @@ def designate_roles(gc,blueprinting_queue,blueprinting_assignment,building_assig
 		closest_workers_to_site[assigned_blueprinting_site] = closest_worker_ids
 
 
-
 	print("blueprinting_assignment",blueprinting_assignment)
 	print("building_assignment",building_assignment)
 	print("blueprinting_queue",blueprinting_queue)
@@ -413,7 +412,23 @@ def mine(gc,my_unit,karbonite_locations,current_roles, building_assignment):
 	if start_map.on_map(closest_deposit):
 		direction_to_deposit = position.direction_to(closest_deposit)
 		#print(unit.id, "is trying to mine at", direction_to_deposit)
-		if position.is_adjacent_to(closest_deposit) or position == closest_deposit:
+
+		enemy_units = gc.sense_nearby_units_by_team(position, my_unit.vision_range, sense_util.enemy_team(gc))
+		dangerous_types = [bc.UnitType.Knight, bc.UnitType.Ranger, bc.UnitType.Mage]
+		dangerous_enemies = []
+
+		# only adds enemy units that can attack
+		for unit in enemy_units:
+			if unit.unit_type in dangerous_types:
+				dangerous_enemies.append(unit)
+
+		if len(dangerous_enemies) > 0:
+			dir = sense_util.best_available_direction(gc, my_unit, dangerous_enemies)
+			movement.try_move(gc, my_unit, dir)
+			#current_roles["miner"].remove(unit.id)
+			#current_roles["builder"].append(unit.id)
+			#building_assignment[unit.id] = pick_closest_building_assignment(gc, unit, building_assignment)
+		elif position.is_adjacent_to(closest_deposit) or position == closest_deposit:
 			# mine if adjacent to deposit
 			if gc.can_harvest(my_unit.id,direction_to_deposit):
 				gc.harvest(my_unit.id,direction_to_deposit)
@@ -421,25 +436,7 @@ def mine(gc,my_unit,karbonite_locations,current_roles, building_assignment):
 				#print(unit.id," just harvested!")
 		else:
 			# move toward deposit
-			
-			enemy_units = gc.sense_nearby_units_by_team(position, my_unit.vision_range, sense_util.enemy_team(gc))
-			dangerous_types = [bc.UnitType.Knight, bc.UnitType.Ranger, bc.UnitType.Mage]
-			dangerous_enemies = []
-
-
-			# only adds enemy units that can attack
-			for unit in enemy_units:
-				if unit.unit_type in dangerous_types:
-					dangerous_enemies.append(unit)
-
-			if len(dangerous_enemies) > 0:
-				dir = sense_util.best_available_direction(gc, my_unit, dangerous_enemies)
-				movement.try_move(gc, my_unit, dir)
-				#current_roles["miner"].remove(unit.id)
-				#current_roles["builder"].append(unit.id)
-				#building_assignment[unit.id] = pick_closest_building_assignment(gc, unit, building_assignment)
-			else:
-				movement.try_move(gc,my_unit,direction_to_deposit)
+			movement.try_move(gc,my_unit,direction_to_deposit)
 	else:
 		current_roles["miner"].remove(my_unit.id)
 		#print(unit.id," no deposits around")
