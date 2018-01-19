@@ -9,6 +9,7 @@ import Units.sense_util as sense_util
 def timestep(gc, unit,composition, building_assignments, battle_locs, constants, mining_rate = 0, current_production = 0, karbonite_lower_limit = 100):
 
 	curr_round = gc.round()
+
 	optimal_composition = [0, 0.9, 0, 0, 0.1] # optimal composition, order is Worker, Knight, Ranger, Mage, Healer
 
 	# should alter based on curr_round.  this is a temporary idea.

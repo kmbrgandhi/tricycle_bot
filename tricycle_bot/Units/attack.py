@@ -2,7 +2,7 @@ import battlecode as bc
 import random
 import sys
 import traceback
-
+import Units.explore as explore
 import Units.sense_util as sense_util
 
 def coefficient_computation(gc, our_unit, their_unit, location, priority):
