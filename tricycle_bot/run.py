@@ -40,9 +40,10 @@ research.research_step(gc)
 queued_paths = {}
 karbonite_locations = map_info.get_initial_karbonite_locations(gc)
 locs_next_to_terrain = map_info.get_locations_next_to_terrain(gc,bc.Planet(0))
+start_map = gc.starting_map(bc.Planet(0))
 # print('NEXT TO TERRAIN',locs_next_to_terrain)
 
-constants = c.Constants(list(bc.Direction), gc.team(), sense_util.enemy_team(gc), locs_next_to_terrain, karbonite_locations)
+constants = c.Constants(list(bc.Direction), gc.team(), sense_util.enemy_team(gc), start_map, locs_next_to_terrain, karbonite_locations)
 
 #ROCKETS
 rocket_launch_times = {}
