@@ -40,9 +40,10 @@ research.research_step(gc)
 queued_paths = {}
 karbonite_locations = map_info.get_initial_karbonite_locations(gc)
 locs_next_to_terrain = map_info.get_locations_next_to_terrain(gc,bc.Planet(0))
+start_map = gc.starting_map(bc.Planet(0))
 # print('NEXT TO TERRAIN',locs_next_to_terrain)
 
-constants = c.Constants(list(bc.Direction), gc.team(), sense_util.enemy_team(gc), locs_next_to_terrain, karbonite_locations)
+constants = c.Constants(list(bc.Direction), gc.team(), sense_util.enemy_team(gc), start_map, locs_next_to_terrain, karbonite_locations)
 
 #ROCKETS
 rocket_launch_times = {}
@@ -51,6 +52,7 @@ rocket_landing_sites = {}
 # WORKER
 blueprinting_queue = []
 building_assignment = {}
+blueprinting_assignment = {}
 
 current_worker_roles = {"miner":[],"builder":[],"blueprinter":[],"boarder":[], "repairer":[]}
 
@@ -108,7 +110,12 @@ while True:
         for unit in gc.my_units():
             # resepective unit types execute their own AI
             if unit.unit_type == bc.UnitType.Worker:
-                worker.timestep(gc,unit,info,karbonite_locations,locs_next_to_terrain,blueprinting_queue,building_assignment,current_worker_roles)
+                try:
+                    worker.timestep(gc,unit,info,karbonite_locations,locs_next_to_terrain,blueprinting_queue,blueprinting_assignment,building_assignment,current_worker_roles)
+                except Exception as e:
+                    print('Error:', e)
+                    # use this to show where the error was
+                    traceback.print_exc()
             elif unit.unit_type == bc.UnitType.Knight:
                 knight.timestep(gc,unit,info,knight_to_cluster,seen_knights_ids,last_turn_battle_locs,next_turn_battle_locs,KNIGHT_CLUSTER_MIN,constants)
             elif unit.unit_type == bc.UnitType.Ranger:

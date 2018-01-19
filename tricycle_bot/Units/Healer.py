@@ -26,7 +26,7 @@ def timestep(gc, unit, composition, battle_locs, constants):
         try: 
             if direction is not None and gc.is_move_ready(unit.id):
                 gc.move_robot(unit.id, direction)
-                print('HEALER moving!')
+                #print('HEALER moving!')
 
             ## Healer movement away from allies
             else:  
@@ -35,21 +35,21 @@ def timestep(gc, unit, composition, battle_locs, constants):
 
                 if gc.is_move_ready(unit.id) and gc.can_move(unit.id, direction):
                     gc.move_robot(unit.id, direction)
-                    print('HEALER moved away from allies!')
+                    #print('HEALER moved away from allies!')
 
         except:
-            # pass
-            print('HEALER movement didnt go through')
+            pass
+            #print('HEALER movement didnt go through')
 
         ## Healing
         try:
             if heal_target is not None: 
                 if gc.is_heal_ready(unit.id) and gc.can_heal(unit.id, heal_target.id):
                     gc.heal(unit.id, heal_target.id) # heal it, if possible
-                    print('healed ', heal_target.id)
+                    #print('healed ', heal_target.id)
         except:
-            # pass
-            print('HEALER healing didnt go through')
+            pass
+            #print('HEALER healing didnt go through')
 
 def healer_sense(gc, unit, unit_loc, battle_locs, constants):
     direction = None

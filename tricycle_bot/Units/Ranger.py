@@ -8,7 +8,7 @@ import Units.explore as explore
 
 order = [bc.UnitType.Worker, bc.UnitType.Knight, bc.UnitType.Ranger, bc.UnitType.Mage,
          bc.UnitType.Healer, bc.UnitType.Factory, bc.UnitType.Rocket]  # storing order of units
-ranger_unit_priority = [0.5, 1, 2, 2, 2, 1, 1]
+ranger_unit_priority = [1, 0.5, 2, 0.5, 2, 2, 3]
 
 def timestep(gc, unit, composition, last_turn_battle_locs, next_turn_battle_locs, queued_paths, ranger_roles, constants):
     # last check to make sure the right unit type is running this

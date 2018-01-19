@@ -5,7 +5,9 @@ import traceback
 import numpy as np
 import Units.sense_util as sense_util
 
+
 def timestep(gc, unit,composition, building_assignments, battle_locs, constants, mining_rate = 0, current_production = 0, karbonite_lower_limit = 100):
+
 	curr_round = gc.round()
 	optimal_composition = [0, 0, 0.9, 0, 0.1] # optimal composition, order is Worker, Knight, Ranger, Mage, Healer
 
@@ -65,7 +67,7 @@ def optimal_unload(gc, unit, directions, building_assignments, battle_locs):
 	Returns direction or None.
 	"""
 	unit_loc = unit.location.map_location()
-	build_sites = list(map(lambda site: site.map_location,list(building_assignments.values())))
+	#build_sites = list(map(lambda site: site.map_location,list(building_assignments.values())))
 
 	## Find list of best unload towards battle_locs and use best dir that doesn't interfere with building
 	if len(battle_locs) > 0: 
@@ -76,7 +78,7 @@ def optimal_unload(gc, unit, directions, building_assignments, battle_locs):
 		unload_dirs = sense_util.get_best_option(shape) ## never returns None or empty list
 
 		for d in unload_dirs: 
-			if unit_loc.add(d) not in build_sites and gc.can_unload(unit.id, d): 
+			if gc.can_unload(unit.id, d): #and unit_loc.add(d) not in build_sites
 				return d
 
 	## Use previous optimal location
@@ -84,8 +86,7 @@ def optimal_unload(gc, unit, directions, building_assignments, battle_locs):
 	best_val = -float('inf')
 
 	for d in directions:
-		build_sites = list(map(lambda site : site.map_location,list(building_assignments.values())))
-		if gc.can_unload(unit.id, d) and unit.location.map_location().add(d) not in build_sites:
+		if gc.can_unload(unit.id, d):# and unit.location.map_location().add(d) not in build_sites
 			locs = gc.all_locations_within(unit.location.map_location(), 9)
 			locs_good = []
 			for loc in locs:
