@@ -103,7 +103,7 @@ print(time.time()-start_time)
 ##AI EXECUTION##
 while True:
     # We only support Python 3, which means brackets around print()
-    print('pyround:', gc.round())
+    print('PYROUND:', gc.round())
     last_turn_battle_locs = next_turn_battle_locs.copy()
     next_turn_battle_locs = {}
 
@@ -120,7 +120,8 @@ while True:
     except: 
         pass
     """
-
+    worker.designate_roles(gc,blueprinting_queue,blueprinting_assignment,building_assignment,current_worker_roles,karbonite_locations)
+    print("current worker roles: ",current_worker_roles)
     try:
         # walk through our units:
         num_workers= num_knights=num_rangers= num_mages= num_healers= num_factory= num_rocket = 0
@@ -145,7 +146,7 @@ while True:
             # resepective unit types execute their own AI
             if unit.unit_type == bc.UnitType.Worker:
                 try:
-                    worker.timestep(gc,unit,info,karbonite_locations,locs_next_to_terrain,blueprinting_queue,blueprinting_assignment,building_assignment,current_worker_roles)
+                    worker.timestep(gc,unit,info,karbonite_locations,blueprinting_queue,blueprinting_assignment,building_assignment,current_worker_roles)
                 except Exception as e:
                     print('Error:', e)
                     # use this to show where the error was
