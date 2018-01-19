@@ -634,10 +634,10 @@ def blueprint(gc,my_unit,blueprinting_queue,building_assignment,blueprinting_ass
 	# assign this unit to build a blueprint, if nothing to build just move away from other factories
 	if my_unit.id not in blueprinting_assignment:
 		building_in_progress_count = len(building_assignment.keys()) + len(blueprinting_assignment.keys())
-		print("blueprinting_assignment",blueprinting_assignment)
-		print("building_assignment",building_assignment)
-		print("building in progress cap",building_in_progress_count)
-		print("blueprint assignment threshold met?",len(blueprinting_queue) > 0 and building_in_progress_count < building_in_progress_cap(gc))
+		#print("blueprinting_assignment",blueprinting_assignment)
+		#print("building_assignment",building_assignment)
+		#print("building in progress cap",building_in_progress_count)
+		#print("blueprint assignment threshold met?",len(blueprinting_queue) > 0 and building_in_progress_count < building_in_progress_cap(gc))
 		if len(blueprinting_queue) > 0 and building_in_progress_count < building_in_progress_cap(gc):
 			closest_building_site = get_closest_site(gc,my_unit,blueprinting_queue)
 			update_blueprinting_queue(closest_building_site,blueprinting_queue)
