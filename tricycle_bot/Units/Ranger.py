@@ -10,7 +10,7 @@ order = [bc.UnitType.Worker, bc.UnitType.Knight, bc.UnitType.Ranger, bc.UnitType
          bc.UnitType.Healer, bc.UnitType.Factory, bc.UnitType.Rocket]  # storing order of units
 ranger_unit_priority = [1, 0.5, 2, 0.5, 2, 2, 3]
 
-def timestep(gc, unit, composition, last_turn_battle_locs, next_turn_battle_locs, queued_paths, ranger_roles, constants):
+def timestep(gc, unit, composition, last_turn_battle_locs, next_turn_battle_locs, queued_paths, ranger_roles, constants, direction_to_coord, precomputed_bfs):
     # last check to make sure the right unit type is running this
     if unit.unit_type != bc.UnitType.Ranger:
         # prob should return some kind of error
@@ -27,7 +27,8 @@ def timestep(gc, unit, composition, last_turn_battle_locs, next_turn_battle_locs
     my_team = constants.my_team
     if location.is_on_map():
         map_loc = location.map_location()
-        dir, attack_target, snipe, move_then_attack, visible_enemies, closest_enemy, signals = ranger_sense(gc, unit, last_turn_battle_locs, queued_paths, ranger_roles, map_loc, constants)
+        dir, attack_target, snipe, move_then_attack, visible_enemies, closest_enemy, signals = ranger_sense(gc, unit, last_turn_battle_locs,
+                                                                                                            queued_paths, ranger_roles, map_loc, constants, direction_to_coord, precomputed_bfs)
         if visible_enemies:
             enemy_loc = closest_enemy.location.map_location()
             f_f_quad = (int(enemy_loc.x / 5), int(enemy_loc.y / 5))
@@ -74,9 +75,9 @@ def check_radius_squares_factories(gc, unit, radius=1):
 
 
 
-def ranger_sense(gc, unit, battle_locs, queued_paths, ranger_roles, location, constants):
+def ranger_sense(gc, unit, battle_locs, queued_paths, ranger_roles, location, constants, direction_to_coord, precomputed_bfs):
     if unit.id in ranger_roles["sniper"]:
-        return snipe_sense(gc, unit, battle_locs, queued_paths, location)
+        return snipe_sense(gc, unit, battle_locs, queued_paths, location, direction_to_coord, precomputed_bfs)
     signals = {}
     dir = None
     attack = None
@@ -117,7 +118,7 @@ def ranger_sense(gc, unit, battle_locs, queued_paths, ranger_roles, location, co
     else:
         # if there are no enemies in sight, check if there is an ongoing battle.  If so, go there.
         if len(battle_locs)>0:
-            dir, target= go_to_battle(gc, unit, battle_locs, constants.directions)
+            dir, target= go_to_battle(gc, unit, battle_locs, constants.directions, location, direction_to_coord, precomputed_bfs)
             #queued_paths[unit.id] = target
         else:
             #dir = move_away(gc, unit, battle_locs)
@@ -153,7 +154,7 @@ def snipe_priority(unit):
     else:
         return -1
 
-def snipe_sense(gc, unit, battle_locs, queued_paths, location):
+def snipe_sense(gc, unit, battle_locs, queued_paths, location, direction_to_coord, precomputed_bfs):
     signals = {}
     dir = None
     attack = None
@@ -207,11 +208,19 @@ def how_many_adjacent(gc, unit, directions):
             total+=1
     return total
 
-def go_to_battle(gc, unit, battle_locs, directions):
+def go_to_battle(gc, unit, battle_locs, directions, location, direction_to_coord, precomputed_bfs):
     # send a unit to battle
     weakest = random.choice(list(battle_locs.keys()))
     target = battle_locs[weakest][0]
-    return optimal_direction_towards(gc, unit, unit.location.map_location(), target, directions), target
+    start_coords = (location.x, location.y)
+    target_coords = (target.x, target.y)
+    shape = direction_to_coord[precomputed_bfs[(start_coords, target_coords)]]
+    options = sense_util.get_best_option(shape)
+    for option in options:
+        if gc.can_move(unit.id, option):
+            return option, target
+    return directions[8], target
+    #return optimal_direction_towards(gc, unit, unit.location.map_location(), target, directions), target
 
 def optimal_direction_towards(gc, unit, location, target, directions):
 
