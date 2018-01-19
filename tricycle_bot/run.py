@@ -57,7 +57,10 @@ blueprinting_assignment = {}
 current_worker_roles = {"miner":[],"builder":[],"blueprinter":[],"boarder":[], "repairer":[]}
 
 # KNIGHT
-knight_clusters = list()
+fighting_locations = {}
+assigned_knights = {}
+for loc in constants.init_enemy_locs: 
+    fighting_locations[(loc.x, loc.y)] = set()
 seen_knights_ids = set()
 knight_to_cluster = {} ## Remove knights not in cluster 
 KNIGHT_CLUSTER_MIN = 2
@@ -78,14 +81,8 @@ while True:
     last_turn_battle_locs = next_turn_battle_locs.copy()
     next_turn_battle_locs = {}
 
-    # #Update knight cluster min 
-    # my_knights = list(filter(lambda x: x.unit_type == bc.UnitType.Knight, gc.my_units()))
-    # if len(my_knights) > 25: 
-    #     KNIGHT_CLUSTER_MIN =8
-    # elif len(my_knights) > 15:
-    #     KNIGHT_CLUSTER_MIN = 5
-    # else: 
-    #     KNIGHT_CLUSTER_MIN = 2
+    knight.update_battles(gc, fighting_locations, assigned_knights, constants)
+    print('updated battle locs: ', fighting_locations)
 
     try:
         # walk through our units:
@@ -117,7 +114,7 @@ while True:
                     # use this to show where the error was
                     traceback.print_exc()
             elif unit.unit_type == bc.UnitType.Knight:
-                knight.timestep(gc,unit,info,knight_to_cluster,seen_knights_ids,last_turn_battle_locs,next_turn_battle_locs,KNIGHT_CLUSTER_MIN,constants)
+                knight.timestep(gc,unit,info,fighting_locations,assigned_knights,constants)
             elif unit.unit_type == bc.UnitType.Ranger:
                 ranger.timestep(gc,unit,info,last_turn_battle_locs, next_turn_battle_locs, queued_paths, ranger_roles, constants)
             elif unit.unit_type == bc.UnitType.Mage:
@@ -127,7 +124,7 @@ while True:
             elif unit.unit_type == bc.UnitType.Factory:
                 factory.timestep(gc,unit,info, building_assignment, last_turn_battle_locs, constants, mining_rate = 3*len(current_worker_roles["miner"]))
             elif unit.unit_type == bc.UnitType.Rocket:
-                print('hi')
+                # print('hi')
                 rocket.timestep(gc,unit,info, rocket_launch_times, rocket_landing_sites)
 
         ## Reset knight turn clusters

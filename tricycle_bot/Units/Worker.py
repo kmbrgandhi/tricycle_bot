@@ -634,10 +634,10 @@ def blueprint(gc,my_unit,blueprinting_queue,building_assignment,blueprinting_ass
 	# assign this unit to build a blueprint, if nothing to build just move away from other factories
 	if my_unit.id not in blueprinting_assignment:
 		building_in_progress_count = len(building_assignment.keys()) + len(blueprinting_assignment.keys())
-		print("blueprinting_assignment",blueprinting_assignment)
-		print("building_assignment",building_assignment)
-		print("building in progress cap",building_in_progress_count)
-		print("blueprint assignment threshold met?",len(blueprinting_queue) > 0 and building_in_progress_count < building_in_progress_cap(gc))
+		# print("blueprinting_assignment",blueprinting_assignment)
+		# print("building_assignment",building_assignment)
+		# print("building in progress cap",building_in_progress_count)
+		# print("blueprint assignment threshold met?",len(blueprinting_queue) > 0 and building_in_progress_count < building_in_progress_cap(gc))
 		if len(blueprinting_queue) > 0 and building_in_progress_count < building_in_progress_cap(gc):
 			closest_building_site = get_closest_site(gc,my_unit,blueprinting_queue)
 			update_blueprinting_queue(closest_building_site,blueprinting_queue)
@@ -660,8 +660,8 @@ def blueprint(gc,my_unit,blueprinting_queue,building_assignment,blueprinting_ass
 		#print(unit.id, "is in the building assignment")
 		assigned_site = blueprinting_assignment[my_unit.id]
 
-		if my_unit.id in blueprinting_assignment:
-			print("unit",my_unit.id,"blueprinting at",blueprinting_assignment[my_unit.id])
+		# if my_unit.id in blueprinting_assignment:
+		# 	print("unit",my_unit.id,"blueprinting at",blueprinting_assignment[my_unit.id])
 		#print(unit.id, "is assigned to building in", assigned_site.map_location)
 		direction_to_site = my_location.direction_to(assigned_site.map_location)
 
@@ -671,7 +671,7 @@ def blueprint(gc,my_unit,blueprinting_queue,building_assignment,blueprinting_ass
 				del blueprinting_assignment[my_unit.id]
 				current_roles["blueprinter"].remove(my_unit.id)
 				current_roles["builder"].append(my_unit.id)
-				print(my_unit.id, " just created a blueprint!")
+				# print(my_unit.id, " just created a blueprint!")
 			#else:
 			#print(unit.id, "can't build but is right next to assigned site")
 		elif my_location == assigned_site.map_location:
