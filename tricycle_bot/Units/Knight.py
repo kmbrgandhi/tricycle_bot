@@ -8,7 +8,7 @@ import Units.attack as attack
 
 order = [bc.UnitType.Worker, bc.UnitType.Knight, bc.UnitType.Ranger, bc.UnitType.Mage,
          bc.UnitType.Healer, bc.UnitType.Factory, bc.UnitType.Rocket]
-knight_unit_priority = [1, 0.5, 2, 0.5, 2, 2, 3]
+knight_unit_priority = [1, 2, 0.5, 0.5, 2, 3, 3]
 battle_radius = 9
 
 def timestep(gc, unit, composition, battle_locs, assigned_knights, constants):

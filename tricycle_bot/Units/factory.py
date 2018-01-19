@@ -10,7 +10,7 @@ def timestep(gc, unit,composition, building_assignments, battle_locs, constants,
 
 	curr_round = gc.round()
 
-	optimal_composition = [0, 0.9, 0, 0, 0.1] # optimal composition, order is Worker, Knight, Ranger, Mage, Healer
+	optimal_composition = [0, 0.8, 0, 0, 0.2] # optimal composition, order is Worker, Knight, Ranger, Mage, Healer
 
 	# should alter based on curr_round.  this is a temporary idea.
 	calculate = [max((optimal_composition[i]-composition[i]), 0) for i in range(len(optimal_composition))] #offset from optimal
