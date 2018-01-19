@@ -33,8 +33,8 @@ def timestep(gc, unit, info, karbonite_locations, blueprinting_queue, blueprinti
 			my_role = role
 	
 
-	print()
-	print("on unit #",unit.id, "position: ",unit.location.map_location(), "role: ",my_role)
+	# print()
+	# print("on unit #",unit.id, "position: ",unit.location.map_location(), "role: ",my_role)
 
 	#print("KARBONITE: ",gc.karbonite()
 	
@@ -159,9 +159,9 @@ def designate_roles(gc,blueprinting_queue,blueprinting_assignment,building_assig
 
 
 
-	print("blueprinting_assignment",blueprinting_assignment)
-	print("building_assignment",building_assignment)
-	print("blueprinting_queue",blueprinting_queue)
+	# print("blueprinting_assignment",blueprinting_assignment)
+	# print("building_assignment",building_assignment)
+	# print("blueprinting_queue",blueprinting_queue)
 
 	for worker in workers:
 
@@ -712,8 +712,8 @@ def blueprint(gc,my_unit,blueprinting_queue,building_assignment,blueprinting_ass
 
 	# if it finds a nice location for factory cluster, put it in queue	
 	if len(blueprinting_queue) < blueprinting_queue_limit(gc):
-		print("blueprinting_queue",blueprinting_queue)
-		print(is_valid_blueprint_location(gc,my_location,blueprinting_queue,blueprinting_assignment))
+		# print("blueprinting_queue",blueprinting_queue)
+		# print(is_valid_blueprint_location(gc,my_location,blueprinting_queue,blueprinting_assignment))
 		if is_valid_blueprint_location(gc,my_location,blueprinting_queue,blueprinting_assignment):	
 			if can_blueprint_rocket(gc,blueprinting_queue):
 				new_site = BuildSite(my_location,bc.UnitType.Rocket)
@@ -726,7 +726,7 @@ def blueprint(gc,my_unit,blueprinting_queue,building_assignment,blueprinting_ass
 
 	# assign this unit to build a blueprint, if nothing to build just move away from other factories
 	if my_unit.id not in blueprinting_assignment:
-		print(my_unit.id,"currently has no assigned site")
+		# print(my_unit.id,"currently has no assigned site")
 		current_roles["blueprinter"].remove(my_unit.id)
 		"""
 		all_buildings = []
