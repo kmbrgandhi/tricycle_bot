@@ -38,19 +38,16 @@ def heuristic(maploc1, maploc2):
 def coords(maploc):
     return (maploc.x, maploc.y)
 
-def precompute_earth(passable_locations_earth, width, height, direction_coords):
+def precompute_earth(passable_locations_earth, direction_coords, wavepoints):
     store_dict = {}
-    for x in range(width):
-        for y in range(height):
-            coordinates = (x, y)
-            if passable_locations_earth[coordinates]:
-                parent = bfs(coordinates, passable_locations_earth, direction_coords)
-                for dest_coords in parent:
-                    direction_tup = (-dest_coords[0]+parent[dest_coords][0], -dest_coords[1]+parent[dest_coords][1])
-                    store_dict[(dest_coords, coordinates)] = direction_coords[direction_tup]
+    for coordinates_fineness in wavepoints:
+        parent = bfs(wavepoints[coordinates_fineness], passable_locations_earth)
+        for dest_coords in parent:
+            direction_tup = (-dest_coords[0]+parent[dest_coords][0], -dest_coords[1]+parent[dest_coords][1])
+            store_dict[(dest_coords, coordinates_fineness)] = direction_coords[direction_tup]
     return store_dict
 
-def bfs(init_coords, passable_locations_earth, direction_coords):
+def bfs(init_coords, passable_locations_earth):
     init = init_coords
     q = collections.deque([init])
     parent = {}
@@ -58,6 +55,28 @@ def bfs(init_coords, passable_locations_earth, direction_coords):
         curr = q.popleft()
         for node in coord_neighbors(curr):
             if node not in parent and passable_locations_earth[node]:
+                q.append(node)
+                parent[node] = curr
+    return parent
+
+
+def precompute_mars(passable_locations_mars, direction_coords, wavepoints):
+    store_dict = {}
+    for coordinates_fineness in wavepoints:
+        parent = bfs_mars(wavepoints[coordinates_fineness], passable_locations_mars)
+        for dest_coords in parent:
+            direction_tup = (-dest_coords[0]+parent[dest_coords][0], -dest_coords[1]+parent[dest_coords][1])
+            store_dict[(dest_coords, coordinates_fineness)] = direction_coords[direction_tup]
+    return store_dict
+
+def bfs_mars(init_coords, passable_locations_mars):
+    init = init_coords
+    q = collections.deque([init])
+    parent = {}
+    while q:
+        curr = q.popleft()
+        for node in coord_neighbors(curr):
+            if node not in parent and node in passable_locations_mars:
                 q.append(node)
                 parent[node] = curr
     return parent

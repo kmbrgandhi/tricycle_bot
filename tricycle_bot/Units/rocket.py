@@ -6,7 +6,7 @@ import Units.explore as explore
 
 directions = list(bc.Direction)
 
-def timestep(gc, unit,composition, rocket_launch_times, rocket_launch_site):
+def timestep(gc, unit,composition, rocket_launch_times, rocket_launch_site, passable_locations_mars):
     
     # last check to make sure the right unit type is running this
     if unit.unit_type != bc.UnitType.Rocket:
@@ -20,7 +20,8 @@ def timestep(gc, unit,composition, rocket_launch_times, rocket_launch_site):
             time = compute_optimal_launch_time(gc, curr_round)[0]
             rocket_launch_times[unit.id] = time
             if unit.id not in rocket_launch_site:
-                rocket_launch_site[unit.id] = compute_optimal_landing_site(gc, curr_round, time, rocket_launch_site)
+                rocket_launch_site[unit.id] = explore.get_maploc(random.choice(list(passable_locations_mars.keys())))
+                #rocket_launch_site[unit.id] = compute_optimal_landing_site(gc, curr_round, time, rocket_launch_site)
 
         elif len(garrison)>5 and gc.round() == rocket_launch_times[unit.id] and gc.can_launch_rocket(unit.id, rocket_launch_site[unit.id]):
             gc.launch_rocket(unit.id, rocket_launch_site[unit.id])
