@@ -87,7 +87,8 @@ def designate_roles(gc,blueprinting_queue,blueprinting_assignment,building_assig
 	please_move = False	
 	workers = []
 	worker_id_list = []
-	start_map = gc.starting_map(bc.Planet.Earth)
+	planet = bc.Planet.Earth
+	start_map = gc.starting_map(planet)
 	my_units = gc.my_units()
 
 	for my_unit in my_units:
@@ -129,16 +130,16 @@ def designate_roles(gc,blueprinting_queue,blueprinting_assignment,building_assig
 		worker_location = worker.location.map_location()
 		# if it finds a nice location for building, put it in queue	
 		if len(blueprinting_queue) < blueprinting_queue_limit(gc):
-			print("blueprinting_queue",blueprinting_queue)
-			print(is_valid_blueprint_location(gc,worker_location,blueprinting_queue,blueprinting_assignment))
-			if is_valid_blueprint_location(gc,worker_location,blueprinting_queue,blueprinting_assignment):	
+			best_location_tuple = get_optimal_building_location(gc,start_map,worker_location,karbonite_locations,blueprinting_queue,blueprinting_assignment)
+			best_location = bc.MapLocation(planet,best_location_tuple[0],best_location_tuple[1])
+			if is_valid_blueprint_location(gc,start_map,worker_location,blueprinting_queue,blueprinting_assignment):	
 				if can_blueprint_rocket(gc,blueprinting_queue):
-					new_site = BuildSite(worker_location,bc.UnitType.Rocket)
+					new_site = BuildSite(best_location,bc.UnitType.Rocket)
 					blueprinting_queue.append(new_site)
 				elif can_blueprint_factory(gc,blueprinting_queue):
-					new_site = BuildSite(worker_location,bc.UnitType.Factory)
+					new_site = BuildSite(best_location,bc.UnitType.Factory)
 					blueprinting_queue.append(new_site)	
-					print(worker.id," just added to building queue",worker_location)
+					print(worker.id," just added to building queue",best_location)
 
 
 	closest_workers_to_blueprint = {} # dictionary mapping blueprint_id to a list of worker id sorted by distance to the blueprint
@@ -258,10 +259,8 @@ def designate_roles(gc,blueprinting_queue,blueprinting_assignment,building_assig
 		else:
 			new_role = "repairer"
 
-		print("before role update",current_roles)
 		current_roles[new_role].append(worker.id)
 
-		print("after role update",current_roles)
 		#print(new_role)
 
 def get_workers_per_building(gc,start_map,building_location):
@@ -594,7 +593,7 @@ def build(gc,my_unit,building_assignment,current_roles):
 
 
 
-def is_valid_blueprint_location(gc,location,blueprinting_queue,blueprinting_assignment):
+def is_valid_blueprint_location(gc,start_map,location,blueprinting_queue,blueprinting_assignment):
 	start_map = gc.starting_map(bc.Planet.Earth)
 	blueprint_spacing = 5
 	nearby = gc.sense_nearby_units(location,blueprint_spacing)
@@ -626,43 +625,43 @@ def is_valid_blueprint_location(gc,location,blueprinting_queue,blueprinting_assi
 	"""
 
 
-# generates locations to build factories that are arranged in clusters of 4 for space efficiency	
-def generate_building_locations(gc,start_map,center):
+# generates locations to build factories that are close to karbonite deposits	
+def get_optimal_building_location(gc,start_map,center,karbonite_locations,blueprinting_queue,blueprinting_assignment):
 	x = center.x
 	y = center.y
 	planet = center.planet
-	occupied_locations = []
 	potential_locations = []
+	karbonite_adjacent_locations = {}
 
-	for location in gc.all_locations_within(center,bc.UnitType.Worker.vision_range):
-		if is_valid_blueprint_location(gc,start_map,location):
-			potential_locations.append(location)
+	for location in gc.all_locations_within(center,50):
+		if is_valid_blueprint_location(gc,start_map,location,blueprinting_queue,blueprinting_assignment):
 
-	return potential_locations
+			loc_key = (location.x,location.y)
 
-	"""
-	x = center.x
-	y = center.y
-	planet = center.planet
-	biggest_cluster = []
-	relative_block_locations = [(0,1),(1,1),(1,0),(1,-1),(0,-1),(-1,-1),(-1,0),(-1,1)]
-	
-	if not is_valid_blueprint_location(start_map,center,locs_next_to_terrain):
-		return [] 
-	
-	for i in range(4):
-		cluster = [center]
-		for j in range(3):
-			d = relative_block_locations[(2*i + j) % 8]
-			block_location = bc.MapLocation(planet,x+d[0],y+d[1])
-			if is_valid_blueprint_location(start_map,block_location,locs_next_to_terrain):			
-				cluster.append(block_location)
-		if len(cluster) > len(biggest_cluster):
-			biggest_cluster = cluster
-	#print("center: ",center)
-	#print("BIGGEST CLUSTER",biggest_cluster)
-	return biggest_cluster
-	"""
+			if loc_key in karbonite_locations:
+				if karbonite_locations[loc_key] > 0:
+					continue
+
+			for adjacent_location in gc.all_locations_within(location,2):
+				if location == adjacent_location: continue
+
+				adj_key = (adjacent_location.x,adjacent_location.y)
+
+				if adj_key in karbonite_locations:
+					karbonite_value = karbonite_locations[adj_key]
+				else:
+					karbonite_value = 0
+
+				if adj_key not in karbonite_adjacent_locations:
+					karbonite_adjacent_locations[loc_key] = 0
+
+				if adj_key in karbonite_locations:
+					karbonite_adjacent_locations[loc_key] += karbonite_locations[adj_key]
+
+	if len(karbonite_adjacent_locations) == 0:
+		return None
+
+	return max(list(karbonite_adjacent_locations.keys()),key=lambda loc:karbonite_adjacent_locations[loc])
 
 
 # function to flexibly determine when a good time to expand factories
@@ -685,7 +684,7 @@ def can_blueprint_rocket(gc,blueprinting_queue):
 
 def blueprinting_queue_limit(gc):
 	start_map = gc.starting_map(bc.Planet(0))
-	return 2
+	return 1
 	return start_map.width * start_map.height / 100 
 
 def get_factory_limit(gc):
@@ -785,6 +784,9 @@ class BuildSite:
 		return self.building_type
 
 	def __str__(self):
+		return "{map_location : " + str(self.map_location) + ", building_type : " + str(self.building_type) + " }"
+
+	def __repr__(self):
 		return "{map_location : " + str(self.map_location) + ", building_type : " + str(self.building_type) + " }"
 
 	def __eq__(self,other):
