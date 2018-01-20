@@ -4,9 +4,12 @@ import sys
 import traceback
 import numpy as np
 import Units.sense_util as sense_util
+import Units.variables as variables
 
 
-def timestep(gc, unit,composition, building_assignments, battle_locs, constants, mining_rate = 0, current_production = 0, karbonite_lower_limit = 100):
+def timestep(gc, unit,composition, battle_locs, constants, mining_rate = 0, current_production = 0, karbonite_lower_limit = 100):
+
+	building_assignments = variables.building_assignment
 
 	curr_round = gc.round()
 	optimal_composition = [0, 0, 0.9, 0, 0.1] # optimal composition, order is Worker, Knight, Ranger, Mage, Healer
