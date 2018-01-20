@@ -9,7 +9,7 @@ import Units.Ranger as Ranger
 
 
 
-def timestep(gc, unit, info, karbonite_locations, blueprinting_queue, blueprinting_assignment, building_assignment, current_roles):
+def timestep(gc, unit, info, karbonite_locations, blueprinting_queue, blueprinting_assignment, building_assignment, current_roles, num_enemies):
 	#print(building_assignment)
 	# last check to make sure the right unit type is running this
 	if unit.unit_type != bc.UnitType.Worker:
@@ -39,7 +39,7 @@ def timestep(gc, unit, info, karbonite_locations, blueprinting_queue, blueprinti
 	#print("KARBONITE: ",gc.karbonite()
 	
 	current_num_workers = info[0]	
-	max_num_workers = get_replication_cap(gc,karbonite_locations)
+	max_num_workers = get_replication_cap(gc,karbonite_locations, info, num_enemies)
 	worker_spacing = 8
 	workers_per_building = 4
 
@@ -188,7 +188,7 @@ def designate_roles(gc,blueprinting_queue,blueprinting_assignment,building_assig
 				if num_open_slots_to_build > 0:
 					closest_worker_list = closest_workers_to_blueprint[building_id]
 					if worker.id in closest_worker_list[:num_open_slots_to_build]:
-						if my_role != "idle":
+						if my_role != "idle" and worker.id in current_roles[my_role]:
 							current_roles[my_role].remove(worker.id)
 						current_roles["builder"].append(worker.id)
 						building_assignment[building_id].append(worker.id)
@@ -201,8 +201,8 @@ def designate_roles(gc,blueprinting_queue,blueprinting_assignment,building_assig
 			if len(blueprinting_queue) > 0 and building_in_progress_count < building_in_progress_cap(gc):
 				for site in blueprinting_queue:
 					closest_worker_list = closest_workers_to_site[site]
-					if worker.id == closest_worker_list[0]:
-						if my_role != "idle":
+					if worker.id in closest_worker_list and worker.id == closest_worker_list[0]:
+						if my_role != "idle" and worker.id in current_roles[my_role]:
 							current_roles[my_role].remove(worker.id)
 						current_roles["blueprinter"].append(worker.id)
 						blueprinting_queue.remove(site)
@@ -317,9 +317,12 @@ def board(gc,my_unit,current_roles):
 		movement.try_move(gc,my_unit,direction_to_rocket)
 		
 	
-def get_replication_cap(gc,karbonite_locations):
+def get_replication_cap(gc,karbonite_locations, info, num_enemies):
 	#print("KARBONITE INFO LENGTH: ",len(karbonite_locations))
 	#print(len(karbonite_locations))
+	if num_enemies > 2*sum(info[1:4])/3:
+		print('replication cap yes')
+		return 3
 	return min(3 + float(500+gc.round())/7000 * len(karbonite_locations),15)
 
 def replicate(gc,unit):

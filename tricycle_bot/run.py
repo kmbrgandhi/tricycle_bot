@@ -78,6 +78,7 @@ passable_locations_earth = {}
 earth = bc.Planet.Earth
 earth_map = gc.starting_map(earth)
 
+
 for x in range(-1, earth_map.width+1):
     for y in range(-1, earth_map.height + 1):
         coords = (x, y)
@@ -100,6 +101,7 @@ print(earth_height)
 start_time = time.time()
 precomputed_bfs = explore.precompute_earth(passable_locations_earth, earth_width, earth_height, coord_to_direction)
 print(time.time()-start_time)
+attacker = set([bc.UnitType.Ranger, bc.UnitType.Knight, bc.UnitType.Mage])
 ##AI EXECUTION##
 while True:
     # We only support Python 3, which means brackets around print()
@@ -107,6 +109,10 @@ while True:
     last_turn_battle_locs = next_turn_battle_locs.copy()
     next_turn_battle_locs = {}
 
+    num_enemies = 0
+    for poss_enemy in gc.units():
+        if poss_enemy.team != gc.team() and poss_enemy.unit_type in attacker:
+            num_enemies += 1
     #Update knight cluster min
     """
     try: 
@@ -125,6 +131,7 @@ while True:
     try:
         # walk through our units:
         num_workers= num_knights=num_rangers= num_mages= num_healers= num_factory= num_rocket = 0
+        targeting_units = {}
         for unit in gc.my_units():
             if unit.unit_type == bc.UnitType.Worker:
                 num_workers+=1
@@ -146,7 +153,7 @@ while True:
             # resepective unit types execute their own AI
             if unit.unit_type == bc.UnitType.Worker:
                 try:
-                    worker.timestep(gc,unit,info,karbonite_locations,blueprinting_queue,blueprinting_assignment,building_assignment,current_worker_roles)
+                    worker.timestep(gc,unit,info,karbonite_locations,blueprinting_queue,blueprinting_assignment,building_assignment,current_worker_roles, num_enemies)
                 except Exception as e:
                     print('Error:', e)
                     # use this to show where the error was
@@ -154,7 +161,7 @@ while True:
             elif unit.unit_type == bc.UnitType.Knight:
                 knight.timestep(gc,unit,info,knight_to_cluster,seen_knights_ids, KNIGHT_CLUSTER_MIN, constants)
             elif unit.unit_type == bc.UnitType.Ranger:
-                ranger.timestep(gc,unit,info,last_turn_battle_locs, next_turn_battle_locs, queued_paths, ranger_roles, constants, direction_to_coord, precomputed_bfs)
+                ranger.timestep(gc,unit,info,last_turn_battle_locs, next_turn_battle_locs, queued_paths, ranger_roles, constants, direction_to_coord, precomputed_bfs, targeting_units)
             elif unit.unit_type == bc.UnitType.Mage:
                 mage.timestep(gc,unit,info,last_turn_battle_locs,next_turn_battle_locs, queued_paths)
             elif unit.unit_type == bc.UnitType.Healer:
