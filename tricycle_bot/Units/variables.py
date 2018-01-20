@@ -2,8 +2,22 @@ import battlecode as bc
 import random
 import sys
 import traceback
+import Units.map_info as map_info
 
 
+gc = bc.GameController()
+
+## GENERAL VARIABLES ##
+
+# map info
+karbonite_locations = map_info.get_initial_karbonite_locations(gc)
+locs_next_to_terrain = map_info.get_locations_next_to_terrain(gc,bc.Planet(0))
+earth_start_map = gc.starting_map(bc.Planet.Earth)
+mars_start_map = gc.starting_map(bc.Planet.Mars)
+
+
+num_enemies = 0
+info = []
 
 ## WORKER VARIABLES ##
 blueprinting_queue = []
@@ -11,11 +25,6 @@ building_assignment = {}
 blueprinting_assignment = {}
 
 current_worker_roles = {"miner":[],"builder":[],"blueprinter":[],"boarder":[], "repairer":[]}
-
-
-
-
-
 
 
 

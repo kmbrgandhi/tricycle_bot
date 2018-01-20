@@ -11,9 +11,8 @@ import Units.factory as factory
 import Units.rocket as rocket
 import Units.sense_util as sense_util
 import Units.explore as explore
-import Units.constants as c
+import Units.variables as variables
 import research
-import map_info
 import time
 import cProfile
 
@@ -22,7 +21,8 @@ print("pystarting")
 
 # A GameController is the main type that you talk to the game with.
 # Its constructor will connect to a running game.
-gc = bc.GameController()
+
+gc = variables.gc
 directions = bc.Direction
 
 
@@ -42,24 +42,15 @@ research.research_step(gc)
 
 # GENERAL
 queued_paths = {}
-karbonite_locations = map_info.get_initial_karbonite_locations(gc)
-locs_next_to_terrain = map_info.get_locations_next_to_terrain(gc,bc.Planet(0))
-start_map = gc.starting_map(bc.Planet(0))
+start_map = gc.starting_map(bc.Planet.Earth)
 # print('NEXT TO TERRAIN',locs_next_to_terrain)
 
-constants = c.Constants(list(bc.Direction), gc.team(), sense_util.enemy_team(gc), start_map, locs_next_to_terrain, karbonite_locations)
+constants = variables.Constants(list(bc.Direction), gc.team(), sense_util.enemy_team(gc), start_map, variables.locs_next_to_terrain, variables.karbonite_locations)
 
 #ROCKETS
 rocket_launch_times = {}
 rocket_landing_sites = {}
 rocket_locs = {}
-
-# WORKER
-blueprinting_queue = []
-building_assignment = {}
-blueprinting_assignment = {}
-
-current_worker_roles = {"miner":[],"builder":[],"blueprinter":[],"boarder":[], "repairer":[]}
 
 # KNIGHT
 fighting_locations = {}
@@ -188,16 +179,16 @@ while True:
     last_turn_battle_locs = next_turn_battle_locs.copy()
     next_turn_battle_locs = {}
 
-    num_enemies = 0
+    variables.num_enemies = 0
     for poss_enemy in gc.units():
         if poss_enemy.team != gc.team() and poss_enemy.unit_type in attacker:
-            num_enemies += 1
+            variables.num_enemies += 1
 
     knight.update_battles(gc, fighting_locations, assigned_knights, constants)
     print('updated battle locs: ', fighting_locations)
 
-    worker.designate_roles(gc,blueprinting_queue,blueprinting_assignment,building_assignment,current_worker_roles,karbonite_locations)
-    print("current worker roles: ",current_worker_roles)
+    worker.designate_roles(gc)
+    print("current worker roles: ", variables.current_worker_roles)
 
     try:
         # walk through our units:
@@ -218,13 +209,13 @@ while True:
                 num_factory+=1
             elif unit.unit_type == bc.UnitType.Rocket:
                 num_rocket+=1
-        info = [num_workers, num_knights, num_rangers, num_mages, num_healers, num_factory, num_rocket]
-
+        variables.info = [num_workers, num_knights, num_rangers, num_mages, num_healers, num_factory, num_rocket]
+        info = variables.info
         for unit in gc.my_units():
             # resepective unit types execute their own AI
             if unit.unit_type == bc.UnitType.Worker:
                 try:
-                    worker.timestep(gc,unit,info,karbonite_locations,blueprinting_queue,blueprinting_assignment,building_assignment,current_worker_roles, num_enemies)
+                    worker.timestep(gc,unit)
                 except Exception as e:
                     print('Error:', e)
                     # use this to show where the error was
