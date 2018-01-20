@@ -497,7 +497,7 @@ void bc_PlanetMap_initial_units_set(bc_PlanetMap* this, bc_VecUnit* initial_unit
 /// Validates the map and checks some invariants are followed.
 /// 
 ///  * InvalidMapObject - the planet map is invalid.
-void bc_PlanetMap_validate(bc_PlanetMap* this);
+uint8_t bc_PlanetMap_validate(bc_PlanetMap* this);
 /// Whether a location is on the map.
 uint8_t bc_PlanetMap_on_map(bc_PlanetMap* this, bc_MapLocation* location);
 /// 
@@ -552,7 +552,11 @@ bc_StartTurnMessage* new_bc_StartTurnMessage();
 /// 
 void delete_bc_StartTurnMessage(bc_StartTurnMessage* this);
 /// 
+int32_t bc_StartTurnMessage_time_left_ms_get(bc_StartTurnMessage* this);
+/// 
 uint32_t bc_StartTurnMessage_round_get(bc_StartTurnMessage* this);
+/// 
+void bc_StartTurnMessage_time_left_ms_set(bc_StartTurnMessage* this, int32_t time_left_ms);
 /// 
 void bc_StartTurnMessage_round_set(bc_StartTurnMessage* this, uint32_t round);
 /// Deserialize a StartTurnMessage from a JSON string
@@ -596,6 +600,38 @@ char* bc_ErrorMessage_to_json(bc_ErrorMessage* this);
 /// Create a human-readable representation of a ErrorMessage
 char* bc_ErrorMessage_debug(bc_ErrorMessage* this);
 /// 
+typedef struct bc_ReceivedMessaTurnMessage bc_ReceivedMessaTurnMessage;
+/// 
+bc_ReceivedMessaTurnMessage* new_bc_ReceivedMessaTurnMessage();
+/// 
+void delete_bc_ReceivedMessaTurnMessage(bc_ReceivedMessaTurnMessage* this);
+/// Deserialize a ReceivedMessaTurnMessage from a JSON string
+bc_ReceivedMessaTurnMessage* bc_ReceivedMessaTurnMessage_from_json(char* s);
+/// Serialize a ReceivedMessaTurnMessage to a JSON string
+char* bc_ReceivedMessaTurnMessage_to_json(bc_ReceivedMessaTurnMessage* this);
+/// Create a human-readable representation of a ReceivedMessaTurnMessage
+char* bc_ReceivedMessaTurnMessage_debug(bc_ReceivedMessaTurnMessage* this);
+/// 
+typedef struct bc_SentMessage bc_SentMessage;
+/// 
+bc_SentMessage* new_bc_SentMessage();
+/// 
+void delete_bc_SentMessage(bc_SentMessage* this);
+/// 
+char* bc_SentMessage_client_id_get(bc_SentMessage* this);
+/// 
+bc_TurnMessage* bc_SentMessage_turn_message_get(bc_SentMessage* this);
+/// 
+void bc_SentMessage_client_id_set(bc_SentMessage* this, char* client_id);
+/// 
+void bc_SentMessage_turn_message_set(bc_SentMessage* this, bc_TurnMessage* turn_message);
+/// Deserialize a SentMessage from a JSON string
+bc_SentMessage* bc_SentMessage_from_json(char* s);
+/// Serialize a SentMessage to a JSON string
+char* bc_SentMessage_to_json(bc_SentMessage* this);
+/// Create a human-readable representation of a SentMessage
+char* bc_SentMessage_debug(bc_SentMessage* this);
+/// 
 typedef struct bc_TurnApplication bc_TurnApplication;
 /// 
 bc_TurnApplication* new_bc_TurnApplication();
@@ -604,9 +640,13 @@ void delete_bc_TurnApplication(bc_TurnApplication* this);
 /// 
 bc_StartTurnMessage* bc_TurnApplication_start_turn_get(bc_TurnApplication* this);
 /// 
+int32_t bc_TurnApplication_start_turn_error_get(bc_TurnApplication* this);
+/// 
 bc_ViewerMessage* bc_TurnApplication_viewer_get(bc_TurnApplication* this);
 /// 
 void bc_TurnApplication_start_turn_set(bc_TurnApplication* this, bc_StartTurnMessage* start_turn);
+/// 
+void bc_TurnApplication_start_turn_error_set(bc_TurnApplication* this, int32_t start_turn_error);
 /// 
 void bc_TurnApplication_viewer_set(bc_TurnApplication* this, bc_ViewerMessage* viewer);
 /// 
@@ -656,7 +696,7 @@ void delete_bc_AsteroidPattern(bc_AsteroidPattern* this);
 /// Validates the asteroid pattern.
 /// 
 ///  * InvalidMapObject - the asteroid pattern is invalid.
-void bc_AsteroidPattern_validate(bc_AsteroidPattern* this);
+uint8_t bc_AsteroidPattern_validate(bc_AsteroidPattern* this);
 /// Whether there is an asteroid strike at the given round.
 uint8_t bc_AsteroidPattern_has_asteroid(bc_AsteroidPattern* this, uint32_t round);
 /// Get the asteroid strike at the given round.
@@ -694,7 +734,7 @@ void bc_OrbitPattern_center_set(bc_OrbitPattern* this, uint32_t center);
 /// Validates the orbit pattern.
 /// 
 ///  * InvalidMapObject - the orbit pattern is invalid.
-void bc_OrbitPattern_validate(bc_OrbitPattern* this);
+uint8_t bc_OrbitPattern_validate(bc_OrbitPattern* this);
 /// Get the duration of flight if the rocket were to take off from either planet on the given round.
 uint32_t bc_OrbitPattern_duration(bc_OrbitPattern* this, uint32_t round);
 /// Deserialize a OrbitPattern from a JSON string
@@ -833,6 +873,8 @@ bc_GameController* new_bc_GameController();
 void delete_bc_GameController(bc_GameController* this);
 /// Send the moves from the current turn and wait for the next turn.
 void bc_GameController_next_turn(bc_GameController* this);
+/// Get the time left at the start of this player's turn, in milliseconds.
+int32_t bc_GameController_get_time_left_ms(bc_GameController* this);
 /// The current round, starting at round 1 and up to ROUND_LIMIT rounds. A round consists of a turn from each team on each planet.
 uint32_t bc_GameController_round(bc_GameController* this);
 /// The current planet.
@@ -1138,9 +1180,9 @@ bc_GameController* bc_GameController_new_manager(bc_GameMap* map);
 /// 
 bc_StartGameMessage* bc_GameController_start_game(bc_GameController* this, bc_Player* player);
 /// 
-bc_TurnApplication* bc_GameController_apply_turn(bc_GameController* this, bc_TurnMessage* turn);
+bc_TurnApplication* bc_GameController_apply_turn(bc_GameController* this, bc_TurnMessage* turn, int32_t time_left_ms);
 /// 
-bc_InitialTurnApplication* bc_GameController_initial_start_turn_message(bc_GameController* this);
+bc_InitialTurnApplication* bc_GameController_initial_start_turn_message(bc_GameController* this, int32_t time_left_ms);
 /// 
 uint8_t bc_GameController_is_over(bc_GameController* this);
 /// 

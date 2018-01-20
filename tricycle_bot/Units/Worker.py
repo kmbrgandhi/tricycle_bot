@@ -9,7 +9,7 @@ import Units.Ranger as Ranger
 
 
 
-def timestep(gc, unit, info, karbonite_locations, blueprinting_queue, blueprinting_assignment, building_assignment, current_roles):
+def timestep(gc, unit, info, karbonite_locations, blueprinting_queue, blueprinting_assignment, building_assignment, current_roles, num_enemies):
 	#print(building_assignment)
 	# last check to make sure the right unit type is running this
 	if unit.unit_type != bc.UnitType.Worker:
@@ -33,13 +33,13 @@ def timestep(gc, unit, info, karbonite_locations, blueprinting_queue, blueprinti
 			my_role = role
 	
 
-	print()
-	print("on unit #",unit.id, "position: ",unit.location.map_location(), "role: ",my_role)
+	# print()
+	# print("on unit #",unit.id, "position: ",unit.location.map_location(), "role: ",my_role)
 
 	#print("KARBONITE: ",gc.karbonite()
 	
 	current_num_workers = info[0]	
-	max_num_workers = get_replication_cap(gc,karbonite_locations)
+	max_num_workers = get_replication_cap(gc,karbonite_locations, info, num_enemies)
 	worker_spacing = 8
 
 	#print("REPLICATION CAP: ",max_num_workers)
@@ -176,9 +176,9 @@ def designate_roles(gc,blueprinting_queue,blueprinting_assignment,building_assig
 		closest_workers_to_site[assigned_blueprinting_site] = closest_worker_ids
 
 
-	print("blueprinting_assignment",blueprinting_assignment)
-	print("building_assignment",building_assignment)
-	print("blueprinting_queue",blueprinting_queue)
+	# print("blueprinting_assignment",blueprinting_assignment)
+	# print("building_assignment",building_assignment)
+	# print("blueprinting_queue",blueprinting_queue)
 
 
 	######################
@@ -212,7 +212,7 @@ def designate_roles(gc,blueprinting_queue,blueprinting_assignment,building_assig
 				if num_open_slots_to_build > 0:
 					closest_worker_list = closest_workers_to_blueprint[building_id]
 					if worker.id in closest_worker_list[:num_open_slots_to_build]:
-						if my_role != "idle":
+						if my_role != "idle" and worker.id in current_roles[my_role]:
 							current_roles[my_role].remove(worker.id)
 						current_roles["builder"].append(worker.id)
 						building_assignment[building_id].append(worker.id)
@@ -226,8 +226,8 @@ def designate_roles(gc,blueprinting_queue,blueprinting_assignment,building_assig
 			if len(blueprinting_queue) > 0 and building_in_progress_count < building_in_progress_cap(gc):
 				for site in blueprinting_queue:
 					closest_worker_list = closest_workers_to_site[site]
-					if worker.id == closest_worker_list[0]:
-						if my_role != "idle":
+					if worker.id in closest_worker_list and worker.id == closest_worker_list[0]:
+						if my_role != "idle" and worker.id in current_roles[my_role]:
 							current_roles[my_role].remove(worker.id)
 						current_roles["blueprinter"].append(worker.id)
 						blueprinting_queue.remove(site)
@@ -352,9 +352,12 @@ def board(gc,my_unit,current_roles):
 		movement.try_move(gc,my_unit,direction_to_rocket)
 		
 	
-def get_replication_cap(gc,karbonite_locations):
+def get_replication_cap(gc,karbonite_locations, info, num_enemies):
 	#print("KARBONITE INFO LENGTH: ",len(karbonite_locations))
 	#print(len(karbonite_locations))
+	if num_enemies > 2*sum(info[1:4])/3:
+		print('replication cap yes')
+		return 3
 	return min(3 + float(500+gc.round())/7000 * len(karbonite_locations),15)
 
 def replicate(gc,unit):
@@ -722,10 +725,9 @@ def blueprint(gc,my_unit,blueprinting_queue,building_assignment,blueprinting_ass
 	is_nearby_building = False
 	is_nearby_potential_buildings = False
 
-
 	# assign this unit to build a blueprint, if nothing to build just move away from other factories
 	if my_unit.id not in blueprinting_assignment:
-		print(my_unit.id,"currently has no assigned site")
+		# print(my_unit.id,"currently has no assigned site")
 		current_roles["blueprinter"].remove(my_unit.id)
 		"""
 		all_buildings = []
@@ -744,8 +746,8 @@ def blueprint(gc,my_unit,blueprinting_queue,building_assignment,blueprinting_ass
 	if my_unit.id in blueprinting_assignment:
 		assigned_site = blueprinting_assignment[my_unit.id]
 
-		if my_unit.id in blueprinting_assignment:
-			print("unit",my_unit.id,"blueprinting at",blueprinting_assignment[my_unit.id])
+		# if my_unit.id in blueprinting_assignment:
+		# 	print("unit",my_unit.id,"blueprinting at",blueprinting_assignment[my_unit.id])
 		#print(unit.id, "is assigned to building in", assigned_site.map_location)
 		direction_to_site = my_location.direction_to(assigned_site.map_location)
 
@@ -755,7 +757,7 @@ def blueprint(gc,my_unit,blueprinting_queue,building_assignment,blueprinting_ass
 				del blueprinting_assignment[my_unit.id]
 				current_roles["blueprinter"].remove(my_unit.id)
 				current_roles["builder"].append(my_unit.id)
-				print(my_unit.id, " just created a blueprint!")
+				# print(my_unit.id, " just created a blueprint!")
 			#else:
 			#print(unit.id, "can't build but is right next to assigned site")
 		elif my_location == assigned_site.map_location:

@@ -61,7 +61,10 @@ blueprinting_assignment = {}
 current_worker_roles = {"miner":[],"builder":[],"blueprinter":[],"boarder":[], "repairer":[]}
 
 # KNIGHT
-knight_clusters = list()
+fighting_locations = {}
+assigned_knights = {}
+for loc in constants.init_enemy_locs: 
+    fighting_locations[(loc.x, loc.y)] = set()
 seen_knights_ids = set()
 knight_to_cluster = {} ## Remove knights not in cluster 
 KNIGHT_CLUSTER_MIN = 2
@@ -77,6 +80,7 @@ next_turn_battle_locs = {}
 passable_locations_earth = {}
 earth = bc.Planet.Earth
 earth_map = gc.starting_map(earth)
+
 
 for x in range(-1, earth_map.width+1):
     for y in range(-1, earth_map.height + 1):
@@ -100,6 +104,7 @@ print(earth_height)
 start_time = time.time()
 precomputed_bfs = explore.precompute_earth(passable_locations_earth, earth_width, earth_height, coord_to_direction)
 print(time.time()-start_time)
+attacker = set([bc.UnitType.Ranger, bc.UnitType.Knight, bc.UnitType.Mage])
 ##AI EXECUTION##
 while True:
     # We only support Python 3, which means brackets around print()
@@ -107,24 +112,21 @@ while True:
     last_turn_battle_locs = next_turn_battle_locs.copy()
     next_turn_battle_locs = {}
 
-    #Update knight cluster min
-    """
-    try: 
-        my_knights = list(filter(lambda x: x.unit_type == bc.UnitType.Knight, gc.my_units()))
-        if len(my_knights) > 25: 
-            KNIGHT_CLUSTER_MIN =8
-        elif len(my_knights) > 15:
-            KNIGHT_CLUSTER_MIN = 5
-        else: 
-            KNIGHT_CLUSTER_MIN = 2
-    except: 
-        pass
-    """
+    num_enemies = 0
+    for poss_enemy in gc.units():
+        if poss_enemy.team != gc.team() and poss_enemy.unit_type in attacker:
+            num_enemies += 1
+
+    knight.update_battles(gc, fighting_locations, assigned_knights, constants)
+    print('updated battle locs: ', fighting_locations)
+
     worker.designate_roles(gc,blueprinting_queue,blueprinting_assignment,building_assignment,current_worker_roles,karbonite_locations)
     print("current worker roles: ",current_worker_roles)
+
     try:
         # walk through our units:
         num_workers= num_knights=num_rangers= num_mages= num_healers= num_factory= num_rocket = 0
+        targeting_units = {}
         for unit in gc.my_units():
             if unit.unit_type == bc.UnitType.Worker:
                 num_workers+=1
@@ -146,23 +148,23 @@ while True:
             # resepective unit types execute their own AI
             if unit.unit_type == bc.UnitType.Worker:
                 try:
-                    worker.timestep(gc,unit,info,karbonite_locations,blueprinting_queue,blueprinting_assignment,building_assignment,current_worker_roles)
+                    worker.timestep(gc,unit,info,karbonite_locations,blueprinting_queue,blueprinting_assignment,building_assignment,current_worker_roles, num_enemies)
                 except Exception as e:
                     print('Error:', e)
                     # use this to show where the error was
                     traceback.print_exc()
             elif unit.unit_type == bc.UnitType.Knight:
-                knight.timestep(gc,unit,info,knight_to_cluster,seen_knights_ids, KNIGHT_CLUSTER_MIN, constants)
+                knight.timestep(gc,unit,info,fighting_locations,assigned_knights,constants)
             elif unit.unit_type == bc.UnitType.Ranger:
-                ranger.timestep(gc,unit,info,last_turn_battle_locs, next_turn_battle_locs, queued_paths, ranger_roles, constants, direction_to_coord, precomputed_bfs)
+                ranger.timestep(gc,unit,info,last_turn_battle_locs, next_turn_battle_locs, queued_paths, ranger_roles, constants, direction_to_coord, precomputed_bfs, targeting_units)
             elif unit.unit_type == bc.UnitType.Mage:
                 mage.timestep(gc,unit,info,last_turn_battle_locs,next_turn_battle_locs, queued_paths)
             elif unit.unit_type == bc.UnitType.Healer:
-                healer.timestep(gc,unit,info,last_turn_battle_locs,constants)
+                healer.timestep(gc,unit,info,fighting_locations,constants)
             elif unit.unit_type == bc.UnitType.Factory:
                 factory.timestep(gc,unit,info, building_assignment, last_turn_battle_locs, constants, mining_rate = 3*len(current_worker_roles["miner"]))
             elif unit.unit_type == bc.UnitType.Rocket:
-                print('hi')
+                # print('hi')
                 rocket.timestep(gc,unit,info, rocket_launch_times, rocket_landing_sites)
 
         ## Reset knight turn clusters

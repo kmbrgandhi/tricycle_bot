@@ -4,3 +4,6 @@
 #Others
 *.bc18
 working_dir
+replay*
+viewer_latest*
+viewer_currentInstall.json

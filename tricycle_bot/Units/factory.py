@@ -9,7 +9,7 @@ import Units.sense_util as sense_util
 def timestep(gc, unit,composition, building_assignments, battle_locs, constants, mining_rate = 0, current_production = 0, karbonite_lower_limit = 100):
 
 	curr_round = gc.round()
-	optimal_composition = [0, 0, 0.8, 0, 0.2] # optimal composition, order is Worker, Knight, Ranger, Mage, Healer
+	optimal_composition = [0, 0, 0.9, 0, 0.1] # optimal composition, order is Worker, Knight, Ranger, Mage, Healer
 
 	# should alter based on curr_round.  this is a temporary idea.
 	calculate = [max((optimal_composition[i]-composition[i]), 0) for i in range(len(optimal_composition))] #offset from optimal
@@ -24,7 +24,7 @@ def timestep(gc, unit,composition, building_assignments, battle_locs, constants,
 		if optimal_unload_dir is not None:
 			gc.unload(unit.id, optimal_unload_dir)
 
-	if gc.can_produce_robot(unit.id, bc.UnitType.Worker): #and should_produce_robot(gc, mining_rate, current_production, karbonite_lower_limit): # otherwise produce a unit, based on most_off_optimal
+	if gc.can_produce_robot(unit.id, bc.UnitType.Ranger): #and should_produce_robot(gc, mining_rate, current_production, karbonite_lower_limit): # otherwise produce a unit, based on most_off_optimal
 		best = None
 		most = -float('inf')
 		tiebreaker = -float('inf')
