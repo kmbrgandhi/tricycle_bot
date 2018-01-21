@@ -9,7 +9,7 @@ import numpy as np
 
 battle_radius = 9
 
-def timestep(unit, composition):
+def timestep(unit, composition, direction_to_coord, precomputed_bfs, bfs_fineness):
 
     # last check to make sure the right unit type is running this
     if unit.unit_type != bc.UnitType.Healer:
@@ -52,7 +52,7 @@ def timestep(unit, composition):
         if best_dir is not None and gc.is_move_ready(unit.id): 
             gc.move_robot(unit.id, best_dir)
         elif best_dir is None and best_loc is not None and gc.is_move_ready(unit.id):
-            best_dir = get_best_direction(gc, unit.id, unit_loc, best_loc)
+            best_dir = get_best_direction(gc, unit.id, unit_loc, best_loc, direction_to_coord, precomputed_bfs, bfs_fineness)
             if best_dir is not None: 
                 gc.move_robot(unit.id, best_dir)
 
@@ -99,18 +99,28 @@ def calculate_location_coefficient(gc, distance, units):
 
     return dist_coeff + health_coeff
 
-def get_best_direction(gc, unit_id, unit_loc, target_loc):
-    ideal_dir = unit_loc.direction_to(target_loc)
-
-    if gc.can_move(unit_id, ideal_dir): 
-        return ideal_dir
-    else:
-        shape = [target_loc.x - unit_loc.x, target_loc.y - unit_loc.y]
-        directions = sense_util.get_best_option(shape)
-        for d in directions: 
-            if gc.can_move(unit_id, d): 
-                return d
+def get_best_direction(gc, unit_id, unit_loc, target_loc, direction_to_coord, precomputed_bfs, bfs_fineness):
+    start_coords = (unit_loc.x, unit_loc.y)
+    target_coords_thirds = (int(target_loc.x/bfs_fineness), int(target_loc.y/bfs_fineness))
+    shape = direction_to_coord[precomputed_bfs[(start_coords, target_coords_thirds)]]
+    options = sense_util.get_best_option(shape)
+    for option in options: 
+        if gc.can_move(unit_id, option):
+            return option 
     return None
+
+# def get_best_direction(gc, unit_id, unit_loc, target_loc):
+#     ideal_dir = unit_loc.direction_to(target_loc)
+
+#     if gc.can_move(unit_id, ideal_dir): 
+#         return ideal_dir
+#     else:
+#         shape = [target_loc.x - unit_loc.x, target_loc.y - unit_loc.y]
+#         directions = sense_util.get_best_option(shape)
+#         for d in directions: 
+#             if gc.can_move(unit_id, d): 
+#                 return d
+#     return None
 
 def get_best_target(gc, unit, unit_loc, my_team):
     ## Attempt to heal nearby units
