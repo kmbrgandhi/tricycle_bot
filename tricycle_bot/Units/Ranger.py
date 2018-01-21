@@ -28,7 +28,7 @@ def timestep(unit):
         #if info[6]>0 and len(ranger_roles["go_to_mars"]) < 5*info[6]:
         #    ranger_roles["go_to_mars"].append(unit.id)
         if len(ranger_roles["fighter"]) > c * len(ranger_roles["sniper"]) and gc.research_info().get_level(
-            bc.UnitType.Ranger) == 3:
+            bc.UnitType.Ranger) == 3 and False:
             ranger_roles["sniper"].append(unit.id)
         else:
             ranger_roles["fighter"].append(unit.id)

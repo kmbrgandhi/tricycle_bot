@@ -103,7 +103,15 @@ while True:
             elif unit.unit_type == unit_types["knight"]:
                 knight.timestep(unit)
             elif unit.unit_type == unit_types["ranger"]:
-                ranger.timestep(unit)
+                try:
+                    ranger.timestep(unit)
+                except:
+                    if ranger in variables.ranger_roles["go_to_mars"]:
+                        variables.ranger_roles["go_to_mars"].remove(ranger)
+                    elif ranger in variables.ranger_roles["fighter"]:
+                        variables.ranger_roles["fighter"].remove(ranger)
+                    elif ranger in variables.ranger_roles["sniper"]:
+                        variables.ranger_roles["sniper"].remove(ranger)
             elif unit.unit_type == unit_types["mage"]:
                 mage.timestep(unit)
             elif unit.unit_type == unit_types["healer"]:

@@ -732,11 +732,13 @@ def get_optimal_building_location(gc,start_map,center,karbonite_locations,bluepr
 
 # function to flexibly determine when a good time to expand factories
 def can_blueprint_factory(gc,factory_count):
+	if gc.round()>250 and variables.num_enemies<5:
+		return False
 	return factory_count < get_factory_limit()
 
 def can_blueprint_rocket(gc,rocket_count):
-	if variables.research.get_level(variables.unit_types["rocket"]) > 0:
-		if gc.round() > 150 and variables.num_enemies < 10:
+	if variables.num_passable_locations_mars>0 and variables.research.get_level(variables.unit_types["rocket"]) > 0:
+		if gc.round() > 180:
 			return True
 
 	return False

@@ -102,6 +102,8 @@ for x in range(mars_width):
         if mars_map.is_passable_terrain_at(bc.MapLocation(mars, x, y)):
             passable_locations_mars[coords] = True
 
+num_passable_locations_mars = len(passable_locations_mars)
+
 if curr_planet == bc.Planet.Earth:
     passable_locations_earth = {}
 

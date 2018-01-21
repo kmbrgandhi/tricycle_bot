@@ -14,7 +14,7 @@ def timestep(unit):
     curr_round = variable.gc.round()
     garrison = unit.structure_garrison()
     gc = variable.gc
-    if variable.curr_planet == bc.Planet.Earth:
+    if variable.curr_planet == bc.Planet.Earth and unit.structure_is_built():
         if unit.id not in variable.rocket_locs:
             variable.rocket_locs[unit.id] = unit.location.map_location()
         if unit.id not in variable.rocket_launch_times or curr_round > variable.rocket_launch_times[unit.id]:
@@ -34,7 +34,7 @@ def timestep(unit):
             near = curr_loc.add(dir)
             if gc.has_unit_at_location(near):
                 nearby_unit = gc.sense_unit_at_location(near)
-                if gc.can_load(unit.id, nearby_unit.id):
+                if nearby_unit.unit_type!=variable.unit_types["factory"] and nearby_unit.unit_type!=variable.unit_types["rocket"] and gc.can_load(unit.id, nearby_unit.id):
                     gc.load(unit.id, nearby_unit.id)
                     break
 
