@@ -8,6 +8,10 @@ import Units.sense_util as sense_util
 
 gc = bc.GameController()
 
+## CONSTANTS ##
+directions = list(bc.Direction)
+
+
 ## GENERAL VARIABLES ##
 
 # map info

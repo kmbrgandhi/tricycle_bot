@@ -41,145 +41,31 @@ research.research_step(gc)
 ##SHARED TEAM INFORMATION##
 
 # GENERAL
-queued_paths = {}
-start_map = gc.starting_map(bc.Planet.Earth)
 # print('NEXT TO TERRAIN',locs_next_to_terrain)
 
 # constants = variables.Constants(list(bc.Direction), gc.team(), sense_util.enemy_team(gc), start_map, variables.locs_next_to_terrain, variables.karbonite_locations)
 
-#ROCKETS
-rocket_launch_times = {}
-rocket_landing_sites = {}
-rocket_locs = {}
-
-# RANGER
-ranger_roles = {"fighter":[],"sniper":[], "go_to_mars":[]}
-ranger_to_cluster = {}
-ranger_clusters = set()
-
-#FIGHTERS
-last_turn_battle_locs = {}
-next_turn_battle_locs = {}
-
-passable_locations_mars = {}
-
-mars = bc.Planet.Mars
-mars_map = gc.starting_map(mars)
-mars_width = mars_map.width
-mars_height = mars_map.height
-
-for x in range(mars_width):
-    for y in range(mars_height):
-        coords = (x, y)
-        if mars_map.is_passable_terrain_at(bc.MapLocation(mars, x, y)):
-            passable_locations_mars[coords] = True
-
-if gc.planet() == bc.Planet.Earth:
-    passable_locations_earth = {}
-
-    earth = bc.Planet.Earth
-    earth_map = gc.starting_map(earth)
-    earth_width = earth_map.width
-    earth_height = earth_map.height
-
-    for x in range(-1, earth_width+1):
-        for y in range(-1, earth_height+1):
-            coords = (x, y)
-            if x==-1 or y==-1 or x == earth_map.width or y== earth_map.height:
-                passable_locations_earth[coords]= False
-            elif earth_map.is_passable_terrain_at(bc.MapLocation(earth, x, y)):
-                passable_locations_earth[coords] = True
-            else:
-                passable_locations_earth[coords]= False
-
-    bfs_fineness = max(int(((earth_width * earth_height)**0.5)/10), 2)
-    wavepoints = {}
-    if earth_width%bfs_fineness==0:
-        upper_width = int(earth_width/bfs_fineness)
-    else:
-        upper_width = int(earth_width/bfs_fineness)+1
-
-    if earth_height%3==0:
-        upper_height = int(earth_height/bfs_fineness)
-    else:
-        upper_height = int(earth_height/bfs_fineness)+1
-
-
-    for x_th in range(0, upper_width):
-        for y_th in range(0, upper_height):
-            lower_limit_x = x_th*bfs_fineness
-            lower_limit_y = y_th*bfs_fineness
-            possibs = [(lower_limit_x+i, lower_limit_y+j) for i in range(0, bfs_fineness) for j in range(0, bfs_fineness)]
-            actual = None
-            for possib in possibs:
-                if possib in passable_locations_earth and passable_locations_earth[possib]:
-                    actual = possib
-                    break
-            if actual is not None:
-                wavepoints[(x_th, y_th)] = actual
-
-
-    print('BFS fineness:', bfs_fineness)
-    print(earth_width)
-    print(earth_height)
-    start_time = time.time()
-    precomputed_bfs = explore.precompute_earth(passable_locations_earth, coord_to_direction, wavepoints)
-    print(time.time()-start_time)
-else:
-    bfs_fineness = max(int(((mars_width * mars_height) ** 0.5) / 10), 2) + 1
-    wavepoints = {}
-    if mars_width % bfs_fineness == 0:
-        upper_width = int(mars_width / bfs_fineness)
-    else:
-        upper_width = int(mars_width / bfs_fineness) + 1
-
-    if mars_height % 3 == 0:
-        upper_height = int(mars_height / bfs_fineness)
-    else:
-        upper_height = int(mars_height / bfs_fineness) + 1
-
-    for x_th in range(0, upper_width):
-        for y_th in range(0, upper_height):
-            lower_limit_x = x_th * bfs_fineness
-            lower_limit_y = y_th * bfs_fineness
-            possibs = [(lower_limit_x + i, lower_limit_y + j) for i in range(0, bfs_fineness) for j in
-                       range(0, bfs_fineness)]
-            actual = None
-            for possib in possibs:
-                if possib in passable_locations_mars and passable_locations_mars[possib]:
-                    actual = possib
-                    break
-            if actual is not None:
-                wavepoints[(x_th, y_th)] = actual
-
-    print('BFS fineness:', bfs_fineness)
-    start_time = time.time()
-    precomputed_bfs = explore.precompute_mars(passable_locations_mars, coord_to_direction, wavepoints)
-    print(time.time() - start_time)
-
-attacker = set([bc.UnitType.Ranger, bc.UnitType.Knight, bc.UnitType.Mage])
 ##AI EXECUTION##
 while True:
     # We only support Python 3, which means brackets around print()
     print('PYROUND:', gc.round())
-    last_turn_battle_locs = next_turn_battle_locs.copy()
-    next_turn_battle_locs = {}
+    variables.last_turn_battle_locs = variables.next_turn_battle_locs.copy()
+    variables.next_turn_battle_locs = {}
 
     variables.num_enemies = 0
     for poss_enemy in gc.units():
-        if poss_enemy.team != gc.team() and poss_enemy.unit_type in attacker:
+        if poss_enemy.team != variables.my_team and poss_enemy.unit_type in variables.attacker:
             variables.num_enemies += 1
 
     knight.update_battles()
     #print('updated battle locs: ', fighting_locations)
-
-    worker.designate_roles(gc)
+    worker.designate_roles()
     #print("current worker roles: ", variables.current_worker_roles)
 
     try:
         # walk through our units:
         num_workers= num_knights=num_rangers= num_mages= num_healers= num_factory= num_rocket = 0
-        targeting_units = {}
+        variables.targeting_units = {}
         for unit in gc.my_units():
             if unit.unit_type == bc.UnitType.Worker:
                 num_workers+=1
@@ -201,24 +87,24 @@ while True:
             # respective unit types execute their own AI
             if unit.unit_type == bc.UnitType.Worker:
                 try:
-                    worker.timestep(gc,unit)
+                    worker.timestep(unit)
                 except Exception as e:
                     print('Error:', e)
                     # use this to show where the error was
                     traceback.print_exc()
             elif unit.unit_type == bc.UnitType.Knight:
-                knight.timestep(unit,info,direction_to_coord, precomputed_bfs, bfs_fineness)
+                knight.timestep(unit,info)
             elif unit.unit_type == bc.UnitType.Ranger:
-                ranger.timestep(gc,unit,info,last_turn_battle_locs, next_turn_battle_locs, queued_paths, ranger_roles, constants, direction_to_coord, precomputed_bfs, targeting_units, bfs_fineness, rocket_locs)
+                ranger.timestep(unit)
             elif unit.unit_type == bc.UnitType.Mage:
-                mage.timestep(gc,unit,info,last_turn_battle_locs,next_turn_battle_locs, queued_paths)
+                mage.timestep(unit)
             elif unit.unit_type == bc.UnitType.Healer:
-                healer.timestep(unit,info,direction_to_coord, precomputed_bfs, bfs_fineness)
+                healer.timestep(unit)
             elif unit.unit_type == bc.UnitType.Factory:
-                factory.timestep(gc,unit,info, last_turn_battle_locs, mining_rate = 3*len(variables.current_worker_roles["miner"]))
+                factory.timestep(unit)
             elif unit.unit_type == bc.UnitType.Rocket:
                 # print('hi')
-                rocket.timestep(gc,unit,info, rocket_launch_times, rocket_landing_sites, passable_locations_mars, rocket_locs)
+                rocket.timestep(unit)
 
         ## Reset knight turn clusters
         seen_knights_ids = set()
