@@ -25,8 +25,8 @@ curr_planet = gc.planet()
 curr_map = gc.starting_map(curr_planet)
 earth_start_map = gc.starting_map(bc.Planet.Earth)
 mars_start_map = gc.starting_map(bc.Planet.Mars)
-earth_diagonal = (earth_start_map.height**2 + earth_start_map.width**2)**0.5
-mars_diagonal = (mars_start_map.height**2 + mars_start_map.width**2)**0.5
+earth_diagonal = (earth_start_map.height**2 + earth_start_map.width**2)
+mars_diagonal = (mars_start_map.height**2 + mars_start_map.width**2)
 my_team = gc.team()
 enemy_team = sense_util.enemy_team(gc)
 
@@ -46,9 +46,11 @@ current_worker_roles = {"miner":[],"builder":[],"blueprinter":[],"boarder":[], "
 earth_battles = {}
 mars_battles = {}
 assigned_knights = {}
+init_enemy_locs = []
 for unit in earth_start_map.initial_units: 
     if unit.team == enemy_team:
         loc = unit.location.map_location()
+        init_enemy_locs.append(loc)
         earth_battles[(loc.x,loc.y)] = clusters.Cluster(allies=set(),enemies=set([unit.id]))
 
 #ROCKETS

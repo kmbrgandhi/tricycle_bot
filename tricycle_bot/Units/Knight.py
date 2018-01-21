@@ -21,10 +21,10 @@ def timestep(unit):
     gc = variables.gc
     planet = gc.planet()
     if planet == bc.Planet.Earth: 
-        battle_locs = variables.earth_battle_locs
+        battle_locs = variables.earth_battles
         diagonal = variables.earth_diagonal
     else: 
-        battle_locs = variables.mars_battle_locs
+        battle_locs = variables.mars_battles
         diagonal = variables.mars_diagonal
 
     assigned_knights = variables.assigned_knights
@@ -88,7 +88,7 @@ def get_best_location(gc, unit, unit_loc, battle_locs, planet, diagonal):
     Chooses the battle location this knight should aim for
     """
     most_urgent = None
-    most_urgent_coeff = 0 ## 0 - 5
+    most_urgent_coeff = -1 ## 0 - 5
 
     for loc in battle_locs: 
         map_loc = bc.MapLocation(planet,loc[0],loc[1])
@@ -141,9 +141,12 @@ def update_battles():
     """
     Remove locations & units that aren't valid anymore.
     """
-
     gc = variables.gc
-    battle_locs = variables.battle_locations
+    planet = gc.planet()
+    if planet == bc.Planet.Earth: 
+        battle_locs = variables.earth_battles
+    else: 
+        battle_locs = variables.mars_battles
     assigned_knights = variables.assigned_knights
     
     enemy_team = variables.enemy_team
@@ -174,4 +177,5 @@ def update_battles():
         knight_id, loc_coords = elem
         battle_locs[loc_coords].remove_ally(knight_id)
         del assigned_knights[knight_id]
+
 

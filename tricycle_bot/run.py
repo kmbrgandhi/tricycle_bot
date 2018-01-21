@@ -57,7 +57,7 @@ while True:
             variables.num_enemies += 1
 
     knight.update_battles()
-    #print('updated battle locs: ', fighting_locations)
+    print('updated battle locs: ', variables.earth_battles)
     worker.designate_roles()
     #print("current worker roles: ", variables.current_worker_roles)
 

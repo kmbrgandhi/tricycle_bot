@@ -24,12 +24,12 @@ def timestep(unit):
 	num_enemies = variables.num_enemies
 
 	planet = gc.planet()
-    if planet == bc.Planet.Earth: 
-        battle_locs = variables.earth_battle_locs
-        diagonal = variables.earth_diagonal
-    else: 
-        battle_locs = variables.mars_battle_locs
-        diagonal = variables.mars_diagonal
+	if planet == bc.Planet.Earth: 
+		battle_locs = variables.earth_battles
+		diagonal = variables.earth_diagonal
+	else: 
+		battle_locs = variables.mars_battles
+		diagonal = variables.mars_diagonal
 
 	earth_start_map = variables.earth_start_map
 
@@ -509,7 +509,7 @@ def mine(gc,my_unit,start_map,karbonite_locations,current_roles, building_assign
 			enemy_loc = unit.location.map_location()
 			add_loc = evaluate_battle_location(gc, enemy_loc, battle_locs)
 			if add_loc:
-				battle_locs[(enemy_loc.x, enemy_loc.y)] = set()
+				battle_locs[(enemy_loc.x, enemy_loc.y)] = clusters.Cluster(allies=set(),enemies=set([unit.id]))
 			if unit.unit_type in dangerous_types:
 				dangerous_enemies.append(unit)
 
@@ -531,18 +531,18 @@ def mine(gc,my_unit,start_map,karbonite_locations,current_roles, building_assign
 		#print(unit.id," no deposits around")
 
 def evaluate_battle_location(gc, loc, battle_locs):
-    """
-    Chooses whether or not to add this enemy's location as a new battle location.
-    """
-    # units_near = gc.sense_nearby_units_by_team(loc, battle_radius, constants.enemy_team)
-    valid = True
-    locs_near = gc.all_locations_within(loc, battle_radius)
-    for near in locs_near:
-        near_coords = (near.x, near.y)
-        if near_coords in battle_locs: 
-            valid = False
-    
-    return valid
+	"""
+	Chooses whether or not to add this enemy's location as a new battle location.
+	"""
+	# units_near = gc.sense_nearby_units_by_team(loc, battle_radius, constants.enemy_team)
+	valid = True
+	locs_near = gc.all_locations_within(loc, battle_radius)
+	for near in locs_near:
+		near_coords = (near.x, near.y)
+		if near_coords in battle_locs: 
+			valid = False
+	
+	return valid
 
 def pick_closest_building_assignment(gc, unit, building_assignment):
 	closest = None

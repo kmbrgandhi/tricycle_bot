@@ -19,10 +19,10 @@ def timestep(unit):
     gc = variables.gc
     planet = gc.planet()
     if planet == bc.Planet.Earth: 
-        battle_locs = variables.earth_battle_locs
+        battle_locs = variables.earth_battles
         diagonal = variables.earth_diagonal
     else: 
-        battle_locs = variables.mars_battle_locs
+        battle_locs = variables.mars_battles
         diagonal = variables.mars_diagonal
 
     composition = variables.info

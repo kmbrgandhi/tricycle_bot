@@ -9,10 +9,11 @@ class Cluster:
     BATTLE_RADIUS = 9
     DANGEROUS_ENEMIES = [bc.UnitType.Knight, bc.UnitType.Ranger, bc.UnitType.Mage]
 
-    def __init__(self, allies, enemies):
+    def __init__(self, allies, enemies, location):
         self.allies = allies
         self.enemies = enemies
         self.urgent = 0 ## 0 - 4 where 4 is the most urgent
+        self.grouping_location = None
 
     def add_ally(self, ally_id):
         self.allies.add(ally_id)
@@ -29,7 +30,7 @@ class Cluster:
         self.enemies = set()
         loc = bc.MapLocation(gc.planet(), loc_coords[0], loc_coords[1])
         if gc.can_sense_location(loc): 
-            locs_near = gc.all_locations_within(loc, BATTLE_RADIUS)
+            locs_near = gc.all_locations_within(loc, Cluster.BATTLE_RADIUS)
             for near in locs_near: 
                 if gc.has_unit_at_location(near):
                     unit = gc.sense_unit_at_location(near)
@@ -61,7 +62,7 @@ class Cluster:
         for enemy_id in self.enemies: 
             try: 
                 enemy = gc.unit(enemy_id)
-                if enemy.type in DANGEROUS_ENEMIES: dangerous += 1
+                if enemy.type in Cluster.DANGEROUS_ENEMIES: dangerous += 1
                 total_enemies += 1
 
                 health += enemy.health
@@ -90,4 +91,11 @@ class Cluster:
 
         self.urgency = 1.5*dangerous_enemies_coeff + 0.5*higher_health_enemies_coeff + little_allies_coeff + low_health_allies_coeff
         return self.urgency
+
+
+    def __str__(self):
+        return "allies: " + str(self.allies) + "\nenemies: " + str(self.enemies)
+
+    def __repr__(self):
+        return "allies: " + str(self.allies) + "\nenemies: " + str(self.enemies)
 
