@@ -7,17 +7,22 @@ import Units.sense_util as sense_util
 import Units.variables as variables
 
 
-def timestep(gc, unit,composition, battle_locs, mining_rate = 0, current_production = 0, karbonite_lower_limit = 100):
+def timestep(unit):
 
 	building_assignments = variables.building_assignment
 	directions = variables.directions
-
+	gc = variables.gc
+	composition = variables.info
+	producing = variables.producing
+	battle_locs = variables.last_turn_battle_locs
+	mining_rate = 3 * len(variables.current_worker_roles["miner"])
+	total_units = [composition[0]+producing[0], composition[1]+producing[1], composition[2]+producing[2], composition[3]+producing[3], composition[4]+producing[4]]
+	num_attacking_units = sum(total_units[1:3])
+	num_non_workers = num_attacking_units + total_units[4]
 	curr_round = gc.round()
-	optimal_composition = [0, 0.9, 0, 0, 0.1] # optimal composition, order is Worker, Knight, Ranger, Mage, Healer
+	optimal_composition = [0, 0.6, 0.3, 0, 0.1] # optimal composition, order is Worker, Knight, Ranger, Mage, Healer
 
 	# should alter based on curr_round.  this is a temporary idea.
-	calculate = [max((optimal_composition[i]-composition[i]), 0) for i in range(len(optimal_composition))] #offset from optimal
-	order = [bc.UnitType.Worker, bc.UnitType.Knight, bc.UnitType.Ranger, bc.UnitType.Mage, bc.UnitType.Healer] # storing order of units
 	# last check to make sure the right unit type is running this
 	if unit.unit_type != bc.UnitType.Factory:
 		# prob should return some kind of error
@@ -28,26 +33,20 @@ def timestep(gc, unit,composition, battle_locs, mining_rate = 0, current_product
 		if optimal_unload_dir is not None:
 			gc.unload(unit.id, optimal_unload_dir)
 
-	if gc.can_produce_robot(unit.id, bc.UnitType.Ranger): #and should_produce_robot(gc, mining_rate, current_production, karbonite_lower_limit): # otherwise produce a unit, based on most_off_optimal
-		best = None
-		most = -float('inf')
-		tiebreaker = -float('inf')
-		for i in range(len(calculate)):
-			if calculate[i] > most:
-				best = i
-				tiebreaker = optimal_composition[i]
-				most = calculate[i]
-			elif calculate[i]==most:
-				if optimal_composition[i]> tiebreaker:
-					best = i
-					tiebreaker = optimal_composition[i]
-					most = calculate[i]
-
-		produce = order[best]
-		gc.produce_robot(unit.id, produce)
+	if gc.can_produce_robot(unit.id, bc.UnitType.Ranger) and (gc.round() < 150 or num_attacking_units < 2*variables.num_enemies): #and should_produce_robot(gc, mining_rate, current_production, karbonite_lower_limit): # otherwise produce a unit, based on most_off_optimal
+		if total_units[0]<4 and gc.can_produce_robot(unit.id, bc.UnitType.Worker):
+			gc.produce_robot(unit.id, bc.UnitType.Worker)
+		elif total_units[1]<9 and gc.round() < 70:
+			gc.produce_robot(unit.id, bc.UnitType.Knight)
+		elif total_units[2] < 0.9 * num_non_workers:
+			gc.produce_robot(unit.id, bc.UnitType.Ranger)
+		elif total_units[1] < 0 * num_non_workers:
+			gc.produce_robot(unit.id, bc.UnitType.Knight)
+		else:
+			gc.produce_robot(unit.id, bc.UnitType.Healer)
 
 		#current_production += order[best].factory_cost()
-
+"""
 def should_produce_robot(gc, mining_rate, current_production, karbonite_lower_limit):
 	# produce a robot if net karbonite at the end of the turn will be more than karbonite_lower_limit
 	net_karbonite = gc.karbonite() + mining_rate - current_production + gain_rate(gc)
@@ -62,7 +61,7 @@ def gain_rate(gc):
 	curr = gc.karbonite()
 	decrease = int(curr/40)
 	return max(10 -decrease, 0)
-
+"""
 def optimal_unload(gc, unit, directions, building_assignments, battle_locs):
 	"""
 	Tries to find unload direction towards a battle location, otherwise finds another optimal

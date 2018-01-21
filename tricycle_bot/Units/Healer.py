@@ -9,7 +9,7 @@ import numpy as np
 
 battle_radius = 9
 
-def timestep(unit, composition, direction_to_coord, precomputed_bfs, bfs_fineness):
+def timestep(unit):
 
     # last check to make sure the right unit type is running this
     if unit.unit_type != bc.UnitType.Healer:
@@ -17,7 +17,10 @@ def timestep(unit, composition, direction_to_coord, precomputed_bfs, bfs_finenes
 
     gc = variables.gc
     battle_locs = variables.battle_locations
-
+    composition = variables.info
+    direction_to_coord = variables.direction_to_coord
+    precomputed_bfs = variables.precomputed_bfs
+    bfs_fineness = variables.bfs_fineness
     enemy_team = variables.enemy_team
     my_team = variables.my_team
 
