@@ -77,9 +77,10 @@ def timestep(unit):
 
             if dir != None and gc.is_move_ready(unit.id) and gc.can_move(unit.id, dir):
                 gc.move_robot(unit.id, dir)
-
+        """
         if snipe!=None and gc.can_begin_snipe(unit.id, snipe.location.map_location()) and gc.is_begin_snipe_ready(unit.id):
             gc.begin_snipe(unit.id, snipe.location)
+        """
 
 
 def get_attack(gc, unit, location, targeting_units):

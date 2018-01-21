@@ -57,15 +57,27 @@ while True:
     for poss_enemy in gc.units():
         if poss_enemy.team != variables.my_team and poss_enemy.unit_type in variables.attacker:
             variables.num_enemies += 1
-
+    start_time = time.time()
     knight.update_battles()
+    print('KNIGHT UPDATE BATTLES:', time.time()-start_time)
     # print('updated battle locs: ', variables.earth_battles)
+    start_time = time.time()
+    healer.update_healers()
+    print('HEALER UPDATE TIME:', time.time()-start_time)
+    # print('updated healer locs: ', variables.healer_target_locs)
+    start_time = time.time()
     worker.designate_roles()
+    print('DESIGNATING ROLES TIME:', time.time()-start_time)
+    time_workers = 0
+    time_rangers = 0
+    time_factories = 0
+    time_knights = 0
     #print("current worker roles: ", variables.current_worker_roles)
     print("time left: ",bc.StartTurnMessage().time_left_ms)
 
     try:
         # walk through our units:
+        start_time = time.time()
         variables.my_units = gc.my_units()
         variables.my_karbonite = gc.karbonite()
         variables.list_of_unit_ids = [unit.id for unit in variables.my_units]
@@ -74,6 +86,7 @@ while True:
         variables.targeting_units = {}
         variables.producing= [0, 0, 0, 0, 0]
         unit_types = variables.unit_types
+        print('PROCESSING TIME:', time.time()-start_time)
 
         for unit in variables.my_units:
             if unit.unit_type == unit_types["worker"]:
@@ -97,16 +110,23 @@ while True:
             if unit.unit_type == unit_types["worker"]:
                 try:
                     worker.timestep(unit)
+                    time_workers += (time.time()-start_time)
+
                 except Exception as e:
                     print('Error:', e)
                     # use this to show where the error was
                     traceback.print_exc()
             elif unit.unit_type == unit_types["knight"]:
+                start_time = time.time()
                 knight.timestep(unit)
+                time_knights+=(time.time()-start_time)
             elif unit.unit_type == unit_types["ranger"]:
                 try:
+                    start_time = time.time()
                     ranger.timestep(unit)
+                    time_rangers += (time.time()-start_time)
                 except:
+                    print('ranger error.')
                     if ranger in variables.ranger_roles["go_to_mars"]:
                         variables.ranger_roles["go_to_mars"].remove(ranger)
                     elif ranger in variables.ranger_roles["fighter"]:
@@ -132,6 +152,11 @@ while True:
         traceback.print_exc()
 
     # send the actions we've performed, and wait for our next turn.
+
+    print('TIME SPENT ON WORKERS:', time_workers)
+    print('TIME SPENT ON RANGERS:', time_rangers)
+    print('TIME SPENT ON FACTORIES:', time_factories)
+    print('TIME SPENT ON KNIGHTS:', time_knights)
     gc.next_turn()
 
     # these lines are not strictly necessary, but it helps make the logs make more sense.

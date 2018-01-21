@@ -45,13 +45,11 @@ class Cluster:
         self.enemies = set()
         loc = bc.MapLocation(gc.planet(), loc_coords[0], loc_coords[1])
         if gc.can_sense_location(loc): 
-            locs_near = gc.all_locations_within(loc, Cluster.BATTLE_RADIUS)
-            for near in locs_near: 
-                if gc.has_unit_at_location(near):
-                    unit = gc.sense_unit_at_location(near)
-                    if unit.team == enemy_team:
-                        sees_enemy = True
-                        self.enemies.add(unit.id)
+            enemies = gc.sense_nearby_units_by_team(loc, Cluster.BATTLE_RADIUS, enemy_team)
+            if len(enemies) > 0: 
+                sees_enemy = True
+                self.enemies = set([x.id for x in enemies])
+                self.urgency_coeff(gc)
         else: sees_enemy = True
         return sees_enemy
 

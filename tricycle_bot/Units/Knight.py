@@ -35,7 +35,7 @@ def timestep(unit):
 
     my_team = variables.my_team
     enemy_team = variables.enemy_team
-    # constants = variables.constants
+    directions = variables.directions
 
     best_loc = None
     best_target = None
@@ -62,10 +62,13 @@ def timestep(unit):
                     assigned_knights[unit.id] = cluster.grouping_location
                 else: 
                     assigned_knights[unit.id] = best_loc
+                # assigned_knights[unit.id] = best_loc
             # else: 
             #     best_loc = move_away_from_factories(gc, unit_loc)
         else:
-            best_loc = assigned_knights[unit.id] ## MapLocation
+            best_dir = get_explore_dir(gc, unit, unit_loc, directions)
+            if best_dir is not None and gc.is_move_ready(unit.id) and gc.can_move(unit.id, best_dir):
+                gc.move_robot(unit.id, best_dir)
 
         ## Attack
         best_target = get_best_target(gc, unit, unit_loc, knight_unit_priority, enemy_team)
@@ -79,7 +82,7 @@ def timestep(unit):
                 battle_locs[(target_loc.x,target_loc.y)] = clusters.Cluster(allies=set(),enemies=set([best_target.id]))
 
             # Attack
-            gc.attack(unit.id, best_target.id)
+            if gc.can_attack(unit.id, best_target.id): gc.attack(unit.id, best_target.id)
         else:
             new_enemy = get_new_enemies(gc, unit, unit_loc, enemy_team)
             if new_enemy is not None: 
@@ -102,13 +105,27 @@ def get_best_location(gc, unit, unit_loc, battle_locs, planet, diagonal):
 
     for loc in battle_locs: 
         map_loc = bc.MapLocation(planet,loc[0],loc[1])
-        distance_coeff = 1 - (float(unit_loc.distance_squared_to(map_loc))/diagonal)
-        coeff = battle_locs[loc].urgency_coeff(gc)
+        distance_coeff = 2*(1 - (float(unit_loc.distance_squared_to(map_loc))/diagonal))
+        coeff = battle_locs[loc].urgent
         if coeff + distance_coeff > most_urgent_coeff:
             most_urgent_coeff = coeff + distance_coeff
             most_urgent = map_loc
 
     return most_urgent
+
+def get_explore_dir(gc, unit, location, directions):
+    # function to get a direction to explore by picking locations that are within some distance that are
+    # not visible to the team yet, and going towards them.
+    dir = None
+    close_locations = [x for x in gc.all_locations_within(location, 150) if
+                       not gc.can_sense_location(x)]
+    if len(close_locations) > 0:
+        dir = sense_util.best_available_direction_visibility(gc, unit, close_locations)
+    else:
+        dir = random.choice(directions)
+    if gc.can_move(unit.id, dir):
+        return dir
+    return None
 
 def get_best_direction(gc, unit, unit_loc, target_loc, direction_to_coord, precomputed_bfs, bfs_fineness):
     start_coords = (unit_loc.x, unit_loc.y)
