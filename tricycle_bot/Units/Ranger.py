@@ -46,6 +46,7 @@ def timestep(unit):
                     variables.which_rocket[unit.id] = (target_loc, rocket)
                     ranger_roles["go_to_mars"].append(unit.id)
                     ranger_roles["fighter"].remove(unit.id)
+                    break
         dir, attack_target, snipe, move_then_attack, visible_enemies, closest_enemy, signals = ranger_sense(gc, unit, variables.last_turn_battle_locs,
                                                                                                             ranger_roles, map_loc, variables.direction_to_coord, variables.precomputed_bfs, targeting_units, variables.bfs_fineness, variables.rocket_locs)
         if visible_enemies and closest_enemy is not None:
@@ -117,10 +118,17 @@ def go_to_mars_sense(gc, unit, battle_locs, location, direction_to_coord, precom
         visible_enemies = True
         attack = get_attack(gc, unit, location, targeting_units)
     start_coords = (location.x, location.y)
+
+    # rocket was launched
     if unit.id not in variables.which_rocket or variables.which_rocket[unit.id][1] not in variables.rocket_locs:
         variables.ranger_roles["go_to_mars"].remove(unit.id)
         return dir, attack, snipe, move_then_attack, visible_enemies, closest_enemy, signals
     target_loc = variables.which_rocket[unit.id][0]
+
+    # rocket was destroyed
+    if not gc.has_unit_at_location(target_loc):
+        variables.ranger_roles["go_to_mars"].remove(unit.id)
+        return dir, attack, snipe, move_then_attack, visible_enemies, closest_enemy, signals
     #print(unit.id)
     #print('MY LOCATION:', start_coords)
     #print('GOING TO:', target_loc)
@@ -365,6 +373,7 @@ def get_explore_dir(gc, unit, location):
     close_locations = [x for x in gc.all_locations_within(location, 150) if
                        not gc.can_sense_location(x)]
     if len(close_locations) > 0:
+
         dir = sense_util.best_available_direction_visibility(gc, unit, close_locations)
         #dir = location.direction_to(random.choice(close_locations))
     else:

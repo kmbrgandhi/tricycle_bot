@@ -46,8 +46,8 @@ def timestep(unit):
 		if unit.id in current_roles[role]:
 			my_role = role
 	
-	print()
-	print("on unit #",unit.id, "position: ",my_location, "role: ",my_role)
+	#print()
+	#print("on unit #",unit.id, "position: ",my_location, "role: ",my_role)
 
 	#print("KARBONITE: ",gc.karbonite()
 	
@@ -212,9 +212,9 @@ def designate_roles():
 		closest_workers_to_site[assigned_blueprinting_site] = closest_worker_ids
 
 
-	print("blueprinting_assignment",blueprinting_assignment)
-	print("building_assignment",building_assignment)
-	print("blueprinting_queue",blueprinting_queue)
+	#print("blueprinting_assignment",blueprinting_assignment)
+	#print("building_assignment",building_assignment)
+	#print("blueprinting_queue",blueprinting_queue)
 
 
 	######################
@@ -243,7 +243,7 @@ def designate_roles():
 				assigned_workers = building_assignment[building_id]
 				assigned_location = gc.unit(building_id).location.map_location()
 				workers_per_building = get_workers_per_building(gc,start_map,assigned_location)
-				print("workers per building",workers_per_building)
+				#print("workers per building",workers_per_building)
 				num_open_slots_to_build = workers_per_building - len(assigned_workers)
 
 				if num_open_slots_to_build > 0:
@@ -394,7 +394,7 @@ def repair(gc, unit, my_location, current_roles):
 					closest = fact
 					closest_dist = dist
 
-	if closest!=None:
+	if closest is not None:
 		if gc.can_repair(unit.id, closest.id):
 			gc.repair(unit.id, closest.id)
 		else:
@@ -681,6 +681,9 @@ def is_valid_blueprint_location(gc,start_map,location,blueprinting_queue,bluepri
 			assigned_site = blueprinting_assignment[worker_id]
 			if location.distance_squared_to(assigned_site.map_location) < blueprint_spacing:
 				return False
+		for enemy_loc in variables.init_enemy_locs:
+			if location.distance_squared_to(enemy_loc) < 50:
+				return False
 		return True
 
 	return False
@@ -732,7 +735,11 @@ def can_blueprint_factory(gc,factory_count):
 	return factory_count < get_factory_limit()
 
 def can_blueprint_rocket(gc,rocket_count):
-	return gc.research_info().get_level(variables.unit_types["rocket"]) > 0 and rocket_count < get_rocket_limit()
+	if variables.research.get_level(variables.unit_types["rocket"]) > 0:
+		if gc.round() > 150 and variables.num_enemies < 10:
+			return True
+
+	return False
 
 def blueprinting_queue_limit(gc):
 	return 1
@@ -782,14 +789,16 @@ def blueprint(gc,my_unit,my_location,building_assignment,blueprinting_assignment
 				new_blueprint = gc.sense_unit_at_location(assigned_site.map_location)
 
 				# update shared data structures
+
 				building_assignment[new_blueprint.id] = [my_unit.id] # initialize new building
-				print("building_assignment",building_assignment)
+				#print("building_assignment",building_assignment)
 				del blueprinting_assignment[my_unit.id]
 				current_roles["blueprinter"].remove(my_unit.id)
 				current_roles["builder"].append(my_unit.id)
 				#print(my_unit.id, " just created a blueprint!")
-			#else:
-			#print(unit.id, "can't build but is right next to assigned site")
+			else:
+				pass
+				#print(my_unit.id, "can't build but is right next to assigned site")
 		elif my_location == assigned_site.map_location:
 			# when unit is currently on top of the queued building site
 			d = random.choice(variables.directions)

@@ -61,13 +61,14 @@ while True:
     knight.update_battles()
     #print('updated battle locs: ', fighting_locations)
     worker.designate_roles()
-    print("current worker roles: ", variables.current_worker_roles)
+    #print("current worker roles: ", variables.current_worker_roles)
 
     try:
         # walk through our units:
         variables.my_units = gc.my_units()
         variables.my_karbonite = gc.karbonite()
         variables.list_of_unit_ids = [unit.id for unit in variables.my_units]
+        variables.research = gc.research_info()
         num_workers= num_knights=num_rangers= num_mages= num_healers= num_factory= num_rocket = 0
         variables.targeting_units = {}
         variables.producing= [0, 0, 0, 0, 0]
