@@ -107,6 +107,7 @@ while True:
                 # print('hi')
                 rocket.timestep(unit)
 
+
         ## Reset knight turn clusters
         seen_knights_ids = set()
 

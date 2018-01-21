@@ -23,7 +23,7 @@ def timestep(unit):
     next_turn_battle_locs = variables.next_turn_battle_locs
     if unit.id not in ranger_roles["fighter"] and unit.id not in ranger_roles["sniper"]:
         c = 13
-        if info[6]>0 and len(ranger_roles["go_to_mars"]) < 6*info[6]:
+        if info[6]>0 and len(ranger_roles["go_to_mars"]) < 6*info[6] and False:
             ranger_roles["go_to_mars"].append(unit.id)
         elif len(ranger_roles["fighter"]) > c * len(ranger_roles["sniper"]) and gc.research_info().get_level(
             bc.UnitType.Ranger) == 3:
