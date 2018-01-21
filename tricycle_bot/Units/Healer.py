@@ -31,11 +31,16 @@ def timestep(unit):
     bfs_fineness = variables.bfs_fineness
     enemy_team = variables.enemy_team
     my_team = variables.my_team
+    directions = variables.directions
+
+    ranger_locs = variables.last_turn_ranger_locs
+    target_locs = variables.healer_target_locs
 
     best_dir = None
     best_loc = None
     best_target = None
     location = unit.location
+
     if location.is_on_map():
         unit_loc = location.map_location()
 
@@ -51,8 +56,15 @@ def timestep(unit):
                 battle_locs[(enemy_loc.x,enemy_loc.y)] = clusters.Cluster(allies=set(),enemies=set([enemies[0].id]))
 
         # Otherwise, goes to battle locations where they are in need of healers
-        elif len(battle_locs) > 0: 
-            best_loc = get_best_location(gc, unit, unit_loc, battle_locs, planet, diagonal) ## MapLocation
+        elif unit.id in target_locs:
+            best_loc = target_locs[unit.id]
+
+        elif len(ranger_locs) > 0: 
+            best_loc = get_best_location(gc, unit, unit_loc, ranger_locs, planet, diagonal) ## MapLocation
+            target_locs[unit.id] = best_loc
+
+        else: 
+            best_dir = get_explore_dir(gc, unit, unit_loc, directions)
 
         ## Healing
         best_target = get_best_target(gc, unit, unit_loc, my_team)
@@ -80,6 +92,20 @@ def dir_away_from_enemy(gc, unit, unit_loc, enemy_loc):
                 return d
     return None
 
+def get_explore_dir(gc, unit, location, directions):
+    # function to get a direction to explore by picking locations that are within some distance that are
+    # not visible to the team yet, and going towards them.
+    dir = None
+    close_locations = [x for x in gc.all_locations_within(location, 150) if
+                       not gc.can_sense_location(x)]
+    if len(close_locations) > 0:
+        dir = sense_util.best_available_direction_visibility(gc, unit, close_locations)
+    else:
+        dir = random.choice(directions)
+    if gc.can_move(unit.id, dir):
+        return dir
+    return None
+
 def get_best_location(gc, unit, unit_loc, battle_locs, planet, diagonal): 
     """
     Chooses the battle location this knight should aim for
@@ -90,13 +116,19 @@ def get_best_location(gc, unit, unit_loc, battle_locs, planet, diagonal):
     for loc in battle_locs: 
         map_loc = bc.MapLocation(planet,loc[0],loc[1])
         distance_coeff = 2*(1 - (float(unit_loc.distance_squared_to(map_loc))/diagonal))
-        coeff = battle_locs[loc].urgency_coeff(gc)
+        coeff = battle_locs[loc].urgent
         if coeff + distance_coeff > most_urgent_coeff:
             most_urgent_coeff = coeff + distance_coeff
             most_urgent = map_loc
 
     return most_urgent
 
+def check_radius_squares_factories(gc, unit, radius=1):
+    is_factory = False
+    for nearby_loc in gc.all_locations_within(unit.location.map_location(), radius):
+        if gc.can_sense_location(nearby_loc) and gc.has_unit_at_location(nearby_loc) and gc.sense_unit_at_location(nearby_loc).unit_type == bc.UnitType.Factory:
+            return True
+    return False
 
 def get_best_direction(gc, unit_id, unit_loc, target_loc, direction_to_coord, precomputed_bfs, bfs_fineness):
     start_coords = (unit_loc.x, unit_loc.y)
@@ -122,7 +154,6 @@ def evaluate_battle_location(gc, loc, battle_locs):
     """
     Chooses whether or not to add this enemy's location as a new battle location.
     """
-    # units_near = gc.sense_nearby_units_by_team(loc, battle_radius, constants.enemy_team)
     valid = True
     locs_near = gc.all_locations_within(loc, battle_radius)
     for near in locs_near:
@@ -131,3 +162,32 @@ def evaluate_battle_location(gc, loc, battle_locs):
             valid = False
     
     return valid
+
+def update_healers():
+    """
+    Remove dead healers from dictionary.
+    If healer target loc has no allied units then remove from dictionary.
+    """
+    gc = variables.gc
+    target_locs = variables.healer_target_locs
+    planet = gc.planet()
+    my_team = variables.my_team
+
+    remove = set()
+    for healer_id in target_locs:
+        try: 
+            healer = gc.unit(healer_id)
+            loc = target_locs[healer_id]
+            if gc.can_sense_location(loc):
+                allies = gc.sense_nearby_units_by_team(loc, 4, my_team)
+                if len(allies) == 0: 
+                    remove.add(healer_id)
+        except:
+            remove.add(healer_id)
+
+    for healer_id in remove: 
+        del target_locs[healer_id]
+
+
+
+

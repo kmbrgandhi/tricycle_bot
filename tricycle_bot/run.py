@@ -62,6 +62,10 @@ while True:
     print('KNIGHT UPDATE BATTLES:', time.time()-start_time)
     # print('updated battle locs: ', variables.earth_battles)
     start_time = time.time()
+    healer.update_healers()
+    print('HEALER UPDATE TIME:', time.time()-start_time)
+    # print('updated healer locs: ', variables.healer_target_locs)
+    start_time = time.time()
     worker.designate_roles()
     print('DESIGNATING ROLES TIME:', time.time()-start_time)
     time_workers = 0
