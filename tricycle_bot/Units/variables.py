@@ -51,6 +51,7 @@ directions = list(bc.Direction)
 non_list_directions = bc.Direction
 my_units = gc.my_units()
 my_karbonite = gc.karbonite()
+research = gc.research_info()
 
 list_of_unit_ids = [unit.id for unit in my_units]
 
@@ -181,7 +182,7 @@ else:
 
     precomputed_bfs = explore.precompute_mars(passable_locations_mars, coord_to_direction, wavepoints)
 
-attacker = set([bc.UnitType.Ranger, bc.UnitType.Knight, bc.UnitType.Mage])
+attacker = set([bc.UnitType.Ranger, bc.UnitType.Knight, bc.UnitType.Mage, bc.UnitType.Healer])
 
 # class Constants: 
 #     def __init__(self, directions, my_team, enemy_team, starting_map, locs_next_to_terrain, karbonite_locations):

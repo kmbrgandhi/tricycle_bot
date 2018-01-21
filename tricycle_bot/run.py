@@ -46,6 +46,9 @@ research.research_step(gc)
 
 ##AI EXECUTION##
 while True:
+
+    print("PYROUND:",gc.round())
+
     # We only support Python 3, which means brackets around print()
     variables.last_turn_battle_locs = variables.next_turn_battle_locs.copy()
     variables.next_turn_battle_locs = {}
@@ -65,6 +68,7 @@ while True:
         variables.my_units = gc.my_units()
         variables.my_karbonite = gc.karbonite()
         variables.list_of_unit_ids = [unit.id for unit in variables.my_units]
+        variables.research = gc.research_info()
         num_workers= num_knights=num_rangers= num_mages= num_healers= num_factory= num_rocket = 0
         variables.targeting_units = {}
         variables.producing= [0, 0, 0, 0, 0]
