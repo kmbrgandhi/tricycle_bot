@@ -4,6 +4,7 @@ import sys
 import traceback
 import Units.sense_util as sense_util
 import Units.explore as explore
+import Units.variables as variables
 
 
 order = [bc.UnitType.Worker, bc.UnitType.Knight, bc.UnitType.Ranger, bc.UnitType.Mage,
@@ -26,7 +27,8 @@ def timestep(gc, unit, composition, last_turn_battle_locs, next_turn_battle_locs
             ranger_roles["fighter"].append(unit.id)
 
     location = unit.location
-    my_team = constants.my_team
+    my_team = variables.my_team
+    directions = variables.directions
     if location.is_on_map():
         map_loc = location.map_location()
         dir, attack_target, snipe, move_then_attack, visible_enemies, closest_enemy, signals = ranger_sense(gc, unit, last_turn_battle_locs,
@@ -143,7 +145,7 @@ def ranger_sense(gc, unit, battle_locs, queued_paths, ranger_roles, location, co
         if attack is not None:
             if closest_enemy is not None:
                 if check_radius_squares_factories(gc, unit):
-                    dir = optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location(), constants.directions)
+                    dir = optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location(), directions)
                 elif (exists_bad_enemy(enemies)) or not gc.can_attack(unit.id, closest_enemy.id):
                     dir = sense_util.best_available_direction(gc, unit, enemies)
                 #and (closest_enemy.location.map_location().distance_squared_to(location)) ** (
@@ -152,7 +154,7 @@ def ranger_sense(gc, unit, battle_locs, queued_paths, ranger_roles, location, co
             if gc.is_move_ready(unit.id):
 
                 if closest_enemy is not None:
-                    dir = optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location(), constants.directions)
+                    dir = optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location(), directions)
 
 
                     next_turn_loc = location.add(dir)
@@ -160,16 +162,16 @@ def ranger_sense(gc, unit, battle_locs, queued_paths, ranger_roles, location, co
                     if attack is not None:
                         move_then_attack = True
                 else:
-                    dir = get_explore_dir(gc, unit, location, constants.directions)
+                    dir = get_explore_dir(gc, unit, location, directions)
 
     else:
         # if there are no enemies in sight, check if there is an ongoing battle.  If so, go there.
         if len(battle_locs)>0:
-            dir, target= go_to_battle(gc, unit, battle_locs, constants.directions, location, direction_to_coord, precomputed_bfs, bfs_fineness)
+            dir, target= go_to_battle(gc, unit, battle_locs, directions, location, direction_to_coord, precomputed_bfs, bfs_fineness)
             #queued_paths[unit.id] = target
         else:
             #dir = move_away(gc, unit, battle_locs)
-            dir = run_towards_init_loc(gc, unit, location, constants.directions, direction_to_coord, precomputed_bfs, bfs_fineness)
+            dir = run_towards_init_loc(gc, unit, location, directions, direction_to_coord, precomputed_bfs, bfs_fineness)
         """
         elif unit.id in queued_paths:
             if location!=queued_paths[unit.id]:

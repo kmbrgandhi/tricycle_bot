@@ -45,21 +45,12 @@ queued_paths = {}
 start_map = gc.starting_map(bc.Planet.Earth)
 # print('NEXT TO TERRAIN',locs_next_to_terrain)
 
-constants = variables.Constants(list(bc.Direction), gc.team(), sense_util.enemy_team(gc), start_map, variables.locs_next_to_terrain, variables.karbonite_locations)
+# constants = variables.Constants(list(bc.Direction), gc.team(), sense_util.enemy_team(gc), start_map, variables.locs_next_to_terrain, variables.karbonite_locations)
 
 #ROCKETS
 rocket_launch_times = {}
 rocket_landing_sites = {}
 rocket_locs = {}
-
-# KNIGHT
-fighting_locations = {}
-assigned_knights = {}
-for loc in constants.init_enemy_locs: 
-    fighting_locations[(loc.x, loc.y)] = set()
-seen_knights_ids = set()
-knight_to_cluster = {} ## Remove knights not in cluster 
-KNIGHT_CLUSTER_MIN = 2
 
 # RANGER
 ranger_roles = {"fighter":[],"sniper":[], "go_to_mars":[]}
@@ -184,7 +175,7 @@ while True:
         if poss_enemy.team != gc.team() and poss_enemy.unit_type in attacker:
             variables.num_enemies += 1
 
-    knight.update_battles(gc, fighting_locations, assigned_knights, constants)
+    knight.update_battles()
     #print('updated battle locs: ', fighting_locations)
 
     worker.designate_roles(gc)
@@ -221,15 +212,15 @@ while True:
                     # use this to show where the error was
                     traceback.print_exc()
             elif unit.unit_type == bc.UnitType.Knight:
-                knight.timestep(gc,unit,info,fighting_locations,assigned_knights,constants)
+                knight.timestep(unit,info,direction_to_coord, precomputed_bfs, bfs_fineness)
             elif unit.unit_type == bc.UnitType.Ranger:
                 ranger.timestep(gc,unit,info,last_turn_battle_locs, next_turn_battle_locs, queued_paths, ranger_roles, constants, direction_to_coord, precomputed_bfs, targeting_units, bfs_fineness, rocket_locs)
             elif unit.unit_type == bc.UnitType.Mage:
                 mage.timestep(gc,unit,info,last_turn_battle_locs,next_turn_battle_locs, queued_paths)
             elif unit.unit_type == bc.UnitType.Healer:
-                healer.timestep(gc,unit,info,fighting_locations,constants)
+                healer.timestep(unit,info,direction_to_coord, precomputed_bfs, bfs_fineness)
             elif unit.unit_type == bc.UnitType.Factory:
-                factory.timestep(gc,unit,info, last_turn_battle_locs, constants, mining_rate = 3*len(variables.current_worker_roles["miner"]))
+                factory.timestep(gc,unit,info, last_turn_battle_locs, mining_rate = 3*len(variables.current_worker_roles["miner"]))
             elif unit.unit_type == bc.UnitType.Rocket:
                 # print('hi')
                 rocket.timestep(gc,unit,info, rocket_launch_times, rocket_landing_sites, passable_locations_mars, rocket_locs)
