@@ -62,6 +62,7 @@ while True:
     # print('updated battle locs: ', variables.earth_battles)
     worker.designate_roles()
     #print("current worker roles: ", variables.current_worker_roles)
+    print("time left: ",bc.StartTurnMessage().time_left_ms)
 
     try:
         # walk through our units:
