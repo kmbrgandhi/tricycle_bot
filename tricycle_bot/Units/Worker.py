@@ -46,8 +46,8 @@ def timestep(unit):
 		if unit.id in current_roles[role]:
 			my_role = role
 	
-	print()
-	print("on unit #",unit.id, "position: ",my_location, "role: ",my_role)
+	#print()
+	#print("on unit #",unit.id, "position: ",my_location, "role: ",my_role)
 
 	#print("KARBONITE: ",gc.karbonite()
 	
@@ -212,9 +212,9 @@ def designate_roles():
 		closest_workers_to_site[assigned_blueprinting_site] = closest_worker_ids
 
 
-	print("blueprinting_assignment",blueprinting_assignment)
-	print("building_assignment",building_assignment)
-	print("blueprinting_queue",blueprinting_queue)
+	#print("blueprinting_assignment",blueprinting_assignment)
+	#print("building_assignment",building_assignment)
+	#print("blueprinting_queue",blueprinting_queue)
 
 
 	######################
@@ -243,7 +243,7 @@ def designate_roles():
 				assigned_workers = building_assignment[building_id]
 				assigned_location = gc.unit(building_id).location.map_location()
 				workers_per_building = get_workers_per_building(gc,start_map,assigned_location)
-				print("workers per building",workers_per_building)
+				#print("workers per building",workers_per_building)
 				num_open_slots_to_build = workers_per_building - len(assigned_workers)
 
 				if num_open_slots_to_build > 0:
@@ -783,7 +783,7 @@ def blueprint(gc,my_unit,my_location,building_assignment,blueprinting_assignment
 
 				# update shared data structures
 				building_assignment[new_blueprint.id] = [] # initialize new building
-				print("building_assignment",building_assignment)
+				#print("building_assignment",building_assignment)
 				del blueprinting_assignment[my_unit.id]
 				current_roles["blueprinter"].remove(my_unit.id)
 				current_roles["builder"].append(my_unit.id)

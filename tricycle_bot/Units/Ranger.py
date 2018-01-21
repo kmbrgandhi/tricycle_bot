@@ -46,6 +46,7 @@ def timestep(unit):
                     variables.which_rocket[unit.id] = (target_loc, rocket)
                     ranger_roles["go_to_mars"].append(unit.id)
                     ranger_roles["fighter"].remove(unit.id)
+                    break
         dir, attack_target, snipe, move_then_attack, visible_enemies, closest_enemy, signals = ranger_sense(gc, unit, variables.last_turn_battle_locs,
                                                                                                             ranger_roles, map_loc, variables.direction_to_coord, variables.precomputed_bfs, targeting_units, variables.bfs_fineness, variables.rocket_locs)
         if visible_enemies and closest_enemy is not None:
@@ -372,6 +373,7 @@ def get_explore_dir(gc, unit, location):
     close_locations = [x for x in gc.all_locations_within(location, 150) if
                        not gc.can_sense_location(x)]
     if len(close_locations) > 0:
+
         dir = sense_util.best_available_direction_visibility(gc, unit, close_locations)
         #dir = location.direction_to(random.choice(close_locations))
     else:

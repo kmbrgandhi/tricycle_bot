@@ -58,7 +58,7 @@ while True:
     knight.update_battles()
     #print('updated battle locs: ', fighting_locations)
     worker.designate_roles()
-    print("current worker roles: ", variables.current_worker_roles)
+    #print("current worker roles: ", variables.current_worker_roles)
 
     try:
         # walk through our units:
