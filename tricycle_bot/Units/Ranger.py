@@ -191,7 +191,7 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
     else:
         # if there are no enemies in sight, check if there is an ongoing battle.  If so, go there.
         if len(battle_locs)>0:
-            dir, target= go_to_battle(gc, unit, battle_locs, location, direction_to_coord, precomputed_bfs, bfs_fineness)
+            dir = go_to_battle(gc, unit, battle_locs, location, direction_to_coord, precomputed_bfs, bfs_fineness)
             #queued_paths[unit.id] = target
         else:
             #dir = move_away(gc, unit, battle_locs)
@@ -291,12 +291,18 @@ def go_to_battle(gc, unit, battle_locs, location, direction_to_coord, precompute
     target = battle_locs[weakest][0]
     start_coords = (location.x, location.y)
     target_coords_thirds = (int(target.x/bfs_fineness), int(target.y/bfs_fineness))
+    if (start_coords, target_coords_thirds) not in precomputed_bfs:
+        target_coords = pick_from_init_enemy_locs(start_coords)
+        if target_coords is None:
+            return None
+        else:
+            target_coords_thirds = (int(target_coords.x / bfs_fineness), int(target_coords.y / bfs_fineness))
     shape = direction_to_coord[precomputed_bfs[(start_coords, target_coords_thirds)]]
     options = sense_util.get_best_option(shape)
     for option in options:
         if gc.can_move(unit.id, option):
-            return option, target
-    return directions[8], target
+            return option
+    return directions[8]
     #return optimal_direction_towards(gc, unit, unit.location.map_location(), target, directions), target
 
 def optimal_direction_towards(gc, unit, location, target):
@@ -353,10 +359,21 @@ def attack_range_non_robots(unit):
     else:
         return unit.attack_range()
 
+def pick_from_init_enemy_locs(init_loc):
+    for choice in variables.init_enemy_locs:
+        coords_loc_thirds = (int(choice.x /variables.bfs_fineness), int(choice.y/variables.bfs_fineness))
+        if (init_loc, coords_loc_thirds) in variables.precomputed_bfs:
+            return choice
+    return None
+
+
+
 def run_towards_init_loc(gc, unit, location,  direction_to_coord, precomputed_bfs, bfs_fineness):
     curr_planet_map = gc.starting_map(gc.planet())
     coords_init_location = (location.x, location.y)
-    coords_loc = random.choice(variables.init_enemy_locs)
+    coords_loc = pick_from_init_enemy_locs(coords_init_location)
+    if coords_loc is None:
+        return None
     coords_loc_thirds = (int(coords_loc.x/bfs_fineness), int(coords_loc.y/bfs_fineness))
     shape = direction_to_coord[precomputed_bfs[(coords_init_location, coords_loc_thirds)]]
     options = sense_util.get_best_option(shape)

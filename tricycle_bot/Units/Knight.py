@@ -101,6 +101,8 @@ def calculate_location_coefficient(distance, quantity):
 def get_best_direction(gc, unit, unit_loc, target_loc, direction_to_coord, precomputed_bfs, bfs_fineness):
     start_coords = (unit_loc.x, unit_loc.y)
     target_coords_thirds = (int(target_loc.x/bfs_fineness), int(target_loc.y/bfs_fineness))
+    if (start_coords, target_coords_thirds) not in precomputed_bfs:
+        return None
     shape = direction_to_coord[precomputed_bfs[(start_coords, target_coords_thirds)]]
     options = sense_util.get_best_option(shape)
     for option in options: 
