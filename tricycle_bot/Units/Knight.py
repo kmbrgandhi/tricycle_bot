@@ -3,19 +3,27 @@ import random
 import sys
 import traceback
 import Units.sense_util as sense_util
-import Units.clusters as clusters
 import Units.attack as attack
+import Units.variables as variables
 
 order = [bc.UnitType.Worker, bc.UnitType.Knight, bc.UnitType.Ranger, bc.UnitType.Mage,
          bc.UnitType.Healer, bc.UnitType.Factory, bc.UnitType.Rocket]
 knight_unit_priority = [1, 2, 0.5, 0.5, 2, 3, 3]
 battle_radius = 9
 
-def timestep(gc, unit, composition, battle_locs, assigned_knights, constants):
+def timestep(unit, composition, direction_to_coord, precomputed_bfs, bfs_fineness):
     # last check to make sure the right unit type is running this
     if unit.unit_type != bc.UnitType.Knight:
         # prob should return some kind of error
         return
+
+    gc = variables.gc
+    battle_locs = variables.battle_locations
+    assigned_knights = variables.assigned_knights
+
+    my_team = variables.my_team
+    enemy_team = variables.enemy_team
+    # constants = variables.constants
 
     best_loc = None
     best_target = None
@@ -37,28 +45,28 @@ def timestep(gc, unit, composition, battle_locs, assigned_knights, constants):
             best_loc = assigned_knights[unit.id] ## MapLocation
 
         ## Attack
-        best_target = get_best_target(gc, unit, unit_loc, knight_unit_priority, constants)
+        best_target = get_best_target(gc, unit, unit_loc, knight_unit_priority, enemy_team)
 
         ## Do shit
         if best_target is not None:  # checked if ready to attack in get best target
             # See if this is a new battle location
             target_loc = best_target.location.map_location()
-            add_location = evaluate_battle_location(gc, target_loc, battle_locs, constants)
+            add_location = evaluate_battle_location(gc, target_loc, battle_locs)
             if add_location: 
                 battle_locs[(target_loc.x,target_loc.y)] = set()
 
             # Attack
             gc.attack(unit.id, best_target.id)
         else:
-            new_enemy = get_new_enemies(gc, unit, unit_loc, constants)
+            new_enemy = get_new_enemies(gc, unit, unit_loc, enemy_team)
             if new_enemy is not None: 
                 enemy_loc = new_enemy.location.map_location()
-                add_location = evaluate_battle_location(gc, enemy_loc, battle_locs, constants)
+                add_location = evaluate_battle_location(gc, enemy_loc, battle_locs)
                 if add_location: 
                     battle_locs[(enemy_loc.x,enemy_loc.y)] = set()
 
         if best_loc is not None and gc.is_move_ready(unit.id): 
-            best_dir = get_best_direction(gc, unit.id, unit_loc, best_loc)
+            best_dir = get_best_direction(gc, unit, unit_loc, best_loc, direction_to_coord, precomputed_bfs, bfs_fineness)
             if best_dir is not None: 
                 gc.move_robot(unit.id, best_dir)
 
@@ -86,34 +94,40 @@ def calculate_location_coefficient(distance, quantity):
 
     return dist_coeff + quantity_coeff
 
-def get_best_direction(gc, unit_id, unit_loc, target_loc):
-    ideal_dir = unit_loc.direction_to(target_loc)
-
-    if gc.can_move(unit_id, ideal_dir): 
-        return ideal_dir
-    else:
-        shape = [target_loc.x - unit_loc.x, target_loc.y - unit_loc.y]
-        directions = sense_util.get_best_option(shape)
-        for d in directions: 
-            if gc.can_move(unit_id, d): 
-                return d
-
+def get_best_direction(gc, unit, unit_loc, target_loc, direction_to_coord, precomputed_bfs, bfs_fineness):
+    start_coords = (unit_loc.x, unit_loc.y)
+    target_coords_thirds = (int(target_loc.x/bfs_fineness), int(target_loc.y/bfs_fineness))
+    shape = direction_to_coord[precomputed_bfs[(start_coords, target_coords_thirds)]]
+    options = sense_util.get_best_option(shape)
+    for option in options: 
+        if gc.can_move(unit.id, option):
+            return option 
     return None
+    # if gc.can_move(unit_id, ideal_dir): 
+    #     return ideal_dir
+    # else:
+    #     shape = [target_loc.x - unit_loc.x, target_loc.y - unit_loc.y]
+    #     directions = sense_util.get_best_option(shape)
+    #     for d in directions: 
+    #         if gc.can_move(unit_id, d): 
+    #             return d
 
-def get_best_target(gc, unit, location, priority_order, constants, javelin=False):
-    vuln_enemies = gc.sense_nearby_units_by_team(location, unit.attack_range(), constants.enemy_team)
+    # return None
+
+def get_best_target(gc, unit, location, priority_order, enemy_team, javelin=False):
+    vuln_enemies = gc.sense_nearby_units_by_team(location, unit.attack_range(), enemy_team)
     if len(vuln_enemies)==0 or not gc.is_attack_ready(unit.id):
         return None
     best_target = max(vuln_enemies, key=lambda x: attack.coefficient_computation(gc, unit, x, location, priority_order))
     return best_target
 
-def get_new_enemies(gc, unit, unit_loc, constants):
-    new_enemies = gc.sense_nearby_units_by_team(unit_loc, int(unit.vision_range/2), constants.enemy_team)
+def get_new_enemies(gc, unit, unit_loc, enemy_team):
+    new_enemies = gc.sense_nearby_units_by_team(unit_loc, int(unit.vision_range/2), enemy_team)
     if len(new_enemies)==0:
         return None
     return new_enemies[0]
 
-def evaluate_battle_location(gc, loc, battle_locs, constants):
+def evaluate_battle_location(gc, loc, battle_locs):
     """
     Chooses whether or not to add this enemy's location as a new battle location.
     """
@@ -127,10 +141,16 @@ def evaluate_battle_location(gc, loc, battle_locs, constants):
     
     return valid
 
-def update_battles(gc, battle_locs, assigned_knights, constants):
+def update_battles():
     """
     Remove locations & units that aren't valid anymore.
     """
+
+    gc = variables.gc
+    battle_locs = variables.battle_locations
+    assigned_knights = variables.assigned_knights
+    
+    enemy_team = variables.enemy_team
 
     ## Locations
     remove = set()
@@ -142,7 +162,7 @@ def update_battles(gc, battle_locs, assigned_knights, constants):
             for near in locs_near: 
                 if gc.has_unit_at_location(near):
                     unit = gc.sense_unit_at_location(near)
-                    if unit.team == constants.enemy_team:
+                    if unit.team == enemy_team:
                         found_enemy = True
                         break
             if not found_enemy: 
