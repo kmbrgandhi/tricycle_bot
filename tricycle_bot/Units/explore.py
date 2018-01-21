@@ -59,6 +59,45 @@ def bfs(init_coords, passable_locations_earth):
                 parent[node] = curr
     return parent
 
+def precompute_earth_dist(passable_locations_earth, direction_coords, wavepoints):
+    store_dict = {}
+    for coordinates_fineness in wavepoints:
+        parent = bfs(wavepoints[coordinates_fineness], passable_locations_earth)
+        for dest_coords in parent:
+            store_dict[(dest_coords, coordinates_fineness)] = parent[dest_coords]
+    return store_dict
+
+def bfs_distance(init_coords, passable_locations_earth):
+    init = init_coords
+    q = collections.deque([init])
+    value = {}
+    value[init] = 0
+    while q:
+        curr = q.popleft()
+        for node in coord_neighbors(curr):
+            if node not in value and passable_locations_earth[node]:
+                q.append(node)
+                value[node] = value[curr]+1
+    del value[init]
+    return value
+
+def bfs_with_destination(init_coords, final_coords, passable_locations_earth, direction_coords):
+    init = init_coords
+    q = collections.deque([init])
+    parent = {}
+    while q:
+        curr = q.popleft()
+        if curr == final_coords:
+            break
+        for node in coord_neighbors(curr):
+            if node not in parent and passable_locations_earth[node]:
+                q.append(node)
+                parent[node] = curr
+    if final_coords not in parent:
+        return None
+    direction_tup = (-final_coords[0] + parent[final_coords][0], -final_coords[1] + parent[final_coords][1])
+    return direction_coords[direction_tup]
+
 
 def precompute_mars(passable_locations_mars, direction_coords, wavepoints):
     store_dict = {}

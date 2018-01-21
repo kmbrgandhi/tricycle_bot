@@ -11,11 +11,9 @@ def timestep(unit):
     if unit.unit_type != bc.UnitType.Rocket:
     # prob should return some kind of error
         return
-
     curr_round = variable.gc.round()
     garrison = unit.structure_garrison()
-    #print('GARRISON LENGTH:', len(garrison))
-
+    gc = variable.gc
     if variable.curr_planet == bc.Planet.Earth:
         if unit.id not in variable.rocket_locs:
             variable.rocket_locs[unit.id] = unit.location.map_location()
@@ -26,9 +24,20 @@ def timestep(unit):
                 variable.rocket_landing_sites[unit.id] = explore.get_maploc(bc.Planet.Mars, random.choice(list(variable.passable_locations_mars.keys())))
                 #rocket_launch_site[unit.id] = compute_optimal_landing_site(gc, curr_round, time, rocket_launch_site)
 
-        elif len(garrison)>-1 and variable.gc.round() == variable.rocket_launch_times[unit.id] and variable.gc.can_launch_rocket(unit.id, variable.rocket_landing_sites[unit.id]):
+        elif len(garrison)>5 and variable.gc.round() == variable.rocket_launch_times[unit.id] and variable.gc.can_launch_rocket(unit.id, variable.rocket_landing_sites[unit.id]):
             variable.gc.launch_rocket(unit.id, variable.rocket_landing_sites[unit.id])
             del variable.rocket_locs[unit.id]
+            return
+
+        curr_loc = unit.location.map_location()
+        for dir in variable.directions:
+            near = curr_loc.add(dir)
+            if gc.has_unit_at_location(near):
+                nearby_unit = gc.sense_unit_at_location(near)
+                if gc.can_load(unit.id, nearby_unit.id):
+                    gc.load(unit.id, nearby_unit.id)
+                    break
+
 
     else:
         #print('GARRISON LENGHT',len(garrison))
