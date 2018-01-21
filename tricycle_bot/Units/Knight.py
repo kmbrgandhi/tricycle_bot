@@ -11,7 +11,7 @@ order = [bc.UnitType.Worker, bc.UnitType.Knight, bc.UnitType.Ranger, bc.UnitType
 knight_unit_priority = [1, 2, 0.5, 0.5, 2, 3, 3]
 battle_radius = 9
 
-def timestep(unit, composition, direction_to_coord, precomputed_bfs, bfs_fineness):
+def timestep(unit):
     # last check to make sure the right unit type is running this
     if unit.unit_type != bc.UnitType.Knight:
         # prob should return some kind of error
@@ -20,6 +20,10 @@ def timestep(unit, composition, direction_to_coord, precomputed_bfs, bfs_finenes
     gc = variables.gc
     battle_locs = variables.battle_locations
     assigned_knights = variables.assigned_knights
+    direction_to_coord = variables.direction_to_coord
+    precomputed_bfs = variables.precomputed_bfs
+    bfs_fineness = variables.bfs_fineness
+    info = variables.info
 
     my_team = variables.my_team
     enemy_team = variables.enemy_team

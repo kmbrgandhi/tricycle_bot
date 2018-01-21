@@ -7,13 +7,17 @@ import Units.sense_util as sense_util
 import Units.variables as variables
 
 
-def timestep(gc, unit,composition, battle_locs, mining_rate = 0, current_production = 0, karbonite_lower_limit = 100):
+def timestep(unit):
 
 	building_assignments = variables.building_assignment
 	directions = variables.directions
+	gc = variables.gc
+	composition = variables.info
+	battle_locs = variables.last_turn_battle_locs
+	mining_rate = 3 * len(variables.current_worker_roles["miner"])
 
 	curr_round = gc.round()
-	optimal_composition = [0, 0.9, 0, 0, 0.1] # optimal composition, order is Worker, Knight, Ranger, Mage, Healer
+	optimal_composition = [0, 0.6, 0.3, 0, 0.1] # optimal composition, order is Worker, Knight, Ranger, Mage, Healer
 
 	# should alter based on curr_round.  this is a temporary idea.
 	calculate = [max((optimal_composition[i]-composition[i]), 0) for i in range(len(optimal_composition))] #offset from optimal
@@ -27,7 +31,6 @@ def timestep(gc, unit,composition, battle_locs, mining_rate = 0, current_product
 		optimal_unload_dir = optimal_unload(gc, unit, directions, building_assignments, battle_locs)
 		if optimal_unload_dir is not None:
 			gc.unload(unit.id, optimal_unload_dir)
-
 	if gc.can_produce_robot(unit.id, bc.UnitType.Ranger): #and should_produce_robot(gc, mining_rate, current_production, karbonite_lower_limit): # otherwise produce a unit, based on most_off_optimal
 		best = None
 		most = -float('inf')
@@ -47,7 +50,7 @@ def timestep(gc, unit,composition, battle_locs, mining_rate = 0, current_product
 		gc.produce_robot(unit.id, produce)
 
 		#current_production += order[best].factory_cost()
-
+"""
 def should_produce_robot(gc, mining_rate, current_production, karbonite_lower_limit):
 	# produce a robot if net karbonite at the end of the turn will be more than karbonite_lower_limit
 	net_karbonite = gc.karbonite() + mining_rate - current_production + gain_rate(gc)
@@ -62,7 +65,7 @@ def gain_rate(gc):
 	curr = gc.karbonite()
 	decrease = int(curr/40)
 	return max(10 -decrease, 0)
-
+"""
 def optimal_unload(gc, unit, directions, building_assignments, battle_locs):
 	"""
 	Tries to find unload direction towards a battle location, otherwise finds another optimal

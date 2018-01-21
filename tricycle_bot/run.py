@@ -93,7 +93,7 @@ while True:
                     # use this to show where the error was
                     traceback.print_exc()
             elif unit.unit_type == bc.UnitType.Knight:
-                knight.timestep(unit,info)
+                knight.timestep(unit)
             elif unit.unit_type == bc.UnitType.Ranger:
                 ranger.timestep(unit)
             elif unit.unit_type == bc.UnitType.Mage:

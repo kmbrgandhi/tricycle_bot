@@ -5,16 +5,21 @@ import traceback
 import Units.Ranger as ranger
 import Units.explore as explore
 import Units.sense_util as sense_util
+import Units.variables as variables
 
-def timestep(gc, unit, composition, last_turn_battle_locs, next_turn_battle_locs, queued_paths):
+def timestep(unit):
     # last check to make sure the right unit type is running this
     if unit.unit_type != bc.UnitType.Mage:
         # prob should return some kind of error
         return
+    gc = variables.gc
+    composition = variables.info
+    last_turn_battle_locs = variables.last_turn_battle_locs
+    next_turn_battle_locs = variables.next_turn_battle_locs
     location = unit.location
     my_team = gc.team()
     if location.is_on_map():
-        dir, attack_target, blink, move_then_attack, visible_enemies = mage_sense(gc, unit, last_turn_battle_locs, queued_paths)
+        dir, attack_target, blink, move_then_attack, visible_enemies = mage_sense(gc, unit, last_turn_battle_locs)
 
         map_loc = location.map_location()
         f_f_quad = (int(map_loc.x/5), int(map_loc.y/5))
@@ -39,7 +44,7 @@ def timestep(gc, unit, composition, last_turn_battle_locs, next_turn_battle_locs
 
 
 
-def mage_sense(gc, unit, battle_locs, queued_paths):
+def mage_sense(gc, unit, battle_locs):
     dir = None
     attack = None
     blink = None
@@ -48,13 +53,10 @@ def mage_sense(gc, unit, battle_locs, queued_paths):
     location = unit.location.map_location()
     enemies = gc.sense_nearby_units_by_team(location, unit.vision_range, sense_util.enemy_team(gc))
     if len(enemies) > 0:
-        if unit.id in queued_paths:
-            del queued_paths[unit.id]
         visible_enemies = True
         sorted_enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(location))
         closest_enemy = ranger.closest_among_ungarrisoned(sorted_enemies)
         attack = ranger.get_attack(gc, unit, location)
-        print(attack)
         if attack is not None:
             if closest_enemy is not None:
                 if (ranger.exists_bad_enemy(enemies) and (closest_enemy.location.map_location().distance_squared_to(location)) ** (
@@ -74,15 +76,8 @@ def mage_sense(gc, unit, battle_locs, queued_paths):
                     dir = ranger.get_explore_dir(gc, unit)
 
     else:
-        if unit.id in queued_paths:
-            if location!=queued_paths[unit.id]:
-                dir = ranger.optimal_direction_towards(gc, unit, location, queued_paths[unit.id])
-                return dir, attack, blink, move_then_attack, visible_enemies
-            else:
-                del queued_paths[unit.id]
         if len(battle_locs)>0:
             dir, target= ranger.go_to_battle(gc, unit, battle_locs)
-            queued_paths[unit.id] = target
         else:
             dir = ranger.get_explore_dir(gc, unit)
 
