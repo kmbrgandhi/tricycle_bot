@@ -7,12 +7,13 @@ import Units.sense_util as sense_util
 import Units.variables as variables
 
 
-def timestep(gc, unit,composition, battle_locs, constants, mining_rate = 0, current_production = 0, karbonite_lower_limit = 100):
+def timestep(gc, unit,composition, battle_locs, mining_rate = 0, current_production = 0, karbonite_lower_limit = 100):
 
 	building_assignments = variables.building_assignment
+	directions = variables.directions
 
 	curr_round = gc.round()
-	optimal_composition = [0, 0, 0.9, 0, 0.1] # optimal composition, order is Worker, Knight, Ranger, Mage, Healer
+	optimal_composition = [0, 0.9, 0, 0, 0.1] # optimal composition, order is Worker, Knight, Ranger, Mage, Healer
 
 	# should alter based on curr_round.  this is a temporary idea.
 	calculate = [max((optimal_composition[i]-composition[i]), 0) for i in range(len(optimal_composition))] #offset from optimal
@@ -23,7 +24,7 @@ def timestep(gc, unit,composition, battle_locs, constants, mining_rate = 0, curr
 		return
 	garrison = unit.structure_garrison() # units inside of factory
 	if len(garrison) > 0: # try to unload a unit if there exists one in the garrison
-		optimal_unload_dir = optimal_unload(gc, unit, constants.directions, building_assignments, battle_locs)
+		optimal_unload_dir = optimal_unload(gc, unit, directions, building_assignments, battle_locs)
 		if optimal_unload_dir is not None:
 			gc.unload(unit.id, optimal_unload_dir)
 

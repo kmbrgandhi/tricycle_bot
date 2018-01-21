@@ -3,14 +3,21 @@ import random
 import sys
 import traceback
 import Units.sense_util as sense_util
+import Units.variables as variables
 
 import numpy as np
 
-def timestep(gc, unit, composition, battle_locs, constants):
+def timestep(unit, composition):
 
     # last check to make sure the right unit type is running this
     if unit.unit_type != bc.UnitType.Healer:
         return
+
+    gc = variables.gc
+    battle_locs = variables.battle_locations
+
+    enemy_team = variables.enemy_team
+    my_team = variables.my_team
 
     best_dir = None
     best_loc = None
@@ -21,7 +28,7 @@ def timestep(gc, unit, composition, battle_locs, constants):
 
         ## Movement
         # If sees enemies close enough then tries to move away from them 
-        enemies = gc.sense_nearby_units_by_team(unit_loc, unit.vision_range, constants.enemy_team)
+        enemies = gc.sense_nearby_units_by_team(unit_loc, unit.vision_range, enemy_team)
         if len(enemies) > 0: 
             enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(unit_loc))
             best_dir = dir_away_from_enemy(gc, unit, unit_loc, enemies[0].location.map_location())
@@ -31,7 +38,7 @@ def timestep(gc, unit, composition, battle_locs, constants):
             best_loc = get_best_location(gc, unit, unit_loc, battle_locs)
             print('best loc: ', best_loc)
         ## Healing
-        best_target = get_best_target(gc, unit, unit_loc, constants)
+        best_target = get_best_target(gc, unit, unit_loc, my_team)
 
         ## Do shit
         if best_target is not None and gc.is_heal_ready(unit.id):
@@ -99,9 +106,9 @@ def get_best_direction(gc, unit_id, unit_loc, target_loc):
                 return d
     return None
 
-def get_best_target(gc, unit, unit_loc, constants):
+def get_best_target(gc, unit, unit_loc, my_team):
     ## Attempt to heal nearby units
-    nearby = gc.sense_nearby_units_by_team(unit_loc, unit.ability_range()-1, constants.my_team)
+    nearby = gc.sense_nearby_units_by_team(unit_loc, unit.ability_range()-1, my_team)
     if len(nearby) > 0: 
         nearby = sorted(nearby, key=lambda x: x.health/x.max_health)
         for ally in nearby: 
