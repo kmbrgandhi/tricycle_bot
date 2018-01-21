@@ -49,9 +49,19 @@ def timestep(unit):
         if unit.id not in assigned_knights: 
             if len(battle_locs) > 0: 
                 best_loc = get_best_location(gc, unit, unit_loc, battle_locs, planet, diagonal) ## MapLocation
-                assigned_knights[unit.id] = best_loc
-                battle_locs[(best_loc.x,best_loc.y)].add_ally(unit.id)
-
+                cluster = battle_locs[(best_loc.x,best_loc.y)]
+                cluster.add_ally(unit.id)
+                if cluster.grouping_location is None:
+                    if best_loc.x < unit_loc.x: x = unit_loc.x - 2
+                    else: x = unit_loc.x + 2
+                    if best_loc.y < unit_loc.y: y = unit_loc.y - 2
+                    else: y = unit_loc.y + 2
+                    cluster.grouping_location = bc.MapLocation(planet, x, y)
+                    assigned_knights[unit.id] = bc.MapLocation(planet, x, y)
+                elif not cluster.grouped:
+                    assigned_knights[unit.id] = cluster.grouping_location
+                else: 
+                    assigned_knights[unit.id] = best_loc
             # else: 
             #     best_loc = move_away_from_factories(gc, unit_loc)
         else:
@@ -103,11 +113,12 @@ def get_best_location(gc, unit, unit_loc, battle_locs, planet, diagonal):
 def get_best_direction(gc, unit, unit_loc, target_loc, direction_to_coord, precomputed_bfs, bfs_fineness):
     start_coords = (unit_loc.x, unit_loc.y)
     target_coords_thirds = (int(target_loc.x/bfs_fineness), int(target_loc.y/bfs_fineness))
-    shape = direction_to_coord[precomputed_bfs[(start_coords, target_coords_thirds)]]
-    options = sense_util.get_best_option(shape)
-    for option in options: 
-        if gc.can_move(unit.id, option):
-            return option 
+    if (start_coords, target_coords_thirds) in precomputed_bfs:
+        shape = direction_to_coord[precomputed_bfs[(start_coords, target_coords_thirds)]]
+        options = sense_util.get_best_option(shape)
+        for option in options: 
+            if gc.can_move(unit.id, option):
+                return option 
     return None
 
 def get_best_target(gc, unit, location, priority_order, enemy_team, javelin=False):
@@ -154,9 +165,15 @@ def update_battles():
     ## Locations
     remove = set()
     for loc_coords in battle_locs:
-        found_enemy = battle_locs[loc_coords].update_enemies(gc, loc_coords, enemy_team)
+        cluster = battle_locs[loc_coords]
+        found_enemy = cluster.update_enemies(gc, loc_coords, enemy_team)
         if not found_enemy:
             remove.add(loc_coords)
+        else:
+            if cluster.allies_grouped(gc):
+                for ally_id in cluster.allies: 
+                    if ally_id in assigned_knights: 
+                        assigned_knights[ally_id] = bc.MapLocation(planet, loc_coords[0], loc_coords[1])
 
     for loc_coords in remove: 
         cluster = battle_locs[loc_coords]
@@ -177,5 +194,7 @@ def update_battles():
         knight_id, loc_coords = elem
         battle_locs[loc_coords].remove_ally(knight_id)
         del assigned_knights[knight_id]
+
+
 
 

@@ -7,13 +7,15 @@ import Units.sense_util as sense_util
 class Cluster:
 
     BATTLE_RADIUS = 9
+    GROUPING_RADIUS = 4
     DANGEROUS_ENEMIES = [bc.UnitType.Knight, bc.UnitType.Ranger, bc.UnitType.Mage]
 
-    def __init__(self, allies, enemies, location):
+    def __init__(self, allies, enemies):
         self.allies = allies
         self.enemies = enemies
         self.urgent = 0 ## 0 - 4 where 4 is the most urgent
         self.grouping_location = None
+        self.grouped = False
 
     def add_ally(self, ally_id):
         self.allies.add(ally_id)
@@ -21,6 +23,19 @@ class Cluster:
     def remove_ally(self, ally_id):
         if ally_id in self.allies: 
             self.allies.remove(ally_id)
+
+    def allies_grouped(self, gc):
+        if self.grouping_location is None or len(self.allies) == 0: return False
+
+        for ally_id in self.allies: 
+            try:
+                ally = gc.unit(ally_id)
+                if ally.location.map_location().distance_to(self.grouping_location) > Cluster.GROUPING_RADIUS:
+                    return False
+            except:
+                continue
+        self.grouped = True
+        return True
 
     def update_enemies(self, gc, loc_coords, enemy_team):
         """
@@ -37,6 +52,7 @@ class Cluster:
                     if unit.team == enemy_team:
                         sees_enemy = True
                         self.enemies.add(unit.id)
+        else: sees_enemy = True
         return sees_enemy
 
     def urgency_coeff(self, gc):
@@ -94,8 +110,8 @@ class Cluster:
 
 
     def __str__(self):
-        return "allies: " + str(self.allies) + "\nenemies: " + str(self.enemies)
+        return "allies: " + str(self.allies) + "\nenemies: " + str(self.enemies) + "\ngrouping location: " + str(self.grouping_location) + "\ngrouped: " + str(self.grouped)
 
     def __repr__(self):
-        return "allies: " + str(self.allies) + "\nenemies: " + str(self.enemies)
+        return "allies: " + str(self.allies) + "\nenemies: " + str(self.enemies) + "\ngrouping location: " + str(self.grouping_location) + "\ngrouped: " + str(self.grouped)
 
