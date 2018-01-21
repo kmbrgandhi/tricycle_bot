@@ -20,8 +20,6 @@ def timestep(unit):
 	num_attacking_units = sum(total_units[1:3])
 	num_non_workers = num_attacking_units + total_units[4]
 	curr_round = gc.round()
-	optimal_composition = [0, 0.6, 0.3, 0, 0.1] # optimal composition, order is Worker, Knight, Ranger, Mage, Healer
-
 	# should alter based on curr_round.  this is a temporary idea.
 	# last check to make sure the right unit type is running this
 	if unit.unit_type != bc.UnitType.Factory:
@@ -33,15 +31,13 @@ def timestep(unit):
 		if optimal_unload_dir is not None:
 			gc.unload(unit.id, optimal_unload_dir)
 
-	if gc.can_produce_robot(unit.id, bc.UnitType.Ranger) and (gc.round() < 150 or num_attacking_units < 2*variables.num_enemies): #and should_produce_robot(gc, mining_rate, current_production, karbonite_lower_limit): # otherwise produce a unit, based on most_off_optimal
+	if gc.can_produce_robot(unit.id, bc.UnitType.Ranger) and (gc.round() < 150 or num_attacking_units<40 or num_attacking_units < 2.7*variables.num_enemies): #and should_produce_robot(gc, mining_rate, current_production, karbonite_lower_limit): # otherwise produce a unit, based on most_off_optimal
 		if total_units[0]<4 and gc.can_produce_robot(unit.id, bc.UnitType.Worker):
 			gc.produce_robot(unit.id, bc.UnitType.Worker)
 		elif total_units[1]<9 and gc.round() < 70:
 			gc.produce_robot(unit.id, bc.UnitType.Knight)
 		elif total_units[2] < 0.9 * num_non_workers:
 			gc.produce_robot(unit.id, bc.UnitType.Ranger)
-		elif total_units[1] < 0 * num_non_workers:
-			gc.produce_robot(unit.id, bc.UnitType.Knight)
 		else:
 			gc.produce_robot(unit.id, bc.UnitType.Healer)
 

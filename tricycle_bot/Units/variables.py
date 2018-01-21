@@ -40,7 +40,7 @@ earth_start_map = gc.starting_map(bc.Planet.Earth)
 mars_start_map = gc.starting_map(bc.Planet.Mars)
 
 init_enemy_locs = []
-for unit in earth_start_map.initial_units: 
+for unit in earth_start_map.initial_units:
     if unit.team == enemy_team:
         init_enemy_locs.append(unit.location.map_location())
 
@@ -76,6 +76,7 @@ ranger_roles = {"fighter":[],"sniper":[], "go_to_mars":[]}
 ranger_to_cluster = {}
 ranger_clusters = set()
 targeting_units = {}
+which_rocket = {}
 
 #FIGHTERS
 producing = [0, 0, 0, 0, 0]

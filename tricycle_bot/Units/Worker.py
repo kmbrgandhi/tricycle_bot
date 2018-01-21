@@ -279,8 +279,9 @@ def designate_roles():
 				if len(blueprinting_assignment) < blueprinting_queue_limit(gc):
 					best_location_tuple = get_optimal_building_location(gc,start_map,worker_location,karbonite_locations,blueprinting_queue,blueprinting_assignment)
 
-					if best_location_tuple is not None:	
-						best_location = bc.MapLocation(earth,best_location_tuple[0],best_location_tuple[1])
+					if best_location_tuple is not None:
+						best_location = bc.MapLocation(earth, best_location_tuple[0], best_location_tuple[1])
+
 						if can_blueprint_rocket(gc,rocket_count):
 
 							if my_role != "idle" and worker.id in current_roles[my_role]:
@@ -495,17 +496,16 @@ def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, bui
 
 		# only adds enemy units that can attack
 		for unit in enemy_units:
+			enemy_loc = unit.location.map_location()
+			add_loc = evaluate_battle_location(gc, enemy_loc, battle_locs)
+			if add_loc:
+				battle_locs[(enemy_loc.x, enemy_loc.y)] = set()
 			if unit.unit_type in dangerous_types:
 				dangerous_enemies.append(unit)
 
 		if len(dangerous_enemies) > 0:
 			dir = sense_util.best_available_direction(gc, my_unit, dangerous_enemies)
 			movement.try_move(gc, my_unit, dir)
-			for enemy in dangerous_enemies: 
-				enemy_loc = enemy.location.map_location()
-				add_loc = evaluate_battle_location(gc, enemy_loc, battle_locs)
-				if add_loc: 
-					battle_locs[(enemy_loc.x,enemy_loc.y)] = set()
 		
 		elif my_location.is_adjacent_to(closest_deposit) or my_location == closest_deposit:
 			# mine if adjacent to deposit
