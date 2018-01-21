@@ -7,6 +7,8 @@ import Units.variables as variables
 
 import numpy as np
 
+battle_radius = 9
+
 def timestep(unit, composition):
 
     # last check to make sure the right unit type is running this
@@ -31,7 +33,11 @@ def timestep(unit, composition):
         enemies = gc.sense_nearby_units_by_team(unit_loc, unit.vision_range, enemy_team)
         if len(enemies) > 0: 
             enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(unit_loc))
-            best_dir = dir_away_from_enemy(gc, unit, unit_loc, enemies[0].location.map_location())
+            enemy_loc = enemies[0].location.map_location()
+            best_dir = dir_away_from_enemy(gc, unit, unit_loc, enemy_loc)
+            add_location = evaluate_battle_location(gc, enemy_loc, battle_locs)
+            if add_location: 
+                battle_locs[(enemy_loc.x,enemy_loc.y)] = set()
 
         # Otherwise, goes to battle locations where they are in need of healers
         elif len(battle_locs) > 0: 
@@ -115,3 +121,17 @@ def get_best_target(gc, unit, unit_loc, my_team):
             if gc.can_heal(unit.id, ally.id): 
                 return ally
     return None
+
+def evaluate_battle_location(gc, loc, battle_locs):
+    """
+    Chooses whether or not to add this enemy's location as a new battle location.
+    """
+    # units_near = gc.sense_nearby_units_by_team(loc, battle_radius, constants.enemy_team)
+    valid = True
+    locs_near = gc.all_locations_within(loc, battle_radius)
+    for near in locs_near:
+        near_coords = (near.x, near.y)
+        if near_coords in battle_locs: 
+            valid = False
+    
+    return valid

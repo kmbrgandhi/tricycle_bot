@@ -8,7 +8,7 @@ import Units.explore as explore
 import Units.Ranger as Ranger
 import Units.variables as variables
 
-
+battle_radius = 9
 
 def timestep(gc, unit):
 	#print(building_assignment)
@@ -20,12 +20,12 @@ def timestep(gc, unit):
 	building_assignment = variables.building_assignment
 	current_roles = variables.current_worker_roles
 	num_enemies = variables.num_enemies
-
+	battle_locs = variables.battle_locations
 
 	if unit.unit_type != bc.UnitType.Worker:
 		# prob should return some kind of error
 		return
-	my_team = gc.team()	
+	my_team =variables.my_team
 
 	my_location = unit.location
 
@@ -62,7 +62,7 @@ def timestep(gc, unit):
 
 	# runs this block every turn if unit is miner
 	if my_role == "miner":
-		mine(gc,unit,karbonite_locations,current_roles, building_assignment)
+		mine(gc,unit,karbonite_locations,current_roles, building_assignment, battle_locs)
 	# if unit is builder
 	elif my_role == "builder":
 		build(gc,unit,building_assignment,current_roles)
@@ -422,7 +422,7 @@ def get_closest_deposit(gc,unit,karbonite_locations):
 			closest_deposit = map_location
 	return closest_deposit	
 	
-def mine(gc,my_unit,karbonite_locations,current_roles, building_assignment):
+def mine(gc,my_unit,karbonite_locations,current_roles, building_assignment, battle_locs):
 	my_location = my_unit.location
 	position = my_location.map_location()
 	closest_deposit = get_closest_deposit(gc,my_unit,karbonite_locations)
@@ -445,6 +445,12 @@ def mine(gc,my_unit,karbonite_locations,current_roles, building_assignment):
 		if len(dangerous_enemies) > 0:
 			dir = sense_util.best_available_direction(gc, my_unit, dangerous_enemies)
 			movement.try_move(gc, my_unit, dir)
+			for enemy in dangerous_enemies: 
+				enemy_loc = enemy.location.map_location()
+				add_loc = evaluate_battle_location(gc, enemy_loc, battle_locs)
+				if add_loc: 
+					battle_locs[(enemy_loc.x,enemy_loc.y)] = set()
+		
 		elif position.is_adjacent_to(closest_deposit) or position == closest_deposit:
 			# mine if adjacent to deposit
 			if gc.can_harvest(my_unit.id,direction_to_deposit):
@@ -457,6 +463,20 @@ def mine(gc,my_unit,karbonite_locations,current_roles, building_assignment):
 	else:
 		current_roles["miner"].remove(my_unit.id)
 		#print(unit.id," no deposits around")
+
+def evaluate_battle_location(gc, loc, battle_locs):
+    """
+    Chooses whether or not to add this enemy's location as a new battle location.
+    """
+    # units_near = gc.sense_nearby_units_by_team(loc, battle_radius, constants.enemy_team)
+    valid = True
+    locs_near = gc.all_locations_within(loc, battle_radius)
+    for near in locs_near:
+        near_coords = (near.x, near.y)
+        if near_coords in battle_locs: 
+            valid = False
+    
+    return valid
 
 def pick_closest_building_assignment(gc, unit, building_assignment):
 	closest = None
