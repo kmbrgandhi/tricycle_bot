@@ -23,7 +23,6 @@ print("pystarting")
 # Its constructor will connect to a running game.
 
 gc = variables.gc
-directions = bc.Direction
 
 
 print("pystarted")
@@ -60,51 +59,55 @@ while True:
     knight.update_battles()
     #print('updated battle locs: ', fighting_locations)
     worker.designate_roles()
-    #print("current worker roles: ", variables.current_worker_roles)
+    print("current worker roles: ", variables.current_worker_roles)
 
     try:
         # walk through our units:
+        variables.my_units = gc.my_units()
+        variables.my_karbonite = gc.karbonite()
+        variables.list_of_unit_ids = [unit.id for unit in variables.my_units]
         num_workers= num_knights=num_rangers= num_mages= num_healers= num_factory= num_rocket = 0
         variables.targeting_units = {}
         variables.producing= [0, 0, 0, 0, 0]
-        for unit in gc.my_units():
-            if unit.unit_type == bc.UnitType.Worker:
+        unit_types = variables.unit_types
+
+        for unit in variables.my_units:
+            if unit.unit_type == unit_types["worker"]:
                 num_workers+=1
-            elif unit.unit_type == bc.UnitType.Knight:
+            elif unit.unit_type == unit_types["knight"]:
                 num_knights+=1
-            elif unit.unit_type == bc.UnitType.Ranger:
+            elif unit.unit_type == unit_types["ranger"]:
                 num_rangers+=1
-            elif unit.unit_type == bc.UnitType.Mage:
+            elif unit.unit_type == unit_types["mage"]:
                 num_mages+=1
-            elif unit.unit_type == bc.UnitType.Healer:
+            elif unit.unit_type == unit_types["healer"]:
                 num_healers+=1
-            elif unit.unit_type == bc.UnitType.Factory:
+            elif unit.unit_type == unit_types["factory"]:
                 num_factory+=1
-            elif unit.unit_type == bc.UnitType.Rocket:
+            elif unit.unit_type == unit_types["rocket"]:
                 num_rocket+=1
         variables.info = [num_workers, num_knights, num_rangers, num_mages, num_healers, num_factory, num_rocket]
         info = variables.info
-        for unit in gc.my_units():
+        for unit in variables.my_units:
             # respective unit types execute their own AI
-            if unit.unit_type == bc.UnitType.Worker:
+            if unit.unit_type == unit_types["worker"]:
                 try:
                     worker.timestep(unit)
                 except Exception as e:
                     print('Error:', e)
                     # use this to show where the error was
                     traceback.print_exc()
-            elif unit.unit_type == bc.UnitType.Knight:
+            elif unit.unit_type == unit_types["knight"]:
                 knight.timestep(unit)
-            elif unit.unit_type == bc.UnitType.Ranger:
+            elif unit.unit_type == unit_types["ranger"]:
                 ranger.timestep(unit)
-            elif unit.unit_type == bc.UnitType.Mage:
+            elif unit.unit_type == unit_types["mage"]:
                 mage.timestep(unit)
-            elif unit.unit_type == bc.UnitType.Healer:
+            elif unit.unit_type == unit_types["healer"]:
                 healer.timestep(unit)
-            elif unit.unit_type == bc.UnitType.Factory:
+            elif unit.unit_type == unit_types["factory"]:
                 factory.timestep(unit)
-            elif unit.unit_type == bc.UnitType.Rocket:
-                # print('hi')
+            elif unit.unit_type == unit_types["rocket"]:
                 rocket.timestep(unit)
 
         ## Reset knight turn clusters

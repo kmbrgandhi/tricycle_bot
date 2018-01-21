@@ -11,21 +11,33 @@ gc = bc.GameController()
 
 
 ## CONSTANTS ##
+
+my_team = gc.team()
+enemy_team = sense_util.enemy_team(gc)
+
 directions = list(bc.Direction)
 earth = bc.Planet.Earth
 mars = bc.Planet.Mars
+
+unit_types = {"worker":bc.UnitType.Worker,
+            "knight":bc.UnitType.Knight,
+            "mage":bc.UnitType.Mage,
+            "healer":bc.UnitType.Healer,
+            "ranger":bc.UnitType.Ranger,
+            "factory":bc.UnitType.Factory,
+            "rocket":bc.UnitType.Rocket}
 
 ## GENERAL VARIABLES ##
 
 # map info
 karbonite_locations = map_info.get_initial_karbonite_locations(gc)
-locs_next_to_terrain = map_info.get_locations_next_to_terrain(gc,bc.Planet(0))
+impassable_terrain_earth = map_info.get_impassable_terrain(gc,earth)
+impassable_terrain_mars = map_info.get_impassable_terrain(gc,mars)
+locs_next_to_terrain = map_info.get_locations_next_to_terrain(gc,earth)
 curr_planet = gc.planet()
 curr_map = gc.starting_map(curr_planet)
 earth_start_map = gc.starting_map(bc.Planet.Earth)
 mars_start_map = gc.starting_map(bc.Planet.Mars)
-my_team = gc.team()
-enemy_team = sense_util.enemy_team(gc)
 
 init_enemy_locs = []
 for unit in earth_start_map.initial_units: 
@@ -36,6 +48,10 @@ num_enemies = 0
 info = []
 directions = list(bc.Direction)
 non_list_directions = bc.Direction
+my_units = gc.my_units()
+my_karbonite = gc.karbonite()
+
+list_of_unit_ids = [unit.id for unit in my_units]
 
 ## WORKER VARIABLES ##
 blueprinting_queue = []
