@@ -60,6 +60,8 @@ while True:
 
     knight.update_battles()
     # print('updated battle locs: ', variables.earth_battles)
+    healer.update_healers()
+    # print('updated healer locs: ', variables.healer_target_locs)
     worker.designate_roles()
     #print("current worker roles: ", variables.current_worker_roles)
 
