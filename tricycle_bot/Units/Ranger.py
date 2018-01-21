@@ -11,7 +11,7 @@ order = [bc.UnitType.Worker, bc.UnitType.Knight, bc.UnitType.Ranger, bc.UnitType
 ranger_unit_priority = [1, 0.5, 2, 0.5, 2, 5, 3]
 
 def timestep(gc, unit, composition, last_turn_battle_locs, next_turn_battle_locs, queued_paths, ranger_roles, constants, direction_to_coord, precomputed_bfs, targeting_units, bfs_fineness):
-    print(targeting_units)
+    #print(targeting_units)
     # last check to make sure the right unit type is running this
     if unit.unit_type != bc.UnitType.Ranger:
         # prob should return some kind of error
@@ -213,7 +213,7 @@ def snipe_sense(gc, unit, battle_locs, queued_paths, location, direction_to_coor
             except:
                 pass
 
-    return dir, attack, snipe, move_then_attack, visible_enemies, signals
+    return dir, attack, snipe, move_then_attack, visible_enemies, closest_enemy, signals
 
 def move_away(gc, unit, battle_locs, map_loc):
     lst = []

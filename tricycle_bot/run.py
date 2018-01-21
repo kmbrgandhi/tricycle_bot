@@ -133,12 +133,12 @@ if gc.planet() == bc.Planet.Earth:
                 wavepoints[(x_th, y_th)] = actual
 
 
-    print('BFS fineness:', bfs_fineness)
-    print(earth_width)
-    print(earth_height)
+    #print('BFS fineness:', bfs_fineness)
+    #print(earth_width)
+    #print(earth_height)
     start_time = time.time()
     precomputed_bfs = explore.precompute_earth(passable_locations_earth, coord_to_direction, wavepoints)
-    print(time.time()-start_time)
+    #print(time.time()-start_time)
 else:
     bfs_fineness = max(int(((mars_width * mars_height) ** 0.5) / 10), 2) + 1
     wavepoints = {}
@@ -166,10 +166,10 @@ else:
             if actual is not None:
                 wavepoints[(x_th, y_th)] = actual
 
-    print('BFS fineness:', bfs_fineness)
+    #print('BFS fineness:', bfs_fineness)
     start_time = time.time()
     precomputed_bfs = explore.precompute_mars(passable_locations_mars, coord_to_direction, wavepoints)
-    print(time.time() - start_time)
+    #print(time.time() - start_time)
 
 attacker = set([bc.UnitType.Ranger, bc.UnitType.Knight, bc.UnitType.Mage])
 ##AI EXECUTION##
@@ -185,7 +185,7 @@ while True:
             variables.num_enemies += 1
 
     knight.update_battles(gc, fighting_locations, assigned_knights, constants)
-    print('updated battle locs: ', fighting_locations)
+    #print('updated battle locs: ', fighting_locations)
 
     worker.designate_roles(gc)
     print("current worker roles: ", variables.current_worker_roles)

@@ -7,6 +7,10 @@ import Units.map_info as map_info
 
 gc = bc.GameController()
 
+## CONSTANTS ##
+directions = list(bc.Direction)
+
+
 ## GENERAL VARIABLES ##
 
 # map info
