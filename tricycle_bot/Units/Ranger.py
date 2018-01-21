@@ -21,9 +21,11 @@ def timestep(unit):
     ranger_roles = variables.ranger_roles
     info = variables.info
     next_turn_battle_locs = variables.next_turn_battle_locs
+    if unit.id in ranger_roles["go_to_mars"] and info[6]==0:
+        ranger_roles["go_to_mars"].remove(unit.id)
     if unit.id not in ranger_roles["fighter"] and unit.id not in ranger_roles["sniper"]:
         c = 13
-        if info[6]>0 and len(ranger_roles["go_to_mars"]) < 6*info[6] and False:
+        if info[6]>0 and len(ranger_roles["go_to_mars"]) < 5*info[6] and False:
             ranger_roles["go_to_mars"].append(unit.id)
         elif len(ranger_roles["fighter"]) > c * len(ranger_roles["sniper"]) and gc.research_info().get_level(
             bc.UnitType.Ranger) == 3:
@@ -108,14 +110,25 @@ def go_to_mars_sense(gc, unit, battle_locs, location, direction_to_coord, precom
         visible_enemies = True
         attack = get_attack(gc, unit, location, targeting_units)
     start_coords = (location.x, location.y)
-    target_loc = random.choice(list(rocket_locs.values()))
+    if unit.id not in variables.which_rocket:
+        target_loc = random.choice(list(rocket_locs.values()))
+        variables.which_rocket[unit.id] = target_loc
+    else:
+        target_loc = variables.which_rocket[unit.id]
     print(unit.id)
-    print(start_coords)
-    print(target_loc)
+    print('MY LOCATION:', start_coords)
+    print('GOING TO:', target_loc)
     if max(abs(target_loc.x - start_coords[0]), abs(target_loc.y-start_coords[1])) == 1:
         rocket = gc.sense_unit_at_location(target_loc)
         if gc.can_load(rocket.id, unit.id):
             gc.load(rocket.id, unit.id)
+    elif target_loc.distance_squared_to(location) < (bfs_fineness**2 * 2) + 1:
+        result = explore.bfs_with_destination((target_loc.x, target_loc.y), start_coords, variables.passable_locations_earth, variables.coord_to_direction)
+        if result is None:
+            variables.ranger_roles.remove(unit.id)
+            dir = None
+        else:
+            dir = result
     else:
 
         target_coords_thirds = (int(target_loc.x / bfs_fineness), int(target_loc.y / bfs_fineness))
@@ -332,7 +345,6 @@ def attack_range_non_robots(unit):
 def run_towards_init_loc(gc, unit, location,  direction_to_coord, precomputed_bfs, bfs_fineness):
     curr_planet_map = gc.starting_map(gc.planet())
     coords_init_location = (location.x, location.y)
-    print(coords_init_location)
     coords_loc = random.choice(variables.init_enemy_locs)
     coords_loc_thirds = (int(coords_loc.x/bfs_fineness), int(coords_loc.y/bfs_fineness))
     shape = direction_to_coord[precomputed_bfs[(coords_init_location, coords_loc_thirds)]]

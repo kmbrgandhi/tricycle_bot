@@ -60,6 +60,7 @@ ranger_roles = {"fighter":[],"sniper":[], "go_to_mars":[]}
 ranger_to_cluster = {}
 ranger_clusters = set()
 targeting_units = {}
+which_rocket = {}
 
 #FIGHTERS
 producing = [0, 0, 0, 0, 0]
