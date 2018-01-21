@@ -336,13 +336,8 @@ def run_towards_init_loc(gc, unit, location,  direction_to_coord, precomputed_bf
     curr_planet_map = gc.starting_map(gc.planet())
     coords_init_location = (location.x, location.y)
     print(coords_init_location)
-    coords_loc = None
-    for init_unit in curr_planet_map.initial_units:
-        loc = init_unit.location.map_location()
-        coords_loc = (loc.x, loc.y)
-        if init_unit.team!=gc.team() and (coords_init_location, coords_loc) in precomputed_bfs:
-            break
-    coords_loc_thirds = (int(coords_loc[0]/bfs_fineness), int(coords_loc[1]/bfs_fineness))
+    coords_loc = random.choice(variables.init_enemy_locs)
+    coords_loc_thirds = (int(coords_loc.x/bfs_fineness), int(coords_loc.y/bfs_fineness))
     shape = direction_to_coord[precomputed_bfs[(coords_init_location, coords_loc_thirds)]]
     options = sense_util.get_best_option(shape)
     for option in options:

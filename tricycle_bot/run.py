@@ -66,6 +66,7 @@ while True:
         # walk through our units:
         num_workers= num_knights=num_rangers= num_mages= num_healers= num_factory= num_rocket = 0
         variables.targeting_units = {}
+        variables.producing= [0, 0, 0, 0, 0]
         for unit in gc.my_units():
             if unit.unit_type == bc.UnitType.Worker:
                 num_workers+=1

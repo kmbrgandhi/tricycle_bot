@@ -61,6 +61,7 @@ ranger_clusters = set()
 targeting_units = {}
 
 #FIGHTERS
+producing = [0, 0, 0, 0, 0]
 last_turn_battle_locs = {}
 next_turn_battle_locs = {}
 
