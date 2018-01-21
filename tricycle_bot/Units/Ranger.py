@@ -48,7 +48,7 @@ def timestep(unit):
                 next_turn_battle_locs[f_f_quad] = (next_turn_battle_locs[f_f_quad][0], next_turn_battle_locs[f_f_quad][1]+1)
 
         if move_then_attack:
-            if dir!=None and gc.is_move_ready(unit.id) and gc.can_move(unit.id, dir):
+            if dir!=None and gc.is_move_ready(unit.id):
                 gc.move_robot(unit.id, dir)
 
             if attack_target is not None and gc.is_attack_ready(unit.id) and gc.can_attack(unit.id, attack_target.id):
@@ -65,7 +65,7 @@ def timestep(unit):
                     targeting_units[attack_target.id]+=1
                 gc.attack(unit.id, attack_target.id)
 
-            if dir != None and gc.is_move_ready(unit.id) and gc.can_move(unit.id, dir):
+            if dir != None and gc.is_move_ready(unit.id):
                 gc.move_robot(unit.id, dir)
 
         if snipe!=None and gc.can_begin_snipe(unit.id, snipe.location.map_location()) and gc.is_begin_snipe_ready(unit.id):
@@ -124,9 +124,6 @@ def go_to_mars_sense(gc, unit, battle_locs, location, direction_to_coord, precom
         for option in options:
             if gc.can_move(unit.id, option):
                 dir = option
-
-        if dir is None:
-            dir = directions[8]
 
     return dir, attack, snipe, move_then_attack, visible_enemies, closest_enemy, signals
 
