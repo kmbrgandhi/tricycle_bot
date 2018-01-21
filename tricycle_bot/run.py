@@ -61,11 +61,6 @@ ranger_clusters = set()
 last_turn_battle_locs = {}
 next_turn_battle_locs = {}
 
-coord_to_direction = {(-1, -1): directions.Southwest, (-1, 1): directions.Northwest, (1, -1): directions.Southeast,
-                      (1, 1): directions.Northeast, (0, 1): directions.North, (0, -1): directions.South,
-                      (1, 0): directions.East, (-1, 0): directions.West}
-direction_to_coord = {v: k for k, v in coord_to_direction.items()}
-
 passable_locations_mars = {}
 
 mars = bc.Planet.Mars
