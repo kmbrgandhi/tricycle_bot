@@ -576,7 +576,7 @@ def mine_mars(gc,unit,my_location):
 			# move toward deposit
 			movement.try_move(gc,unit,direction_to_deposit)	 
 	else:
-		nearby = gc.sense_nearby_units_by_team(my_location.map_location(), worker_spacing, variables.my_team)
+		nearby = gc.sense_nearby_units_by_team(my_location, worker_spacing, variables.my_team)
 
 		away_from_units = sense_util.best_available_direction(gc,unit,nearby)	
 		#print(unit.id, "at", unit.location.map_location(), "is trying to move to", away_from_units)
@@ -782,7 +782,7 @@ def blueprint(gc,my_unit,my_location,building_assignment,blueprinting_assignment
 				new_blueprint = gc.sense_unit_at_location(assigned_site.map_location)
 
 				# update shared data structures
-				building_assignment[new_blueprint.id] = [] # initialize new building
+				building_assignment[new_blueprint.id] = [my_unit.id] # initialize new building
 				print("building_assignment",building_assignment)
 				del blueprinting_assignment[my_unit.id]
 				current_roles["blueprinter"].remove(my_unit.id)

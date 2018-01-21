@@ -46,6 +46,9 @@ research.research_step(gc)
 
 ##AI EXECUTION##
 while True:
+
+    print("PYROUND:",gc.round())
+
     # We only support Python 3, which means brackets around print()
     variables.last_turn_battle_locs = variables.next_turn_battle_locs.copy()
     variables.next_turn_battle_locs = {}
