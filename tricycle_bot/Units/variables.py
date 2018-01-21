@@ -5,6 +5,7 @@ import traceback
 import Units.map_info as map_info
 import Units.sense_util as sense_util
 import Units.explore as explore
+import Units.clusters as clusters
 
 
 gc = bc.GameController()
@@ -23,13 +24,10 @@ curr_planet = gc.planet()
 curr_map = gc.starting_map(curr_planet)
 earth_start_map = gc.starting_map(bc.Planet.Earth)
 mars_start_map = gc.starting_map(bc.Planet.Mars)
+earth_diagonal = (earth_start_map.height**2 + earth_start_map.width**2)**0.5
+mars_diagonal = (mars_start_map.height**2 + mars_start_map.width**2)**0.5
 my_team = gc.team()
 enemy_team = sense_util.enemy_team(gc)
-
-init_enemy_locs = []
-for unit in earth_start_map.initial_units: 
-    if unit.team == enemy_team:
-        init_enemy_locs.append(unit.location.map_location())
 
 num_enemies = 0
 info = []
@@ -44,10 +42,13 @@ blueprinting_assignment = {}
 current_worker_roles = {"miner":[],"builder":[],"blueprinter":[],"boarder":[], "repairer":[]}
 
 ## KNIGHT VARIABLES ##
-battle_locations = {}
+earth_battles = {}
+mars_battles = {}
 assigned_knights = {}
-for loc in init_enemy_locs: 
-    battle_locations[(loc.x, loc.y)] = set()
+for unit in earth_start_map.initial_units: 
+    if unit.team == enemy_team:
+        loc = unit.location.map_location()
+        earth_battles[(loc.x,loc.y)] = clusters.Cluster(allies=set(),enemies=set([unit.id]))
 
 #ROCKETS
 rocket_launch_times = {}

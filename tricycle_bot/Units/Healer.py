@@ -4,6 +4,7 @@ import sys
 import traceback
 import Units.sense_util as sense_util
 import Units.variables as variables
+import Units.clusters as clusters
 
 import numpy as np
 
@@ -16,7 +17,14 @@ def timestep(unit):
         return
 
     gc = variables.gc
-    battle_locs = variables.battle_locations
+    planet = gc.planet()
+    if planet == bc.Planet.Earth: 
+        battle_locs = variables.earth_battle_locs
+        diagonal = variables.earth_diagonal
+    else: 
+        battle_locs = variables.mars_battle_locs
+        diagonal = variables.mars_diagonal
+
     composition = variables.info
     direction_to_coord = variables.direction_to_coord
     precomputed_bfs = variables.precomputed_bfs
@@ -40,12 +48,12 @@ def timestep(unit):
             best_dir = dir_away_from_enemy(gc, unit, unit_loc, enemy_loc)
             add_location = evaluate_battle_location(gc, enemy_loc, battle_locs)
             if add_location: 
-                battle_locs[(enemy_loc.x,enemy_loc.y)] = set()
+                battle_locs[(enemy_loc.x,enemy_loc.y)] = clusters.Cluster(allies=set(),enemies=set([enemies[0].id]))
 
         # Otherwise, goes to battle locations where they are in need of healers
         elif len(battle_locs) > 0: 
-            best_loc = get_best_location(gc, unit, unit_loc, battle_locs)
-            print('best loc: ', best_loc)
+            best_loc = get_best_location(gc, unit, unit_loc, battle_locs, planet, diagonal) ## MapLocation
+
         ## Healing
         best_target = get_best_target(gc, unit, unit_loc, my_team)
 
@@ -72,35 +80,23 @@ def dir_away_from_enemy(gc, unit, unit_loc, enemy_loc):
                 return d
     return None
 
-def get_best_location(gc, unit, unit_loc, battle_locs): 
+def get_best_location(gc, unit, unit_loc, battle_locs, planet, diagonal): 
     """
     Chooses the battle location this knight should aim for
     """
-    best = None
-    best_coeff = -float('inf')
+    most_urgent = None
+    most_urgent_coeff = 0 ## 0 - 5
 
     for loc in battle_locs: 
-        map_loc = bc.MapLocation(gc.planet(),loc[0],loc[1])
-        distance = float(unit_loc.distance_squared_to(map_loc))
-        units = battle_locs[loc]
-        coeff = calculate_location_coefficient(gc, distance, units)
-        if coeff > best_coeff: 
-            best = map_loc
-            best_coeff = coeff
+        map_loc = bc.MapLocation(planet,loc[0],loc[1])
+        distance_coeff = 1 - (float(unit_loc.distance_squared_to(map_loc))/diagonal)
+        coeff = battle_locs[loc].urgency_coeff(gc)
+        if coeff + distance_coeff > most_urgent_coeff:
+            most_urgent_coeff = coeff + distance_coeff
+            most_urgent = map_loc
 
-    return best
+    return most_urgent
 
-def calculate_location_coefficient(gc, distance, units):
-    dist_coeff = 1 - distance/100
-    health_coeff = 0
-
-    for unit_id in units: 
-        unit = gc.unit(unit_id)
-        health_coeff += unit.max_health / unit.health
-
-    if len(units) > 0: health_coeff = health_coeff/len(units)
-
-    return dist_coeff + health_coeff
 
 def get_best_direction(gc, unit_id, unit_loc, target_loc, direction_to_coord, precomputed_bfs, bfs_fineness):
     start_coords = (unit_loc.x, unit_loc.y)
@@ -111,19 +107,6 @@ def get_best_direction(gc, unit_id, unit_loc, target_loc, direction_to_coord, pr
         if gc.can_move(unit_id, option):
             return option 
     return None
-
-# def get_best_direction(gc, unit_id, unit_loc, target_loc):
-#     ideal_dir = unit_loc.direction_to(target_loc)
-
-#     if gc.can_move(unit_id, ideal_dir): 
-#         return ideal_dir
-#     else:
-#         shape = [target_loc.x - unit_loc.x, target_loc.y - unit_loc.y]
-#         directions = sense_util.get_best_option(shape)
-#         for d in directions: 
-#             if gc.can_move(unit_id, d): 
-#                 return d
-#     return None
 
 def get_best_target(gc, unit, unit_loc, my_team):
     ## Attempt to heal nearby units

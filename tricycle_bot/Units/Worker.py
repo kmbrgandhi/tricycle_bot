@@ -7,7 +7,7 @@ import Units.movement as movement
 import Units.explore as explore
 import Units.Ranger as Ranger
 import Units.variables as variables
-
+import Units.clusters as clusters
 
 battle_radius = 9
 
@@ -22,7 +22,14 @@ def timestep(unit):
 	building_assignment = variables.building_assignment
 	current_roles = variables.current_worker_roles
 	num_enemies = variables.num_enemies
-	battle_locs = variables.battle_locations
+
+	planet = gc.planet()
+    if planet == bc.Planet.Earth: 
+        battle_locs = variables.earth_battle_locs
+        diagonal = variables.earth_diagonal
+    else: 
+        battle_locs = variables.mars_battle_locs
+        diagonal = variables.mars_diagonal
 
 	if unit.unit_type != bc.UnitType.Worker:
 		# prob should return some kind of error
@@ -474,7 +481,7 @@ def mine(gc,my_unit,karbonite_locations,current_roles, building_assignment, batt
 				enemy_loc = enemy.location.map_location()
 				add_loc = evaluate_battle_location(gc, enemy_loc, battle_locs)
 				if add_loc: 
-					battle_locs[(enemy_loc.x,enemy_loc.y)] = set()
+					battle_locs[(enemy_loc.x,enemy_loc.y)] = clusters.Cluster(allies=set(),enemies=set([enemy.id]))
 		
 		elif position.is_adjacent_to(closest_deposit) or position == closest_deposit:
 			# mine if adjacent to deposit

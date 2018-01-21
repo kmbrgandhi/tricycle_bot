@@ -5,6 +5,7 @@ import traceback
 import Units.sense_util as sense_util
 import Units.attack as attack
 import Units.variables as variables
+import Units.clusters as clusters
 
 order = [bc.UnitType.Worker, bc.UnitType.Knight, bc.UnitType.Ranger, bc.UnitType.Mage,
          bc.UnitType.Healer, bc.UnitType.Factory, bc.UnitType.Rocket]
@@ -18,7 +19,14 @@ def timestep(unit):
         return
 
     gc = variables.gc
-    battle_locs = variables.battle_locations
+    planet = gc.planet()
+    if planet == bc.Planet.Earth: 
+        battle_locs = variables.earth_battle_locs
+        diagonal = variables.earth_diagonal
+    else: 
+        battle_locs = variables.mars_battle_locs
+        diagonal = variables.mars_diagonal
+
     assigned_knights = variables.assigned_knights
     direction_to_coord = variables.direction_to_coord
     precomputed_bfs = variables.precomputed_bfs
@@ -40,9 +48,10 @@ def timestep(unit):
         # If new knight assign to location 
         if unit.id not in assigned_knights: 
             if len(battle_locs) > 0: 
-                best_loc = get_best_location(gc, unit, unit_loc, battle_locs) ## MapLocation
+                best_loc = get_best_location(gc, unit, unit_loc, battle_locs, planet, diagonal) ## MapLocation
                 assigned_knights[unit.id] = best_loc
-                battle_locs[(best_loc.x,best_loc.y)].add(unit.id)
+                battle_locs[(best_loc.x,best_loc.y)].add_ally(unit.id)
+
             # else: 
             #     best_loc = move_away_from_factories(gc, unit_loc)
         else:
@@ -57,7 +66,7 @@ def timestep(unit):
             target_loc = best_target.location.map_location()
             add_location = evaluate_battle_location(gc, target_loc, battle_locs)
             if add_location: 
-                battle_locs[(target_loc.x,target_loc.y)] = set()
+                battle_locs[(target_loc.x,target_loc.y)] = clusters.Cluster(allies=set(),enemies=set([best_target.id]))
 
             # Attack
             gc.attack(unit.id, best_target.id)
@@ -67,36 +76,29 @@ def timestep(unit):
                 enemy_loc = new_enemy.location.map_location()
                 add_location = evaluate_battle_location(gc, enemy_loc, battle_locs)
                 if add_location: 
-                    battle_locs[(enemy_loc.x,enemy_loc.y)] = set()
+                    battle_locs[(enemy_loc.x,enemy_loc.y)] = clusters.Cluster(allies=set(),enemies=set([new_enemy.id]))
 
         if best_loc is not None and gc.is_move_ready(unit.id): 
             best_dir = get_best_direction(gc, unit, unit_loc, best_loc, direction_to_coord, precomputed_bfs, bfs_fineness)
             if best_dir is not None: 
                 gc.move_robot(unit.id, best_dir)
 
-def get_best_location(gc, unit, unit_loc, battle_locs): 
+def get_best_location(gc, unit, unit_loc, battle_locs, planet, diagonal): 
     """
     Chooses the battle location this knight should aim for
     """
-    best = None
-    best_coeff = -float('inf')
+    most_urgent = None
+    most_urgent_coeff = 0 ## 0 - 5
 
     for loc in battle_locs: 
-        map_loc = bc.MapLocation(gc.planet(),loc[0],loc[1])
-        distance = float(unit_loc.distance_squared_to(map_loc))
-        quantity = len(battle_locs[loc])
-        coeff = calculate_location_coefficient(distance, quantity)
-        if coeff > best_coeff: 
-            best = map_loc
-            best_coeff = coeff
+        map_loc = bc.MapLocation(planet,loc[0],loc[1])
+        distance_coeff = 1 - (float(unit_loc.distance_squared_to(map_loc))/diagonal)
+        coeff = battle_locs[loc].urgency_coeff(gc)
+        if coeff + distance_coeff > most_urgent_coeff:
+            most_urgent_coeff = coeff + distance_coeff
+            most_urgent = map_loc
 
-    return best
-
-def calculate_location_coefficient(distance, quantity):
-    dist_coeff = 1 - distance/100
-    quantity_coeff = 1 - quantity/15
-
-    return dist_coeff + quantity_coeff
+    return most_urgent
 
 def get_best_direction(gc, unit, unit_loc, target_loc, direction_to_coord, precomputed_bfs, bfs_fineness):
     start_coords = (unit_loc.x, unit_loc.y)
@@ -107,16 +109,6 @@ def get_best_direction(gc, unit, unit_loc, target_loc, direction_to_coord, preco
         if gc.can_move(unit.id, option):
             return option 
     return None
-    # if gc.can_move(unit_id, ideal_dir): 
-    #     return ideal_dir
-    # else:
-    #     shape = [target_loc.x - unit_loc.x, target_loc.y - unit_loc.y]
-    #     directions = sense_util.get_best_option(shape)
-    #     for d in directions: 
-    #         if gc.can_move(unit_id, d): 
-    #             return d
-
-    # return None
 
 def get_best_target(gc, unit, location, priority_order, enemy_team, javelin=False):
     vuln_enemies = gc.sense_nearby_units_by_team(location, unit.attack_range(), enemy_team)
@@ -159,24 +151,15 @@ def update_battles():
     ## Locations
     remove = set()
     for loc_coords in battle_locs:
-        loc = bc.MapLocation(gc.planet(),loc_coords[0],loc_coords[1])
-        if gc.can_sense_location(loc): 
-            found_enemy = False 
-            locs_near = gc.all_locations_within(loc, battle_radius)
-            for near in locs_near: 
-                if gc.has_unit_at_location(near):
-                    unit = gc.sense_unit_at_location(near)
-                    if unit.team == enemy_team:
-                        found_enemy = True
-                        break
-            if not found_enemy: 
-                remove.add(loc_coords)
+        found_enemy = battle_locs[loc_coords].update_enemies(gc, loc_coords, enemy_team)
+        if not found_enemy:
+            remove.add(loc_coords)
 
     for loc_coords in remove: 
-        units = battle_locs[loc_coords]
+        cluster = battle_locs[loc_coords]
         del battle_locs[loc_coords]
-        for unit in units: 
-            del assigned_knights[unit]
+        for unit_id in cluster.allies: 
+            del assigned_knights[unit_id]
 
     ## Units
     remove = set()
@@ -189,5 +172,6 @@ def update_battles():
 
     for elem in remove:
         knight_id, loc_coords = elem
-        battle_locs[loc_coords].remove(knight_id)
+        battle_locs[loc_coords].remove_ally(knight_id)
         del assigned_knights[knight_id]
+
