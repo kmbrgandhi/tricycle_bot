@@ -374,7 +374,7 @@ def get_replication_cap(gc,karbonite_locations, info, num_enemies):
 	#print("KARBONITE INFO LENGTH: ",len(karbonite_locations))
 	#print(len(karbonite_locations))
 	if num_enemies > 2*sum(info[1:4])/3:
-		print('replication cap yes')
+		#print('replication cap yes')
 		return 3
 	return min(3 + float(500+gc.round())/7000 * len(karbonite_locations),15)
 
@@ -589,7 +589,7 @@ def build(gc,my_unit,building_assignment,current_roles):
 
 
 		if gc.can_build(my_unit.id,assigned_building.id):
-			print(my_unit.id, "is building factory at ",assigned_location)
+			#print(my_unit.id, "is building factory at ",assigned_location)
 			gc.build(my_unit.id,assigned_building.id)
 			if assigned_building.structure_is_built():
 				current_roles["builder"].remove(my_unit.id)

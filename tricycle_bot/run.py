@@ -185,10 +185,10 @@ while True:
             variables.num_enemies += 1
 
     knight.update_battles(gc, fighting_locations, assigned_knights, constants)
-    print('updated battle locs: ', fighting_locations)
+    #print('updated battle locs: ', fighting_locations)
 
     worker.designate_roles(gc)
-    print("current worker roles: ", variables.current_worker_roles)
+    #print("current worker roles: ", variables.current_worker_roles)
 
     try:
         # walk through our units:
@@ -212,7 +212,7 @@ while True:
         variables.info = [num_workers, num_knights, num_rangers, num_mages, num_healers, num_factory, num_rocket]
         info = variables.info
         for unit in gc.my_units():
-            # resepective unit types execute their own AI
+            # respective unit types execute their own AI
             if unit.unit_type == bc.UnitType.Worker:
                 try:
                     worker.timestep(gc,unit)
@@ -223,7 +223,7 @@ while True:
             elif unit.unit_type == bc.UnitType.Knight:
                 knight.timestep(gc,unit,info,fighting_locations,assigned_knights,constants)
             elif unit.unit_type == bc.UnitType.Ranger:
-                ranger.timestep(gc,unit,info,last_turn_battle_locs, next_turn_battle_locs, queued_paths, ranger_roles, constants, direction_to_coord, precomputed_bfs, targeting_units, bfs_fineness)
+                ranger.timestep(gc,unit,info,last_turn_battle_locs, next_turn_battle_locs, queued_paths, ranger_roles, constants, direction_to_coord, precomputed_bfs, targeting_units, bfs_fineness, rocket_locs)
             elif unit.unit_type == bc.UnitType.Mage:
                 mage.timestep(gc,unit,info,last_turn_battle_locs,next_turn_battle_locs, queued_paths)
             elif unit.unit_type == bc.UnitType.Healer:
@@ -232,7 +232,7 @@ while True:
                 factory.timestep(gc,unit,info, last_turn_battle_locs, constants, mining_rate = 3*len(variables.current_worker_roles["miner"]))
             elif unit.unit_type == bc.UnitType.Rocket:
                 # print('hi')
-                rocket.timestep(gc,unit,info, rocket_launch_times, rocket_landing_sites, passable_locations_mars)
+                rocket.timestep(gc,unit,info, rocket_launch_times, rocket_landing_sites, passable_locations_mars, rocket_locs)
 
         ## Reset knight turn clusters
         seen_knights_ids = set()
