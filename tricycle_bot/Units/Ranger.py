@@ -23,7 +23,7 @@ def timestep(unit):
     next_turn_battle_locs = variables.next_turn_battle_locs
     if unit.id not in ranger_roles["fighter"] and unit.id not in ranger_roles["sniper"]:
         c = 13
-        if info[6]>0 and len(ranger_roles["go_to_mars"]) < 6*info[6]:
+        if info[6]>0 and len(ranger_roles["go_to_mars"]) < 6*info[6] and False:
             ranger_roles["go_to_mars"].append(unit.id)
         elif len(ranger_roles["fighter"]) > c * len(ranger_roles["sniper"]) and gc.research_info().get_level(
             bc.UnitType.Ranger) == 3:
@@ -95,7 +95,7 @@ def check_radius_squares_factories(gc, unit, radius=1):
     return False
 
 def go_to_mars_sense(gc, unit, battle_locs, location, direction_to_coord, precomputed_bfs, targeting_units, bfs_fineness, rocket_locs):
-    print('GOING TO MARS')
+    #print('GOING TO MARS')
     signals = {}
     dir = None
     attack = None

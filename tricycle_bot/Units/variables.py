@@ -13,7 +13,8 @@ gc = bc.GameController()
 
 ## CONSTANTS ##
 directions = list(bc.Direction)
-
+earth = bc.Planet.Earth
+mars = bc.Planet.Mars
 
 ## GENERAL VARIABLES ##
 

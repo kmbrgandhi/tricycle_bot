@@ -48,7 +48,6 @@ research.research_step(gc)
 ##AI EXECUTION##
 while True:
     # We only support Python 3, which means brackets around print()
-    print('PYROUND:', gc.round())
     variables.last_turn_battle_locs = variables.next_turn_battle_locs.copy()
     variables.next_turn_battle_locs = {}
 
@@ -106,6 +105,7 @@ while True:
             elif unit.unit_type == bc.UnitType.Rocket:
                 # print('hi')
                 rocket.timestep(unit)
+
 
         ## Reset knight turn clusters
         seen_knights_ids = set()
