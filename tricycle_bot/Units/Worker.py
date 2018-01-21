@@ -7,7 +7,7 @@ import Units.movement as movement
 import Units.explore as explore
 import Units.Ranger as Ranger
 import Units.variables as variables
-
+import Units.clusters as clusters
 
 battle_radius = 9
 
@@ -22,7 +22,15 @@ def timestep(unit):
 	building_assignment = variables.building_assignment
 	current_roles = variables.current_worker_roles
 	num_enemies = variables.num_enemies
-	battle_locs = variables.battle_locations
+
+	planet = gc.planet()
+	if planet == bc.Planet.Earth: 
+		battle_locs = variables.earth_battles
+		diagonal = variables.earth_diagonal
+	else: 
+		battle_locs = variables.mars_battles
+		diagonal = variables.mars_diagonal
+
 	earth_start_map = variables.earth_start_map
 	unit_types = variables.unit_types
 
@@ -499,7 +507,7 @@ def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, bui
 			enemy_loc = unit.location.map_location()
 			add_loc = evaluate_battle_location(gc, enemy_loc, battle_locs)
 			if add_loc:
-				battle_locs[(enemy_loc.x, enemy_loc.y)] = set()
+				battle_locs[(enemy_loc.x, enemy_loc.y)] = clusters.Cluster(allies=set(),enemies=set([unit.id]))
 			if unit.unit_type in dangerous_types:
 				dangerous_enemies.append(unit)
 
@@ -521,18 +529,18 @@ def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, bui
 		#print(unit.id," no deposits around")
 
 def evaluate_battle_location(gc, loc, battle_locs):
-    """
-    Chooses whether or not to add this enemy's location as a new battle location.
-    """
-    # units_near = gc.sense_nearby_units_by_team(loc, battle_radius, constants.enemy_team)
-    valid = True
-    locs_near = gc.all_locations_within(loc, battle_radius)
-    for near in locs_near:
-        near_coords = (near.x, near.y)
-        if near_coords in battle_locs: 
-            valid = False
-    
-    return valid
+	"""
+	Chooses whether or not to add this enemy's location as a new battle location.
+	"""
+	# units_near = gc.sense_nearby_units_by_team(loc, battle_radius, constants.enemy_team)
+	valid = True
+	locs_near = gc.all_locations_within(loc, battle_radius)
+	for near in locs_near:
+		near_coords = (near.x, near.y)
+		if near_coords in battle_locs: 
+			valid = False
+	
+	return valid
 
 def pick_closest_building_assignment(gc, unit, building_assignment):
 	closest = None
