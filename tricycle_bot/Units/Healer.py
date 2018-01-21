@@ -45,7 +45,7 @@ def timestep(unit):
         # Otherwise, goes to battle locations where they are in need of healers
         elif len(battle_locs) > 0: 
             best_loc = get_best_location(gc, unit, unit_loc, battle_locs)
-            print('best loc: ', best_loc)
+            #print('best loc: ', best_loc)
         ## Healing
         best_target = get_best_target(gc, unit, unit_loc, my_team)
 

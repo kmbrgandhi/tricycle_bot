@@ -95,7 +95,7 @@ def check_radius_squares_factories(gc, unit, radius=1):
     return False
 
 def go_to_mars_sense(gc, unit, battle_locs, location, direction_to_coord, precomputed_bfs, targeting_units, bfs_fineness, rocket_locs):
-    print('GOING TO MARS')
+    #print('GOING TO MARS')
     signals = {}
     dir = None
     attack = None

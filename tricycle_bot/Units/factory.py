@@ -20,8 +20,6 @@ def timestep(unit):
 	num_attacking_units = sum(total_units[1:3])
 	num_non_workers = num_attacking_units + total_units[4]
 	curr_round = gc.round()
-	optimal_composition = [0, 0.6, 0.3, 0, 0.1] # optimal composition, order is Worker, Knight, Ranger, Mage, Healer
-
 	# should alter based on curr_round.  this is a temporary idea.
 	# last check to make sure the right unit type is running this
 	if unit.unit_type != bc.UnitType.Factory:
@@ -40,8 +38,6 @@ def timestep(unit):
 			gc.produce_robot(unit.id, bc.UnitType.Knight)
 		elif total_units[2] < 0.9 * num_non_workers:
 			gc.produce_robot(unit.id, bc.UnitType.Ranger)
-		elif total_units[1] < 0 * num_non_workers:
-			gc.produce_robot(unit.id, bc.UnitType.Knight)
 		else:
 			gc.produce_robot(unit.id, bc.UnitType.Healer)
 
