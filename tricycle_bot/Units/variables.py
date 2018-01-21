@@ -28,7 +28,7 @@ my_team = gc.team()
 enemy_team = sense_util.enemy_team(gc)
 
 init_enemy_locs = []
-for unit in earth_start_map.initial_units: 
+for unit in earth_start_map.initial_units:
     if unit.team == enemy_team:
         init_enemy_locs.append(unit.location.map_location())
 
