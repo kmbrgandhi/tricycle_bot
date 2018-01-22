@@ -154,7 +154,7 @@ def designate_roles():
 	#print("part 1",time.time()-start_time)
 	
 	update_for_dead_workers(gc,current_roles,blueprinting_queue,blueprinting_assignment,building_assignment)
-	update_building_assignment(gc,building_assignment)
+	update_building_assignment(gc,building_assignment,blueprinting_assignment)
 
 	#print("part 2",time.time()-start_time)
 
@@ -614,7 +614,7 @@ def mine_mars(gc,unit,my_location):
 		movement.try_move(gc,unit,away_from_units)
 
 # updates building assignments in case buildings are destroyed before they are built
-def update_building_assignment(gc,building_assignment):
+def update_building_assignment(gc,building_assignment,blueprinting_assignment):
 	keys = list(building_assignment.keys())[:]
 	invalid_building_locations = variables.invalid_building_locations
 	my_unit_ids = [unit.id for unit in gc.my_units()]

@@ -6,7 +6,7 @@ import Units.map_info as map_info
 import Units.sense_util as sense_util
 import Units.explore as explore
 import Units.clusters as clusters
-
+import time
 
 gc = bc.GameController()
 
