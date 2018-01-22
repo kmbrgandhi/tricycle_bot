@@ -19,12 +19,12 @@ def coefficient_computation(gc, our_unit, their_unit, location, priority):
             except:
                 new_unit = None
             if new_unit is not None and new_unit.team!=our_unit.team:
-                coeff = coeff + attack_coefficient(gc, our_unit, new_unit)
+                coeff = coeff + attack_coefficient(gc, our_unit, new_unit, location, priority)
 
         return coeff
 
 def attack_coefficient(gc, our_unit, their_unit, location, priority): 
-    distance = their_unit.location.map_location().distance_squared_to(location)
+    distance = sense_util.distance_squared_between_maplocs(their_unit.location.map_location(), location)
 
     coeff = priority[their_unit.unit_type]
     if distance < attack_range_non_robots(their_unit):
