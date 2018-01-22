@@ -27,6 +27,8 @@ def timestep(unit):
         battle_locs = variables.mars_battles
         diagonal = variables.mars_diagonal
 
+    next_turn_battle_locs = variables.next_turn_battle_locs
+
     assigned_knights = variables.assigned_knights
     direction_to_coord = variables.direction_to_coord
     precomputed_bfs = variables.precomputed_bfs
@@ -51,24 +53,24 @@ def timestep(unit):
                 best_loc = get_best_location(gc, unit, unit_loc, battle_locs, planet, diagonal) ## MapLocation
                 cluster = battle_locs[(best_loc.x,best_loc.y)]
                 cluster.add_ally(unit.id)
-                if cluster.grouping_location is None:
-                    if best_loc.x < unit_loc.x: x = unit_loc.x - 2
-                    else: x = unit_loc.x + 2
-                    if best_loc.y < unit_loc.y: y = unit_loc.y - 2
-                    else: y = unit_loc.y + 2
-                    cluster.grouping_location = bc.MapLocation(planet, x, y)
-                    assigned_knights[unit.id] = bc.MapLocation(planet, x, y)
-                elif not cluster.grouped:
-                    assigned_knights[unit.id] = cluster.grouping_location
-                else: 
-                    assigned_knights[unit.id] = best_loc
-                # assigned_knights[unit.id] = best_loc
-            # else: 
-            #     best_loc = move_away_from_factories(gc, unit_loc)
+                # if cluster.grouping_location is None:
+                #     if best_loc.x < unit_loc.x: x = unit_loc.x - 2
+                #     else: x = unit_loc.x + 2
+                #     if best_loc.y < unit_loc.y: y = unit_loc.y - 2
+                #     else: y = unit_loc.y + 2
+                #     cluster.grouping_location = bc.MapLocation(planet, x, y)
+                #     assigned_knights[unit.id] = bc.MapLocation(planet, x, y)
+                # elif not cluster.grouped:
+                #     assigned_knights[unit.id] = cluster.grouping_location
+                # else: 
+                    # assigned_knights[unit.id] = best_loc
+                assigned_knights[unit.id] = best_loc
+            else: 
+                best_dir = get_explore_dir(gc, unit, unit_loc, directions)
+                if best_dir is not None and gc.is_move_ready(unit.id) and gc.can_move(unit.id, best_dir):
+                    gc.move_robot(unit.id, best_dir)
         else:
-            best_dir = get_explore_dir(gc, unit, unit_loc, directions)
-            if best_dir is not None and gc.is_move_ready(unit.id) and gc.can_move(unit.id, best_dir):
-                gc.move_robot(unit.id, best_dir)
+            best_loc = assigned_knights[unit.id]
 
         ## Attack
         best_target = get_best_target(gc, unit, unit_loc, knight_unit_priority, enemy_team)
@@ -81,6 +83,11 @@ def timestep(unit):
             if add_location: 
                 battle_locs[(target_loc.x,target_loc.y)] = clusters.Cluster(allies=set(),enemies=set([best_target.id]))
 
+            f_f_quad = (int(target_loc.x / 5), int(target_loc.y / 5))
+            if f_f_quad not in next_turn_battle_locs:
+                next_turn_battle_locs[f_f_quad] = (unit_loc, 1)
+            else:
+                next_turn_battle_locs[f_f_quad] = (next_turn_battle_locs[f_f_quad][0], next_turn_battle_locs[f_f_quad][1]+1)
             # Attack
             if gc.can_attack(unit.id, best_target.id): gc.attack(unit.id, best_target.id)
         else:
@@ -107,8 +114,12 @@ def get_best_location(gc, unit, unit_loc, battle_locs, planet, diagonal):
         map_loc = bc.MapLocation(planet,loc[0],loc[1])
         distance_coeff = 2*(1 - (float(unit_loc.distance_squared_to(map_loc))/diagonal))
         coeff = battle_locs[loc].urgent
-        if coeff + distance_coeff > most_urgent_coeff:
-            most_urgent_coeff = coeff + distance_coeff
+        if len(battle_locs[loc].enemies) > 0: 
+            coeff = 2*(coeff + distance_coeff)
+        else: 
+            coeff = coeff + distance_coeff
+        if coeff > most_urgent_coeff:
+            most_urgent_coeff = coeff 
             most_urgent = map_loc
 
     return most_urgent
@@ -186,11 +197,11 @@ def update_battles():
         found_enemy = cluster.update_enemies(gc, loc_coords, enemy_team)
         if not found_enemy:
             remove.add(loc_coords)
-        else:
-            if cluster.allies_grouped(gc):
-                for ally_id in cluster.allies: 
-                    if ally_id in assigned_knights: 
-                        assigned_knights[ally_id] = bc.MapLocation(planet, loc_coords[0], loc_coords[1])
+        # else:
+        #     if cluster.allies_grouped(gc):
+        #         for ally_id in cluster.allies: 
+        #             if ally_id in assigned_knights: 
+        #                 assigned_knights[ally_id] = bc.MapLocation(planet, loc_coords[0], loc_coords[1])
 
     for loc_coords in remove: 
         cluster = battle_locs[loc_coords]
