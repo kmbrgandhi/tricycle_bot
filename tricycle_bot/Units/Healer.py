@@ -55,13 +55,15 @@ def timestep(unit):
             if add_location: 
                 battle_locs[(enemy_loc.x,enemy_loc.y)] = clusters.Cluster(allies=set(),enemies=set([enemies[0].id]))
 
-        # Otherwise, goes to battle locations where they are in need of healers
-        elif unit.id in target_locs:
-            best_loc = target_locs[unit.id]
+        # # Otherwise, goes to battle locations where they are in need of healers
+        # elif unit.id in target_locs:
+        #     best_loc = target_locs[unit.id]
 
-        elif len(ranger_locs) > 0: 
-            best_loc = get_best_location(gc, unit, unit_loc, ranger_locs, planet, diagonal) ## MapLocation
-            target_locs[unit.id] = best_loc
+        # elif len(ranger_locs) > 0: 
+        #     best_loc = get_best_location(gc, unit, unit_loc, ranger_locs, planet, diagonal) ## MapLocation
+        #     target_locs[unit.id] = best_loc
+        elif len(battle_locs) > 0: 
+            best_loc = get_best_location(gc, unit, unit_loc, battle_locs, planet, diagonal)
 
         else: 
             best_dir = get_explore_dir(gc, unit, unit_loc, directions)

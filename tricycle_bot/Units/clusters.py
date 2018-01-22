@@ -7,7 +7,7 @@ import Units.sense_util as sense_util
 class Cluster:
 
     BATTLE_RADIUS = 9
-    GROUPING_RADIUS = 4
+    GROUPING_RADIUS = 3
     DANGEROUS_ENEMIES = [bc.UnitType.Knight, bc.UnitType.Ranger, bc.UnitType.Mage]
 
     def __init__(self, allies, enemies):
