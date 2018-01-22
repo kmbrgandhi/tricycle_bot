@@ -46,9 +46,8 @@ research.research_step(gc)
 
 ##AI EXECUTION##
 while True:
-
-    print("PYROUND:",gc.round())
-
+    #beginning_start_time = time.time()
+    time_left = gc.get_time_left_ms()
     # We only support Python 3, which means brackets around print()
     variables.last_turn_battle_locs = variables.next_turn_battle_locs.copy()
     variables.next_turn_battle_locs = {}
@@ -68,14 +67,14 @@ while True:
     healer.update_healers()
     #print('HEALER UPDATE TIME:', time.time()-start_time)
     # print('updated healer locs: ', variables.healer_target_locs)
-    start_time = time.time()
+    #start_time = time.time()
     worker.designate_roles()
     #role_time = time.time()-start_time
-    print('DESIGNATING ROLES TIME:', time.time()-start_time)
-    time_workers = 0
-    time_rangers = 0
-    time_factories = 0
-    time_knights = 0
+    #print('DESIGNATING ROLES TIME:', time.time()-start_time)
+    #time_workers = 0
+    #time_rangers = 0
+    #time_factories = 0
+    #time_knights = 0
     #print("current worker roles: ", variables.current_worker_roles)
 
     try:
@@ -113,9 +112,9 @@ while True:
             # respective unit types execute their own AI
             if unit.unit_type == unit_types["worker"]:
                 try:
-                    start_time = time.time()
+                    #start_time = time.time()
                     worker.timestep(unit)
-                    time_workers += (time.time()-start_time)
+                    #time_workers += (time.time()-start_time)
 
                 except Exception as e:
                     print('Error:', e)
@@ -127,9 +126,9 @@ while True:
                 #time_knights+=(time.time()-start_time)
             elif unit.unit_type == unit_types["ranger"]:
                 try:
-                    start_time = time.time()
+                    #start_time = time.time()
                     ranger.timestep(unit)
-                    time_rangers += (time.time()-start_time)
+                    #time_rangers += (time.time()-start_time)
                     #print(time.time()-start_time)
                 except Exception as e:
                     #print('RANGER ERROR.')
@@ -146,13 +145,13 @@ while True:
             elif unit.unit_type == unit_types["healer"]:
                 healer.timestep(unit)
             elif unit.unit_type == unit_types["factory"]:
-                start_time = time.time()
+                #start_time = time.time()
                 factory.timestep(unit)
-                time_factories+=(time.time()-start_time)
+                #time_factories+=(time.time()-start_time)
             elif unit.unit_type == unit_types["rocket"]:
-                start_time = time.time()
+                #start_time = time.time()
                 rocket.timestep(unit)
-                time_knights+=(time.time()-start_time)
+                #time_knights+=(time.time()-start_time)
 
 
 
@@ -166,11 +165,11 @@ while True:
 
     # send the actions we've performed, and wait for our next turn.
 
-    print('TIME SPENT ON WORKERS:', time_workers)
-    print('TIME SPENT ON RANGERS:', time_rangers)
-    print('TIME SPENT ON FACTORIES:', time_factories)
-    print('TIME SPENT ON ROCKETS:', time_knights)
-    print('TOTAL TIME:', time.time()-beginning_start_time)
+    #print('TIME SPENT ON WORKERS:', time_workers)
+    #print('TIME SPENT ON RANGERS:', time_rangers)
+    #print('TIME SPENT ON FACTORIES:', time_factories)
+    #print('TIME SPENT ON ROCKETS:', time_knights)
+    #print('TOTAL TIME:', time.time()-beginning_start_time)
     gc.next_turn()
     # these lines are not strictly necessary, but it helps make the logs make more sense.
     # it forces everything we've written this turn to be written to the manager.
