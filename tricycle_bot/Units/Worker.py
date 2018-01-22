@@ -8,6 +8,7 @@ import Units.explore as explore
 import Units.Ranger as Ranger
 import Units.variables as variables
 import Units.clusters as clusters
+import time
 
 battle_radius = 9
 
@@ -108,6 +109,8 @@ def designate_roles():
 	current_roles = variables.current_worker_roles
 	karbonite_locations = variables.karbonite_locations
 	unit_types = variables.unit_types
+	invalid_building_locations = variables.invalid_building_locations
+	all_building_locations = variables.all_building_locations
 
 	blueprint_count = 0
 	factory_count = 0	
@@ -116,6 +119,7 @@ def designate_roles():
 	please_move = False	
 	min_workers_per_building = 3
 	recruitment_radius = 20
+
 	workers = []
 	worker_id_list = []
 	earth = variables.earth
@@ -147,8 +151,12 @@ def designate_roles():
 			workers.append(my_unit)
 			worker_id_list.append(my_unit.id)
 
+	#print("part 1",time.time()-start_time)
+	
 	update_for_dead_workers(gc,current_roles,blueprinting_queue,blueprinting_assignment,building_assignment)
 	update_building_assignment(gc,building_assignment)
+
+	#print("part 2",time.time()-start_time)
 
 	max_num_builders = 5
 	max_num_blueprinters = 2 #len(blueprinting_queue)*2 + 1 # at least 1 blueprinter, 2 blueprinters per cluster
@@ -181,6 +189,7 @@ def designate_roles():
 					#print(worker.id," just added to building queue",best_location)
 	"""
 
+
 	closest_workers_to_blueprint = {} # dictionary mapping blueprint_id to a list of worker id sorted by distance to the blueprint
 	workers_in_recruitment_range = {}
 	for building_id in building_assignment:
@@ -205,7 +214,6 @@ def designate_roles():
 	#print("closest workers to blueprint",closest_workers_to_blueprint)
 	#print("workers in recruitment range",workers_in_recruitment_range)
 
-	
 	closest_workers_to_site = {} # dictionary mapping blueprint_id to a list of worker id sorted by distance to the blueprint
 
 	for assigned_blueprinting_site in blueprinting_queue:
@@ -219,7 +227,6 @@ def designate_roles():
 
 		closest_workers_to_site[assigned_blueprinting_site] = closest_worker_ids
 
-
 	#print("blueprinting_assignment",blueprinting_assignment)
 	#print("building_assignment",building_assignment)
 	#print("blueprinting_queue",blueprinting_queue)
@@ -228,6 +235,8 @@ def designate_roles():
 	######################
 	## ROLE DESIGNATION ##
 	######################
+
+	pre_loop_time = time.time()
 	for worker in workers:
 
 		worker_location = worker.location.map_location()
@@ -279,14 +288,16 @@ def designate_roles():
 						break
 
 		# recruit nearby worker to place down a blueprint
+
 		if my_role != "blueprinter" and not role_revised:
 			building_in_progress_count = len(building_assignment.keys()) + len(blueprinting_assignment.keys())
 			if building_in_progress_count < building_in_progress_cap(gc):
 
 				# if it finds a nice location for building, put it in queue	
 				if len(blueprinting_assignment) < blueprinting_queue_limit(gc):
+					inside_time = time.time()
 					best_location_tuple = get_optimal_building_location(gc,start_map,worker_location,karbonite_locations,blueprinting_queue,blueprinting_assignment)
-
+					#print("time for building location",time.time() - inside_time)
 					if best_location_tuple is not None:
 						best_location = bc.MapLocation(earth, best_location_tuple[0], best_location_tuple[1])
 
@@ -298,6 +309,12 @@ def designate_roles():
 							current_roles["blueprinter"].append(worker.id)
 							new_site = BuildSite(best_location,unit_types["rocket"])
 							blueprinting_assignment[worker.id] = new_site
+
+							nearby_sites = gc.all_locations_within(best_location,variables.rocket_spacing)
+							for site in nearby_sites:
+								if invalid_building_locations[(site.x,site.y)]:
+									invalid_building_locations[(site.x,site.y)] = False
+
 							my_role = "blueprinter"
 							#blueprinting_queue.append(new_site)
 						elif can_blueprint_factory(gc,factory_count):
@@ -308,25 +325,15 @@ def designate_roles():
 							current_roles["blueprinter"].append(worker.id)
 							new_site = BuildSite(best_location,unit_types["factory"])
 							blueprinting_assignment[worker.id] = new_site
+
+							nearby_sites = gc.all_locations_within(best_location,variables.factory_spacing)
+							for site in nearby_sites:
+								if invalid_building_locations[(site.x,site.y)]:
+									invalid_building_locations[(site.x,site.y)] = False
+
 							my_role = "blueprinter"
 							#blueprinting_queue.append(new_site)	
 							#print(worker.id," just added to building queue",best_location)
-
-
-				"""
-				for site in blueprinting_queue:
-					closest_worker_list = closest_workers_to_site[site]
-					if worker.id in closest_worker_list and worker.id == closest_worker_list[0]:
-						if my_role != "idle" and worker.id in current_roles[my_role]:
-							current_roles[my_role].remove(worker.id)
-						current_roles["blueprinter"].append(worker.id)
-						blueprinting_queue.remove(site)
-						blueprinting_assignment[worker.id] = site
-						my_role = "blueprinter"
-						break
-						#print(unit.id, "has been assigned to this building ",closest_building_site)
-				"""
-
 
 		## DESIGNATION FOR UNASSIGNED WORKERS ##
 		if my_role != "idle":
@@ -352,7 +359,6 @@ def designate_roles():
 
 		current_roles[new_role].append(worker.id)
 
-		#print(new_role)
 
 def get_workers_per_building(gc,start_map,building_location):
 	max_workers_per_building = 6
@@ -610,11 +616,34 @@ def mine_mars(gc,unit,my_location):
 # updates building assignments in case buildings are destroyed before they are built
 def update_building_assignment(gc,building_assignment):
 	keys = list(building_assignment.keys())[:]
+	invalid_building_locations = variables.invalid_building_locations
 	for building_id in keys:
 		if building_id not in [unit.id for unit in gc.my_units()]:
 			del building_assignment[building_id]
-		else:
-			building = gc.unit(building_id)
+			removed_building_location = variables.all_building_locations[building_id]
+			reevaluated_sites = gc.all_locations_within(removed_building_location,variables.factory_spacing)
+
+			# reevaluate
+			for site in reevaluated_sites:
+
+				if invalid_building_locations[(site.x,site.y)]: continue
+
+				nearby = gc.sense_nearby_units(site,variables.factory_spacing)
+
+				for other in nearby:
+					if other.unit_type == variables.unit_types["factory"] or other.unit_type == variables.unit_types["rocket"]:
+						invalid_building_locations[(site.x,site.y)] = False
+						continue
+
+				for worker_id in blueprinting_assignment:
+					assigned_site = blueprinting_assignment[worker_id]
+					if site.distance_squared_to(assigned_site.map_location) < variables.factory_spacing:
+						invalid_building_locations[(site.x,site.y)] = False
+						continue
+
+				invalid_building_locations[(site.x,site.y)] = True
+
+
 
 def assign_unit_to_build(gc,my_unit,my_location,start_map,building_assignment):
 	available_blueprints = []
@@ -691,16 +720,22 @@ def build(gc,my_unit,my_location,start_map,building_assignment,current_roles):
 
 
 
+def adjacent_locations(location):
+	d = [(0,1),(1,1),(1,0),(1,-1),(0,-1),(-1,-1),(-1,0),(-1,1)]
+	planet = location.planet
+	x = location.x
+	y = location.y
+	return [bc.MapLocation(planet,x+dx,y+dy) for dx,dy in d]
+	
+
 def is_valid_blueprint_location(gc,start_map,location,blueprinting_queue,blueprinting_assignment):
+
 	blueprint_spacing = 10
 	nearby = gc.sense_nearby_units(location,blueprint_spacing)
 
 	if start_map.on_map(location) and location not in variables.impassable_terrain_earth:
 		for other in nearby:
 			if other.unit_type == variables.unit_types["factory"] or other.unit_type == variables.unit_types["rocket"]:
-				return False
-		for site in blueprinting_queue:
-			if location.distance_squared_to(site.map_location) < blueprint_spacing:
 				return False
 		for worker_id in blueprinting_assignment:
 			assigned_site = blueprinting_assignment[worker_id]
@@ -714,6 +749,7 @@ def is_valid_blueprint_location(gc,start_map,location,blueprinting_queue,bluepri
 	return False
 
 
+
 # generates locations to build factories that are close to karbonite deposits	
 def get_optimal_building_location(gc,start_map,center,karbonite_locations,blueprinting_queue,blueprinting_assignment):
 	potential_locations = []
@@ -721,13 +757,17 @@ def get_optimal_building_location(gc,start_map,center,karbonite_locations,bluepr
 	no_deposits_located = True
 
 	for location in gc.all_locations_within(center,20):
-		if is_valid_blueprint_location(gc,start_map,location,blueprinting_queue,blueprinting_assignment):
+		start_time = time.time()
+		if variables.invalid_building_locations[(location.x,location.y)]:
+			#print("optimal building location time",time.time() - start_time)
 			loc_key = (location.x,location.y)
 
 			if loc_key in karbonite_locations:
 				if karbonite_locations[loc_key] > 0:
 					continue
-			for adjacent_location in gc.all_locations_within(location,2):
+
+			start_time = time.time()
+			for adjacent_location in adjacent_locations(location):
 				if location == adjacent_location: continue
 
 				adj_key = (adjacent_location.x,adjacent_location.y)
@@ -741,14 +781,14 @@ def get_optimal_building_location(gc,start_map,center,karbonite_locations,bluepr
 					karbonite_adjacent_locations[loc_key] = karbonite_value
 				else:
 					karbonite_adjacent_locations[loc_key] += karbonite_value
-
+			#print("par t2 location time",time.time() - start_time)
 			if karbonite_adjacent_locations[loc_key] > 0:
 				no_deposits_located = False
 
 	if len(karbonite_adjacent_locations) == 0:
 		return None
 	elif no_deposits_located:
-		for default_location in gc.all_locations_within(center,2):
+		for default_location in adjacent_locations(center):
 			if is_valid_blueprint_location(gc,start_map,default_location,blueprinting_queue,blueprinting_assignment):
 				return (default_location.x,default_location.y)
 	
@@ -815,6 +855,7 @@ def blueprint(gc,my_unit,my_location,building_assignment,blueprinting_assignment
 				gc.blueprint(my_unit.id, assigned_site.building_type, direction_to_site)
 				new_blueprint = gc.sense_unit_at_location(assigned_site.map_location)
 
+				variables.all_building_locations[new_blueprint.id] = assigned_site.map_location
 				# update shared data structures
 
 				building_assignment[new_blueprint.id] = [my_unit.id] # initialize new building
