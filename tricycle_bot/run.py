@@ -76,7 +76,7 @@ while True:
     time_rangers = 0
     time_factories = 0
     time_knights = 0
-    #print("current worker roles: ", variables.current_worker_roles)
+    print("current worker roles: ", variables.current_worker_roles)
 
     try:
         # walk through our units:
