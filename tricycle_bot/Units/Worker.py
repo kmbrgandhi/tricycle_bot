@@ -600,8 +600,9 @@ def mine_mars(gc,unit,my_location):
 def update_building_assignment(gc,building_assignment):
 	keys = list(building_assignment.keys())[:]
 	invalid_building_locations = variables.invalid_building_locations
+	my_unit_ids = [unit.id for unit in gc.my_units()]
 	for building_id in keys:
-		if building_id not in [unit.id for unit in gc.my_units()]:
+		if building_id not in my_unit_ids:
 			del building_assignment[building_id]
 			removed_building_location = variables.all_building_locations[building_id]
 			reevaluated_sites = gc.all_locations_within(removed_building_location,variables.factory_spacing)
