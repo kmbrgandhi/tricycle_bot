@@ -78,6 +78,21 @@ for x in range(earth_start_map.width):
         invalid_building_locations[(x,y)] = True
 
 
+factory_spacing_diff = []
+for dx in [-2,-1,0,1,2]:
+    for dy in [-2,-1,0,1,2]:
+        if dx == 0 and dy == 0: 
+            continue
+        factory_spacing_diff.append((dx,dy))
+
+building_scouting_diff = []
+for dx in [-4,-3,-2,-1,0,1,2,3,4]:
+    for dy in [-4,-3,-2,-1,0,1,2,3,4]:
+        if dx == 0 and dy == 0:
+            continue
+        building_scouting_diff.append((dx,dy))
+
+
 current_worker_roles = {"miner":[],"builder":[],"blueprinter":[],"boarder":[], "repairer":[]}
 
 ## KNIGHT VARIABLES ##
