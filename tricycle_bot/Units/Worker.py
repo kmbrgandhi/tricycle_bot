@@ -312,7 +312,7 @@ def designate_roles():
 							#print("time for building location",time.time() - inside_time)
 							if best_location_tuple is not None:
 								best_location = bc.MapLocation(earth, best_location_tuple[0], best_location_tuple[1])
-								print(worker.id,"can build a factory")
+								#print(worker.id,"can build a factory")
 								if my_role != "idle" and worker.id in current_roles[my_role]:
 									current_roles[my_role].remove(worker.id)
 
@@ -333,8 +333,8 @@ def designate_roles():
 								#blueprinting_queue.append(new_site)	
 								#print(worker.id," just added to building queue",best_location)
 
-								print(worker.id,"cannot build a rocket or factory")
-						print(worker.id,"cannot build a rocket or factory")
+								#print(worker.id,"cannot build a rocket or factory")
+						#print(worker.id,"cannot build a rocket or factory")
 			## DESIGNATION FOR UNASSIGNED WORKERS ##
 			if my_role != "idle":
 				continue
