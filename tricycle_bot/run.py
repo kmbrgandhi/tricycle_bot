@@ -67,13 +67,15 @@ while True:
     # print('updated healer locs: ', variables.healer_target_locs)
     start_time = time.time()
     worker.designate_roles()
+    role_time = time.time()-start_time
     print('DESIGNATING ROLES TIME:', time.time()-start_time)
+    if role_time > 0.1:
+        print("AHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH")
     time_workers = 0
     time_rangers = 0
     time_factories = 0
     time_knights = 0
     #print("current worker roles: ", variables.current_worker_roles)
-    print("time left: ",bc.StartTurnMessage().time_left_ms)
 
     try:
         # walk through our units:
@@ -109,6 +111,7 @@ while True:
             # respective unit types execute their own AI
             if unit.unit_type == unit_types["worker"]:
                 try:
+                    start_time = time.time()
                     worker.timestep(unit)
                     time_workers += (time.time()-start_time)
 

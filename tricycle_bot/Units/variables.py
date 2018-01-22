@@ -56,9 +56,23 @@ research = gc.research_info()
 list_of_unit_ids = [unit.id for unit in my_units]
 
 ## WORKER VARIABLES ##
+
+factory_spacing = 10
+rocket_spacing = 2
+
 blueprinting_queue = []
 building_assignment = {}
 blueprinting_assignment = {}
+all_building_locations = {}
+invalid_building_locations = {}
+
+for x in range(earth_start_map.width):
+    for y in range(earth_start_map.height):
+        location = bc.MapLocation(earth,x,y)
+        if location in impassable_terrain_earth:
+            invalid_building_locations[(x,y)] = False
+        invalid_building_locations[(x,y)] = True
+
 
 current_worker_roles = {"miner":[],"builder":[],"blueprinter":[],"boarder":[], "repairer":[]}
 
