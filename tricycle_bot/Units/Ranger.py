@@ -27,7 +27,7 @@ def timestep(unit):
         c = 13
         #if info[6]>0 and len(ranger_roles["go_to_mars"]) < 5*info[6]:
         #    ranger_roles["go_to_mars"].append(unit.id)
-        if len(ranger_roles["fighter"]) > c * len(ranger_roles["sniper"]) and gc.research_info().get_level(
+        if len(ranger_roles["fighter"]) > c * len(ranger_roles["sniper"]) and variables.research.get_level(
             bc.UnitType.Ranger) == 3 and False:
             ranger_roles["sniper"].append(unit.id)
         else:
@@ -98,9 +98,11 @@ def exists_bad_enemy(enemies):
             return True
     return False
 
-def check_radius_squares_factories(gc, unit, radius=1):
-    is_factory = False
-    for nearby_loc in gc.all_locations_within(unit.location.map_location(), radius):
+def check_radius_squares_factories(gc, location):
+    location_coords = (location.x, location.y)
+    nearby_locs = explore.coord_neighbors(location_coords)
+    for nearby_loc_coords in nearby_locs:
+        nearby_loc = bc.MapLocation(variables.curr_planet, nearby_loc_coords[0], nearby_loc_coords[1])
         if gc.can_sense_location(nearby_loc) and gc.has_unit_at_location(nearby_loc) and gc.sense_unit_at_location(nearby_loc).unit_type == bc.UnitType.Factory:
             return True
     return False
@@ -114,7 +116,7 @@ def go_to_mars_sense(gc, unit, battle_locs, location, direction_to_coord, precom
     closest_enemy = None
     move_then_attack = False
     visible_enemies = False
-    enemies = gc.sense_nearby_units_by_team(location, unit.vision_range, sense_util.enemy_team(gc))
+    enemies = gc.sense_nearby_units_by_team(location, unit.vision_range, variables.enemy_team)
     if len(enemies) > 0:
         visible_enemies = True
         attack = get_attack(gc, unit, location, targeting_units)
@@ -161,18 +163,27 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
     closest_enemy = None
     move_then_attack = False
     visible_enemies = False
-    enemies = gc.sense_nearby_units_by_team(location, unit.vision_range, sense_util.enemy_team(gc))
+    enemies = gc.sense_nearby_units_by_team(location, unit.vision_range, variables.enemy_team)
     if len(enemies) > 0:
         visible_enemies= True
-        sorted_enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(location))
-        closest_enemy = closest_among_ungarrisoned(sorted_enemies)
+        closest_enemy = None
+        closest_dist = float('inf')
+        for enemy in enemies:
+            loc = enemy.location
+            if loc.is_on_map():
+                dist = sense_util.distance_squared_between_maplocs(loc.map_location(), location)
+                if dist<closest_dist:
+                    closest_dist = dist
+                    closest_enemy = enemy
+        #sorted_enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(location))
+        #closest_enemy = closest_among_ungarrisoned(sorted_enemies)
         attack = get_attack(gc, unit, location, targeting_units)
         if attack is not None:
             if closest_enemy is not None:
-                if check_radius_squares_factories(gc, unit):
+                if check_radius_squares_factories(gc, location):
                     dir = optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location())
                 elif (exists_bad_enemy(enemies)) or not gc.can_attack(unit.id, closest_enemy.id):
-                    dir = sense_util.best_available_direction(gc, unit, enemies)
+                    dir = sense_util.best_available_direction(gc, unit, [closest_enemy])
                 #and (closest_enemy.location.map_location().distance_squared_to(location)) ** (
                 #0.5) + 2 < unit.attack_range() ** (0.5)) or not gc.can_attack(unit.id, attack.id):
         else:
@@ -188,7 +199,6 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
                         move_then_attack = True
                 else:
                     dir = get_explore_dir(gc, unit, location)
-
     else:
         # if there are no enemies in sight, check if there is an ongoing battle.  If so, go there.
         if len(battle_locs)>0:
@@ -252,7 +262,7 @@ def snipe_sense(gc, unit, battle_locs, location, direction_to_coord, precomputed
             try:
                 best_unit =  None
                 best_priority = -float("inf")
-                for poss_enemy in gc.units():
+                for poss_enemy in variables.units:
                     if poss_enemy.location.is_on_map() and poss_enemy.team!=gc.team() and snipe_priority(poss_enemy)>best_priority:
                         best_unit = poss_enemy
                         best_priority = snipe_priority(poss_enemy)

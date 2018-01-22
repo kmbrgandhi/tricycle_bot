@@ -50,8 +50,12 @@ info = []
 directions = list(bc.Direction)
 non_list_directions = bc.Direction
 my_units = gc.my_units()
+units = gc.units()
 my_karbonite = gc.karbonite()
 research = gc.research_info()
+curr_round = gc.round()
+
+print_count = 0
 
 list_of_unit_ids = [unit.id for unit in my_units]
 
@@ -75,15 +79,15 @@ for x in range(earth_start_map.width):
 
 
 factory_spacing_diff = []
-for dx in range(2):
-    for dy in range(2):
+for dx in [-2,-1,0,1,2]:
+    for dy in [-2,-1,0,1,2]:
         if dx == 0 and dy == 0: 
             continue
         factory_spacing_diff.append((dx,dy))
 
 building_scouting_diff = []
-for dx in range(4):
-    for dy in range(4):
+for dx in [-4,-3,-2,-1,0,1,2,3,4]:
+    for dy in [-4,-3,-2,-1,0,1,2,3,4]:
         if dx == 0 and dy == 0:
             continue
         building_scouting_diff.append((dx,dy))
