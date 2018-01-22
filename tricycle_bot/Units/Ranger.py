@@ -5,6 +5,7 @@ import traceback
 import Units.sense_util as sense_util
 import Units.explore as explore
 import Units.variables as variables
+import time
 
 
 order = [bc.UnitType.Worker, bc.UnitType.Knight, bc.UnitType.Ranger, bc.UnitType.Mage,
@@ -17,6 +18,7 @@ def timestep(unit):
     if unit.unit_type != bc.UnitType.Ranger:
         # prob should return some kind of error
         return
+    #start_time = time.time()
     gc = variables.gc
     ranger_roles = variables.ranger_roles
     info = variables.info
@@ -25,30 +27,38 @@ def timestep(unit):
         ranger_roles["go_to_mars"].remove(unit.id)
     if unit.id not in ranger_roles["fighter"] and unit.id not in ranger_roles["sniper"]:
         c = 13
-        #if info[6]>0 and len(ranger_roles["go_to_mars"]) < 5*info[6]:
-        #    ranger_roles["go_to_mars"].append(unit.id)
+        if info[6]>0 and len(ranger_roles["go_to_mars"]) < 4*info[6]:
+            ranger_roles["go_to_mars"].append(unit.id)
         if len(ranger_roles["fighter"]) > c * len(ranger_roles["sniper"]) and variables.research.get_level(
             bc.UnitType.Ranger) == 3 and False:
             ranger_roles["sniper"].append(unit.id)
         else:
             ranger_roles["fighter"].append(unit.id)
-
+    #if variables.print_count<10:
+    #    print("Preprocessing:", time.time()-start_time)
 
     location = unit.location
     my_team = variables.my_team
     targeting_units = variables.targeting_units
     if location.is_on_map():
+        #start_time = time.time()
         map_loc = location.map_location()
         if variables.curr_planet == bc.Planet.Earth and unit.id not in ranger_roles["go_to_mars"] and unit.id in ranger_roles["fighter"]:
             for rocket in variables.rocket_locs:
                 target_loc = variables.rocket_locs[rocket]
-                if map_loc.distance_squared_to(variables.rocket_locs[rocket]) < 40:
+                if sense_util.distance_squared_between_maplocs(map_loc, target_loc) < 40:
                     variables.which_rocket[unit.id] = (target_loc, rocket)
                     ranger_roles["go_to_mars"].append(unit.id)
                     ranger_roles["fighter"].remove(unit.id)
                     break
+        #if variables.print_count < 10:
+        #    print("Preprocessing inside:", time.time() - start_time)
+        #start_time = time.time()
         dir, attack_target, snipe, move_then_attack, visible_enemies, closest_enemy, signals = ranger_sense(gc, unit, variables.last_turn_battle_locs,
                                                                                                             ranger_roles, map_loc, variables.direction_to_coord, variables.precomputed_bfs, targeting_units, variables.bfs_fineness, variables.rocket_locs)
+        #if variables.print_count < 10:
+        #    print("Sensing:", time.time() - start_time)
+        #start_time = time.time()
         if visible_enemies and closest_enemy is not None:
             enemy_loc = closest_enemy.location.map_location()
             f_f_quad = (int(enemy_loc.x / 5), int(enemy_loc.y / 5))
@@ -81,7 +91,10 @@ def timestep(unit):
         if snipe!=None and gc.can_begin_snipe(unit.id, snipe.location.map_location()) and gc.is_begin_snipe_ready(unit.id):
             gc.begin_snipe(unit.id, snipe.location)
         """
-
+        #if variables.print_count < 10:
+        #    print("Doing tasks:", time.time() - start_time)
+    if variables.print_count<10:
+        variables.print_count+=1
 
 def get_attack(gc, unit, location, targeting_units):
     vuln_enemies = gc.sense_nearby_units_by_team(location, unit.attack_range(), sense_util.enemy_team(gc))
@@ -165,9 +178,13 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
     closest_enemy = None
     move_then_attack = False
     visible_enemies = False
+    #start_time = time.time()
     enemies = gc.sense_nearby_units_by_team(location, unit.vision_range, variables.enemy_team)
+    #if variables.print_count < 10:
+    #    print("Sensing nearby units:", time.time() - start_time)
     if len(enemies) > 0:
         visible_enemies= True
+        #start_time = time.time()
         closest_enemy = None
         closest_dist = float('inf')
         for enemy in enemies:
