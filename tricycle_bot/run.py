@@ -124,14 +124,16 @@ while True:
                     start_time = time.time()
                     ranger.timestep(unit)
                     time_rangers += (time.time()-start_time)
-                except:
-                    print('ranger error.')
+                except Exception as e:
+                    print('RANGER ERROR.')
                     if ranger in variables.ranger_roles["go_to_mars"]:
                         variables.ranger_roles["go_to_mars"].remove(ranger)
                     elif ranger in variables.ranger_roles["fighter"]:
                         variables.ranger_roles["fighter"].remove(ranger)
                     elif ranger in variables.ranger_roles["sniper"]:
                         variables.ranger_roles["sniper"].remove(ranger)
+
+                    traceback.print_exc()
             elif unit.unit_type == unit_types["mage"]:
                 mage.timestep(unit)
             elif unit.unit_type == unit_types["healer"]:

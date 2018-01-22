@@ -11,6 +11,17 @@ def can_attack_multiplier(unit):
     # Multiplier for the danger of a unit, given it can attack.
     return 2
 
+def distance_squared_between_maplocs(maploc1, maploc2):
+    return (maploc1.x-maploc2.x)**2 + (maploc1.y - maploc2.y)**2
+
+
+def distance_squared_between_coord_maploc(coords1, maploc2):
+    return (coords1[0]-maploc2.x)**2 + (coords1[1] - maploc2.y)**2
+
+
+def distance_squared_between_coords(coords1, coords2):
+    return (coords1[0]-coords2[0])**2 + (coords1[1] - coords2[1])**2
+
 def health_multiplier(unit):
     # Multiplier for how appealing it is to attack a unit, given its current health.
     c = 1

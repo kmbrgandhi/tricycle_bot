@@ -139,9 +139,9 @@ def go_to_mars_sense(gc, unit, battle_locs, location, direction_to_coord, precom
             gc.load(rocket.id, unit.id)
     else:
         #print('REALLY CLOSE')
-        result = explore.bfs_with_destination((target_loc.x, target_loc.y), start_coords, variables.passable_locations_earth, variables.coord_to_direction)
+        result = explore.bfs_with_destination((target_loc.x, target_loc.y), start_coords, variables.gc, variables.planet, variables.passable_locations_earth, variables.coord_to_direction)
         if result is None:
-            variables.ranger_roles.remove(unit.id)
+            variables.ranger_roles["go_to_mars"].remove(unit.id)
             dir = None
         else:
             dir = result

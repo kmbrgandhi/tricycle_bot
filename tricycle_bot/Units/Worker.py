@@ -90,8 +90,8 @@ def timestep(unit):
 
 		away_from_units = sense_util.best_available_direction(gc,unit,nearby)	
 		#print(unit.id, "at", unit.location.map_location(), "is trying to move to", away_from_units)
-		movement.try_move(gc,unit,away_from_units)
 
+		movement.try_move(gc,unit,away_from_units)
 
 # returns whether unit is a miner or builder, currently placeholder until we can use team-shared data to designate unit roles
 def designate_roles():
@@ -393,6 +393,7 @@ def repair(gc, unit, my_location, current_roles):
 	map_loc = my_location
 	closest = None
 	closest_dist = float('inf')
+	closest_map_loc = None
 	for fact in variables.my_units:
 		if fact.unit_type == variables.unit_types["factory"]:
 			if fact.structure_is_built() and fact.health < fact.max_health:
@@ -401,15 +402,28 @@ def repair(gc, unit, my_location, current_roles):
 				if dist < closest_dist:
 					closest = fact
 					closest_dist = dist
+					closest_map_loc = loc
 
 	if closest is not None:
 		if gc.can_repair(unit.id, closest.id):
 			gc.repair(unit.id, closest.id)
 		else:
-			dir = map_loc.direction_to(closest.location.map_location())
-			movement.try_move(gc, unit, dir)
+			try_move_smartly(unit, map_loc, closest_map_loc)
 	else:
 		current_roles["repairer"].remove(unit.id)
+
+def try_move_smartly(unit, map_loc1, map_loc2):
+	if sense_util.distance_squared_between_maplocs(map_loc1, map_loc2) < (2 * variables.bfs_fineness ** 2) + 1:
+		dir = map_loc1.direction_to(map_loc2)
+	else:
+		our_coords = (map_loc1.x, map_loc1.y)
+		target_coords_thirds = (
+		int(map_loc2.x / variables.bfs_fineness), int(map_loc2.y / variables.bfs_fineness))
+		if (our_coords, target_coords_thirds) in variables.precomputed_bfs:
+			dir = variables.precomputed_bfs[(our_coords, target_coords_thirds)]
+		else:
+			dir = map_loc1.direction_to(map_loc2)
+	movement.try_move(variables.gc, unit, dir)
 
 def board(gc,my_unit,my_location,current_roles):
 	finished_rockets = []
@@ -436,8 +450,9 @@ def board(gc,my_unit,my_location,current_roles):
 			current_roles["boarder"].remove(my_unit.id)
 	else:
 		#print(unit.id, 'moving toward rocket')
-		direction_to_rocket = my_location.direction_to(rocket_location)
-		movement.try_move(gc,my_unit,direction_to_rocket)
+		try_move_smartly(my_unit, my_location, rocket_location)
+		#direction_to_rocket = my_location.direction_to(rocket_location)
+		#movement.try_move(gc,my_unit,direction_to_rocket)
 		
 	
 def get_replication_cap(gc,karbonite_locations, info, num_enemies):
@@ -523,7 +538,8 @@ def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, bui
 				#print(unit.id," just harvested!")
 		else:
 			# move toward deposit
-			movement.try_move(gc,my_unit,direction_to_deposit)
+			try_move_smartly(my_unit, my_location, closest_deposit)
+			#movement.try_move(gc,my_unit,direction_to_deposit)
 	else:
 		current_roles["miner"].remove(my_unit.id)
 		#print(unit.id," no deposits around")
@@ -582,7 +598,8 @@ def mine_mars(gc,unit,my_location):
 				#print(unit.id," just harvested on Mars!")
 		else:
 			# move toward deposit
-			movement.try_move(gc,unit,direction_to_deposit)	 
+			try_move_smartly(unit, my_location, closest_deposit)
+			#movement.try_move(gc,unit,direction_to_deposit)
 	else:
 		nearby = gc.sense_nearby_units_by_team(my_location, worker_spacing, variables.my_team)
 
@@ -668,9 +685,9 @@ def build(gc,my_unit,my_location,start_map,building_assignment,current_roles):
 		return
 	# if not adjacent move toward it
 	else:
-		#print(unit.id, "is trying to move toward factory at ",assigned_site)
-		direction_to_blueprint = my_location.direction_to(assigned_location)
-		movement.try_move(gc,my_unit,direction_to_blueprint)
+		try_move_smartly(my_unit, my_location, assigned_location)
+		#direction_to_blueprint = my_location.direction_to(assigned_location)
+		#movement.try_move(gc,my_unit,direction_to_blueprint)
 
 
 
