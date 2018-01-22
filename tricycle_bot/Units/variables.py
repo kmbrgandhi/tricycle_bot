@@ -50,8 +50,12 @@ info = []
 directions = list(bc.Direction)
 non_list_directions = bc.Direction
 my_units = gc.my_units()
+units = gc.units()
 my_karbonite = gc.karbonite()
 research = gc.research_info()
+curr_round = gc.round()
+
+print_count = 0
 
 list_of_unit_ids = [unit.id for unit in my_units]
 
