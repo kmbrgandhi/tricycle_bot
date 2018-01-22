@@ -199,13 +199,14 @@ def designate_roles():
 		workers_per_building = get_workers_per_building(gc,start_map,blueprint_location)
 
 		if len(assigned_workers) < workers_per_building:
-			workers_dist_to_blueprint_sorted = sorted(workers,key=lambda unit:unit.location.map_location().distance_squared_to(blueprint_location))
+			workers_dist_to_blueprint_sorted = sorted(workers,key=lambda unit:sense_util.distance_squared_between_maplocs(unit.location.map_location(), blueprint_location))
 			closest_worker_ids = []
 			for worker_unit in workers_dist_to_blueprint_sorted:
 				if worker_unit.id in current_roles["blueprinter"] or worker_unit.id in current_roles["builder"]:
 					continue
 				if building_id not in workers_in_recruitment_range:
-					if worker_unit.location.map_location().distance_squared_to(blueprint_location) > recruitment_radius:
+					worker_unit_loc = worker_unit.location.map_location()
+					if sense_util.distance_squared_between_maplocs(worker_unit_loc, blueprint_location) > recruitment_radius:
 						workers_in_recruitment_range[building_id] = len(closest_worker_ids)
 
 				closest_worker_ids.append(worker_unit.id)
@@ -218,7 +219,7 @@ def designate_roles():
 
 	for assigned_blueprinting_site in blueprinting_queue:
 		assigned_location = assigned_blueprinting_site.map_location
-		workers_dist_to_site_sorted = sorted(workers,key=lambda unit:unit.location.map_location().distance_squared_to(assigned_location))
+		workers_dist_to_site_sorted = sorted(workers,key=lambda unit:sense_util.distance_squared_between_maplocs(unit.location.map_location(), assigned_location))
 		closest_worker_ids = list(map(lambda unit: unit.id, workers_dist_to_site_sorted))
 
 		for blueprinter_id in current_roles["blueprinter"]:
@@ -404,7 +405,7 @@ def repair(gc, unit, my_location, current_roles):
 		if fact.unit_type == variables.unit_types["factory"]:
 			if fact.structure_is_built() and fact.health < fact.max_health:
 				loc = fact.location.map_location()
-				dist = map_loc.distance_squared_to(loc)
+				dist = sense_util.distance_squared_between_maplocs(map_loc, loc)
 				if dist < closest_dist:
 					closest = fact
 					closest_dist = dist
@@ -440,7 +441,7 @@ def board(gc,my_unit,my_location,current_roles):
 	minimum_distance = float('inf')
 	closest_rocket = None
 	for rocket in finished_rockets:
-		dist_to_rocket = my_location.distance_squared_to(rocket.location.map_location())
+		dist_to_rocket = sense_util.distance_squared_between_maplocs(my_location, rocket.location.map_location())
 		if dist_to_rocket < minimum_distance:
 			minimum_distance = dist_to_rocket
 			closest_rocket = rocket
@@ -504,8 +505,8 @@ def get_closest_deposit(gc,unit,position,karbonite_locations):
 	closest_deposit = bc.MapLocation(planet,-1,-1)
 	for x,y in karbonite_locations.keys():
 		map_location = bc.MapLocation(planet,x,y)
-		distance_to_deposit = position.distance_squared_to(map_location)	
-		#keep updating current closest deposit to unit	
+		distance_to_deposit = sense_util.distance_squared_between_maplocs(position, map_location)
+		#keep updating current closest deposit to unit
 		if distance_to_deposit < current_distance:
 			current_distance = distance_to_deposit 
 			closest_deposit = map_location
@@ -569,7 +570,7 @@ def pick_closest_building_assignment(gc, unit, building_assignment):
 	min_dist = float('inf')
 	map_loc = unit.location.map_location()
 	for building in building_assignment.values():
-		dist = map_loc.distance_squared_to(building.get_map_location())
+		dist = sense_util.distance_squared_between_maplocs(map_loc, building.get_map_location())
 		if dist< min_dist:
 			closest = building
 			min_dist = dist
@@ -586,7 +587,7 @@ def mine_mars(gc,unit,my_location):
 	for deposit_location in all_locations:
 		if gc.karbonite_at(deposit_location) == 0:
 			continue
-		distance_to_deposit = my_location.distance_squared_to(deposit_location)	
+		distance_to_deposit = sense_util.distance_squared_between_maplocs(my_location, deposit_location)
 		#keep updating current closest deposit to unit	
 		if distance_to_deposit < current_distance:
 			current_distance = distance_to_deposit 
@@ -638,7 +639,7 @@ def update_building_assignment(gc,building_assignment,blueprinting_assignment):
 
 				for worker_id in blueprinting_assignment:
 					assigned_site = blueprinting_assignment[worker_id]
-					if site.distance_squared_to(assigned_site.map_location) < variables.factory_spacing:
+					if sense_util.distance_squared_between_maplocs(site, assigned_site.map_location) < variables.factory_spacing:
 						invalid_building_locations[(site.x,site.y)] = False
 						continue
 
@@ -661,7 +662,7 @@ def assign_unit_to_build(gc,my_unit,my_location,start_map,building_assignment):
 	#print(len(blueprints))
 	for blueprint in available_blueprints:
 		blueprint_location = blueprint.location.map_location()
-		distance_to_blueprint = my_location.distance_squared_to(blueprint_location)
+		distance_to_blueprint = sense_util.distance_squared_between_maplocs(my_location, blueprint_location)
 		if distance_to_blueprint < smallest_distance:
 			smallest_distance = distance_to_blueprint
 			closest_building = blueprint
@@ -740,10 +741,10 @@ def is_valid_blueprint_location(gc,start_map,location,blueprinting_queue,bluepri
 				return False
 		for worker_id in blueprinting_assignment:
 			assigned_site = blueprinting_assignment[worker_id]
-			if location.distance_squared_to(assigned_site.map_location) < blueprint_spacing:
+			if sense_util.distance_squared_between_maplocs(location, assigned_site.map_location) < blueprint_spacing:
 				return False
 		for enemy_loc in variables.init_enemy_locs:
-			if location.distance_squared_to(enemy_loc) < 50:
+			if sense_util.distance_squared_between_maplocs(location, enemy_loc) < 50:
 				return False
 		return True
 
@@ -823,7 +824,7 @@ def get_closest_site(my_unit,my_location,blueprinting_queue):
 	smallest_distance = float('inf')
 	closest_site = None	
 	for site in blueprinting_queue:
-		distance_to_site = my_location.distance_squared_to(site.map_location) 
+		distance_to_site = sense_util.distance_squared_between_maplocs(my_location, site.map_location)
 		if distance_to_site < smallest_distance:
 			smallest_distance = distance_to_site
 			closest_site = site
