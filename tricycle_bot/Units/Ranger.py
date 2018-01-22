@@ -360,7 +360,7 @@ def coefficient_computation(gc, our_unit, their_unit, their_loc, location):
     # compute the relative appeal of attacking a unit.  Use AOE computation if attacking unit is mage.
     if not gc.can_attack(our_unit.id, their_unit.id):
         return 0
-    coeff = attack_coefficient(gc, our_unit, location, their_unit, their_loc, location)
+    coeff = attack_coefficient(gc, our_unit, location, their_unit, their_loc)
     if our_unit.unit_type != bc.UnitType.Mage:
         return coeff
     else:
@@ -370,7 +370,7 @@ def coefficient_computation(gc, our_unit, their_unit, their_loc, location):
             except:
                 new_unit = None
             if new_unit is not None and new_unit.team!=our_unit.team:
-                coeff = coeff + attack_coefficient(gc, our_unit, new_unit, location)
+                coeff = coeff + attack_coefficient(gc, our_unit, location, new_unit, new_unit.location.map_location())
 
         return coeff
 

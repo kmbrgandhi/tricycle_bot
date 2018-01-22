@@ -41,15 +41,33 @@ def timestep(unit):
 
     best_loc = None
     best_target = None
+    assign_to_loc = None ## (x,y)
     location = unit.location
 
     if location.is_on_map(): 
         unit_loc = location.map_location()
 
+        ## Attack
+        best_target = get_best_target(gc, unit, unit_loc, knight_unit_priority, enemy_team)
+        if best_target is not None: 
+            target_loc = best_target.location.map_location()
+            add_location = evaluate_battle_location(gc, target_loc, battle_locs)
+            if add_location: 
+                battle_locs[(target_loc.x,target_loc.y)] = clusters.Cluster(allies=set(),enemies=set([best_target.id]))
+                assign_to_loc = (target_loc.x,target_loc.y)
+
+            f_f_quad = (int(target_loc.x / 5), int(target_loc.y / 5))
+            if f_f_quad not in next_turn_battle_locs:
+                next_turn_battle_locs[f_f_quad] = (unit_loc, 1)
+            else:
+                next_turn_battle_locs[f_f_quad] = (next_turn_battle_locs[f_f_quad][0], next_turn_battle_locs[f_f_quad][1]+1)
+
         ## Movement 
         # If new knight assign to location 
         if unit.id not in assigned_knights: 
-            if len(battle_locs) > 0: 
+            if assign_to_loc is not None: 
+                battle_locs[assign_to_loc].add_ally(unit.id)
+            elif len(battle_locs) > 0: 
                 best_loc = get_best_location(gc, unit, unit_loc, battle_locs, planet, diagonal) ## MapLocation
                 cluster = battle_locs[(best_loc.x,best_loc.y)]
                 cluster.add_ally(unit.id)
@@ -70,26 +88,18 @@ def timestep(unit):
                 if best_dir is not None and gc.is_move_ready(unit.id) and gc.can_move(unit.id, best_dir):
                     gc.move_robot(unit.id, best_dir)
         else:
+            if assign_to_loc is not None: 
+                current_loc = assigned_knights[unit.id]
+                if (current_loc.x, current_loc.y) in battle_locs: 
+                    battle_locs[(current_loc.x, current_loc.y)].remove_ally(unit.id)
+                battle_locs[assign_to_loc].add_ally(unit.id)
+                assigned_knights[unit.id] = bc.MapLocation(planet, assign_to_loc[0], assign_to_loc[1])
             best_loc = assigned_knights[unit.id]
 
-        ## Attack
-        best_target = get_best_target(gc, unit, unit_loc, knight_unit_priority, enemy_team)
-
         ## Do shit
-        if best_target is not None:  # checked if ready to attack in get best target
-            # See if this is a new battle location
-            target_loc = best_target.location.map_location()
-            add_location = evaluate_battle_location(gc, target_loc, battle_locs)
-            if add_location: 
-                battle_locs[(target_loc.x,target_loc.y)] = clusters.Cluster(allies=set(),enemies=set([best_target.id]))
-
-            f_f_quad = (int(target_loc.x / 5), int(target_loc.y / 5))
-            if f_f_quad not in next_turn_battle_locs:
-                next_turn_battle_locs[f_f_quad] = (unit_loc, 1)
-            else:
-                next_turn_battle_locs[f_f_quad] = (next_turn_battle_locs[f_f_quad][0], next_turn_battle_locs[f_f_quad][1]+1)
+        if best_target is not None and gc.can_attack(unit.id, best_target.id):  # checked if ready to attack in get best target 
             # Attack
-            if gc.can_attack(unit.id, best_target.id): gc.attack(unit.id, best_target.id)
+            gc.attack(unit.id, best_target.id)
         else:
             new_enemy = get_new_enemies(gc, unit, unit_loc, enemy_team)
             if new_enemy is not None: 
