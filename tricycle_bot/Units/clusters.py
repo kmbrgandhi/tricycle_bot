@@ -30,7 +30,7 @@ class Cluster:
         for ally_id in self.allies: 
             try:
                 ally = gc.unit(ally_id)
-                if ally.location.map_location().distance_to(self.grouping_location) > Cluster.GROUPING_RADIUS:
+                if sense_util.distance_squared_between_maplocs(ally.location.map_location(), self.grouping_location) > Cluster.GROUPING_RADIUS:
                     return False
             except:
                 continue

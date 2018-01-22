@@ -63,15 +63,19 @@ while True:
     #start_time = time.time()
     knight.update_battles()
     #print('KNIGHT UPDATE BATTLES:', time.time()-start_time)
-    # print('updated battle locs: ', variables.earth_battles)
+
     #start_time = time.time()
     healer.update_healers()
     #print('HEALER UPDATE TIME:', time.time()-start_time)
-    # print('updated healer locs: ', variables.healer_target_locs)
+
+    start_time = time.time()
+    ranger.update_rangers() 
+    print('RANGER UPDATE TIME: ', time.time()-start_time)
+
     start_time = time.time()
     worker.designate_roles()
-    #role_time = time.time()-start_time
     print('DESIGNATING ROLES TIME:', time.time()-start_time)
+    
     time_workers = 0
     time_rangers = 0
     time_factories = 0

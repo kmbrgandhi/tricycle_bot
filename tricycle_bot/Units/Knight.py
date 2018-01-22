@@ -112,7 +112,7 @@ def get_best_location(gc, unit, unit_loc, battle_locs, planet, diagonal):
 
     for loc in battle_locs: 
         map_loc = bc.MapLocation(planet,loc[0],loc[1])
-        distance_coeff = 2*(1 - (float(unit_loc.distance_squared_to(map_loc))/diagonal))
+        distance_coeff = 2*(1 - (float(sense_util.distance_squared_between_maplocs(unit_loc,map_loc))/diagonal))
         coeff = battle_locs[loc].urgent
         if len(battle_locs[loc].enemies) > 0: 
             coeff = 2*(coeff + distance_coeff)
