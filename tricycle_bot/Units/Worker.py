@@ -311,7 +311,7 @@ def designate_roles():
 							new_site = BuildSite(best_location,unit_types["rocket"])
 							blueprinting_assignment[worker.id] = new_site
 
-							nearby_sites = gc.all_locations_within(best_location,variables.rocket_spacing)
+							nearby_sites = adjacent_locations(best_location)
 							for site in nearby_sites:
 								if invalid_building_locations[(site.x,site.y)]:
 									invalid_building_locations[(site.x,site.y)] = False
@@ -327,7 +327,7 @@ def designate_roles():
 							new_site = BuildSite(best_location,unit_types["factory"])
 							blueprinting_assignment[worker.id] = new_site
 
-							nearby_sites = gc.all_locations_within(best_location,variables.factory_spacing)
+							nearby_sites = factory_spacing_locations(best_location)
 							for site in nearby_sites:
 								if invalid_building_locations[(site.x,site.y)]:
 									invalid_building_locations[(site.x,site.y)] = False
@@ -364,7 +364,7 @@ def designate_roles():
 def get_workers_per_building(gc,start_map,building_location):
 	max_workers_per_building = 6
 	num_adjacent_spaces = 0
-	adjacent_locations = gc.all_locations_within(building_location,2)
+	adjacent_locations = adjacent_locations(building_location)
 	for location in adjacent_locations:
 		if building_location == location:
 			continue
@@ -623,7 +623,7 @@ def update_building_assignment(gc,building_assignment,blueprinting_assignment):
 		if building_id not in my_unit_ids:
 			del building_assignment[building_id]
 			removed_building_location = variables.all_building_locations[building_id]
-			reevaluated_sites = gc.all_locations_within(removed_building_location,variables.factory_spacing)
+			reevaluated_sites = factory_spacing_locations(removed_building_location)
 
 			# reevaluate
 			for site in reevaluated_sites:
@@ -721,14 +721,25 @@ def build(gc,my_unit,my_location,start_map,building_assignment,current_roles):
 		#movement.try_move(gc,my_unit,direction_to_blueprint)
 
 
-
 def adjacent_locations(location):
 	d = [(0,1),(1,1),(1,0),(1,-1),(0,-1),(-1,-1),(-1,0),(-1,1)]
 	planet = location.planet
 	x = location.x
 	y = location.y
 	return [bc.MapLocation(planet,x+dx,y+dy) for dx,dy in d]
+
+
+def factory_spacing_locations(location):
+	d = variables.factory_spacing
+	planet = location.planet
+	x = location.x
+	y = location.y
+	return [bc.MapLocation(planet,x+dx,y+dy) for dx,dy in d]
 	
+
+def potential_building_locations(location):
+	d = variables.building_scouting_diff
+	return 
 
 def is_valid_blueprint_location(gc,start_map,location,blueprinting_queue,blueprinting_assignment):
 
