@@ -81,7 +81,7 @@ def bfs_distance(init_coords, passable_locations_earth):
     del value[init]
     return value
 
-def bfs_with_destination(init_coords, final_coords, passable_locations_earth, direction_coords):
+def bfs_with_destination(init_coords, final_coords, gc, planet, passable_locations_earth, direction_coords):
     init = init_coords
     q = collections.deque([init])
     parent = {}
@@ -90,7 +90,8 @@ def bfs_with_destination(init_coords, final_coords, passable_locations_earth, di
         if curr == final_coords:
             break
         for node in coord_neighbors(curr):
-            if node not in parent and passable_locations_earth[node]:
+            maploc_node = get_maploc(planet, node)
+            if node not in parent and passable_locations_earth[node] and not gc.has_unit_at_location(maploc_node):
                 q.append(node)
                 parent[node] = curr
     if final_coords not in parent:
