@@ -29,8 +29,8 @@ def timestep(unit):
         c = 13
         if info[6]>0 and len(ranger_roles["go_to_mars"]) < 4*info[6]:
             ranger_roles["go_to_mars"].append(unit.id)
-        if len(ranger_roles["fighter"]) > c * len(ranger_roles["sniper"]) and variables.research.get_level(
-            bc.UnitType.Ranger) == 3 and False:
+        if False and len(ranger_roles["fighter"]) > c * len(ranger_roles["sniper"]) and variables.research.get_level(
+            bc.UnitType.Ranger) == 3:
             ranger_roles["sniper"].append(unit.id)
         else:
             ranger_roles["fighter"].append(unit.id)
@@ -110,9 +110,9 @@ def get_attack(gc, unit, location, targeting_units):
 def exists_bad_enemy(enemy):
     if attack_range_non_robots(enemy)>0:
         return True
-    random_num = random.random()
-    if random_num>0.5:
-        return True
+    #random_num = random.random()
+    #if random_num>0.5:
+    #    return True
     return False
 
 def check_radius_squares_factories(gc, location):
@@ -158,12 +158,23 @@ def go_to_mars_sense(gc, unit, battle_locs, location, enemies, direction_to_coor
             gc.load(rocket.id, unit.id)
     else:
         #print('REALLY CLOSE')
+        poss_dir = location.direction_to(target_loc)
+        shape = variables.direction_to_coord[poss_dir]
+        options = sense_util.get_best_option(shape)
+        for option in options:
+            if gc.can_move(unit.id, option):
+                # print(time.time() - start_time)
+                dir = option
+        if dir is None:
+            dir = directions[8]
+        """
         result = explore.bfs_with_destination((target_loc.x, target_loc.y), start_coords, variables.gc, variables.curr_planet, variables.passable_locations_earth, variables.coord_to_direction)
         if result is None:
             variables.ranger_roles["go_to_mars"].remove(unit.id)
             dir = None
         else:
             dir = result
+        """
         #print(dir)
 
     return dir, attack, snipe, move_then_attack, visible_enemies, closest_enemy, signals
@@ -181,12 +192,12 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
     closest_enemy = None
     move_then_attack = False
     visible_enemies = False
-    #start_time = time.time()
+    start_time = time.time()
     #if variables.print_count < 10:
     #    print("Sensing nearby units:", time.time() - start_time)
     if len(enemies) > 0:
         visible_enemies= True
-        #start_time = time.time()
+        start_time = time.time()
         closest_enemy = None
         closest_dist = float('inf')
         for enemy in enemies:

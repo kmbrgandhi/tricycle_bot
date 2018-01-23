@@ -75,17 +75,17 @@ def timestep(unit):
 	if my_role == "miner":
 		start_time = time.time()
 		mine(gc,unit,my_location,earth_start_map,karbonite_locations,current_roles, building_assignment, battle_locs)
-		print("mining time: ",time.time() - start_time)
+		#print("mining time: ",time.time() - start_time)
 	# if unit is builder
 	elif my_role == "builder":
 		start_time = time.time()
 		build(gc,unit,my_location,earth_start_map,building_assignment,current_roles)
-		print("building time: ",time.time() - start_time)
+		#print("building time: ",time.time() - start_time)
 	# if unit is blueprinter
 	elif my_role == "blueprinter":
 		start_time = time.time()
 		blueprint(gc,unit,my_location,building_assignment,blueprinting_assignment,current_roles)
-		print("blueprinting time: ",time.time() - start_time)
+		#print("blueprinting time: ",time.time() - start_time)
 	# if unit is boarder
 	elif my_role == "boarder": 
 		board(gc,unit,my_location,current_roles)
@@ -535,7 +535,7 @@ def get_closest_deposit(gc,unit,position,karbonite_locations,in_vision_range=Fal
 				current_distance = distance_to_deposit 
 				closest_deposit = karbonite_location
 
-	print("getting closest deposit time:",time.time() - start_time)
+	#print("getting closest deposit time:",time.time() - start_time)
 	return closest_deposit
 	
 def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, building_assignment, battle_locs):
@@ -544,7 +544,7 @@ def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, bui
 
 	closest_deposit = get_closest_deposit(gc,my_unit,my_location,karbonite_locations)
 
-	print("closest deposit time",time.time() - start_time)
+	#print("closest deposit time",time.time() - start_time)
 	#check to see if there even are deposits
 	if start_map.on_map(closest_deposit):
 		direction_to_deposit = my_location.direction_to(closest_deposit)
@@ -962,11 +962,11 @@ def blueprint(gc,my_unit,my_location,building_assignment,blueprinting_assignment
 
 				building_assignment[new_blueprint.id] = [my_unit.id] # initialize new building
 				#print("building_assignment",building_assignment)
-				print("blueprinting assignment before",blueprinting_assignment)
+				#print("blueprinting assignment before",blueprinting_assignment)
 				del blueprinting_assignment[my_unit.id]
 				current_roles["blueprinter"].remove(my_unit.id)
 				current_roles["builder"].append(my_unit.id)
-				print("blueprinting assignment after",blueprinting_assignment)
+				#print("blueprinting assignment after",blueprinting_assignment)
 				#print(my_unit.id, " just created a blueprint!")
 			else:
 				pass
