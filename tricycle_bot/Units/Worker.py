@@ -46,8 +46,41 @@ def timestep(unit):
 	my_location = unit.location.map_location()
 
 	if my_location.planet is variables.mars:
+		if gc.round()>700:
+			try_replicate = replicate(gc, unit)
+			if try_replicate:
+				return
 		mine_mars(gc,unit,my_location)
 		return
+	"""
+	if gc.round() > 300 and not variables.saviour_worker and near_factory(my_location):
+		variables.saviour_worker = True
+		variables.saviour_worker_id = unit.id
+
+	if variables.saviour_worker_id is not None and variables.saviour_worker_id == unit.id:
+		if variables.saviour_blueprinted:
+			if not gc.unit(variables.saviour_blueprinted.id).structure_is_built():
+				if gc.can_build(unit.id, variables.saviour_blueprinted.id):
+					gc.build(unit.id, variables.saviour_blueprinted.id)
+			else:
+				gc.load(variables.saviour_blueprinted.id, unit.id)
+				variables.saviour_worker_id = None
+				variables.saviour_worker = False
+				variables.saviour_blueprinted = False
+				variables.saviour_blueprinted_id = None
+		else:
+			for dir in variables.directions:
+				map_loc = my_location.add(dir)
+				map_loc_coords = (map_loc.x, map_loc.y)
+				if map_loc_coords in variables.passable_locations_earth and variables.passable_locations_earth[map_loc]:
+					if gc.can_blueprint(unit.id, variables.unit_types["rocket"], dir):
+						gc.blueprint(unit.id, variables.unit_types["rocket"], dir)
+						variables.saviour_blueprinted = True
+						variables.saviour_blueprinted_id= gc.sense_unit_at_location(map_loc).id
+	"""
+
+
+
 
 
 	my_role = "idle"
@@ -99,6 +132,17 @@ def timestep(unit):
 		#print(unit.id, "at", unit.location.map_location(), "is trying to move to", away_from_units)
 
 		movement.try_move(gc,unit,away_from_units)
+
+def near_factory(my_location):
+	my_location_coords = (my_location.x, my_location.y)
+	for coords in explore.coord_neighbors(my_location_coords, diff = explore.diffs_20):
+		if coords in variables.passable_locations_earth and variables.passable_locations_earth[coords]:
+			map_loc = bc.MapLocation(bc.Planet.Earth, coords[0], coords[1])
+			if variables.gc.can_sense_location(map_loc) and variables.gc.has_unit_at_location(map_loc):
+				unit = variables.gc.sense_unit_at_location(map_loc)
+				if unit.unit_type == variables.unit_types["factory"]:
+					return True
+	return False
 
 # returns whether unit is a miner or builder, currently placeholder until we can use team-shared data to designate unit roles
 def designate_roles():
@@ -916,7 +960,7 @@ def get_factory_limit():
 	return 4
 
 def get_rocket_limit():
-	return 2
+	return 3
 
 def get_closest_site(my_unit,my_location,blueprinting_queue):
 	

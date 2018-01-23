@@ -138,6 +138,10 @@ coord_to_direction = {(-1, -1): non_list_directions.Southwest, (-1, 1): non_list
 direction_to_coord = {v: k for k, v in coord_to_direction.items()}
 
 passable_locations_mars = {}
+savior_worker = False
+saviour_worker_id = None
+saviour_blueprinted = False
+saviour_blueprinted_id = None
 
 mars = bc.Planet.Mars
 mars_map = gc.starting_map(mars)
