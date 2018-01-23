@@ -46,10 +46,10 @@ def timestep(unit):
 
         ## Healing
         best_target = get_best_target(gc, unit, unit_loc, my_team)
-        if best_target is not None: 
-            target_loc = best_target.location.map_location()
-            add_healer_target(gc, target_loc)
-            assigned_healers[unit.id] = target_loc
+        #if best_target is not None:
+         #   heal_target_loc = best_target.location.map_location()
+         #   add_healer_target(gc, target_loc)
+          #  assigned_healers[unit.id] = target_loc
 
         ## Movement
         # If sees enemies close enough then tries to move away from them 
@@ -65,6 +65,9 @@ def timestep(unit):
         # Otherwise, goes to battle locations where they are in need of healers
         elif unit.id in assigned_healers:
             best_loc = assigned_healers[unit.id]
+            if not sense_util.distance_squared_between_maplocs(best_loc, unit_loc)>4:
+                best_loc = get_best_target_loc(gc, unit, unit_loc, target_locs, planet, diagonal)  ## MapLocation
+                assigned_healers[unit.id] = best_loc
 
         elif len(target_locs) > 0: 
             best_loc = get_best_target_loc(gc, unit, unit_loc, target_locs, planet, diagonal) ## MapLocation
@@ -73,7 +76,7 @@ def timestep(unit):
         # elif len(battle_locs) > 0: 
         #     best_loc = get_best_location(gc, unit, unit_loc, battle_locs, planet, diagonal)
 
-        else: 
+        else:
             best_dir = get_explore_dir(gc, unit, unit_loc, directions)
 
         ## Do shit
@@ -82,6 +85,8 @@ def timestep(unit):
         if best_dir is not None and gc.is_move_ready(unit.id): 
             gc.move_robot(unit.id, best_dir)
         elif best_loc is not None and gc.is_move_ready(unit.id):
+            #print('GETTING BEST DIRECTION')
+            #print(best_loc)
             best_dir = get_best_direction(gc, unit.id, unit_loc, best_loc, direction_to_coord, precomputed_bfs, bfs_fineness)
             if best_dir is not None: 
                 gc.move_robot(unit.id, best_dir)

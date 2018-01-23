@@ -236,11 +236,9 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
         if attack is not None:
             if closest_enemy is not None:
                 start_time = time.time()
-                """
                 if check_radius_squares_factories(gc, location):
                     dir = optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location())
-                """
-                if (exists_bad_enemy(closest_enemy)) or not gc.can_attack(unit.id, closest_enemy.id):
+                elif (exists_bad_enemy(closest_enemy)) or not gc.can_attack(unit.id, closest_enemy.id):
                     #if variables.print_count < 10:
                     #    print("Checking if condition:", time.time() - start_time)
                     start_time = time.time()
