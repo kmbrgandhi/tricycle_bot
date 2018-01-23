@@ -220,7 +220,7 @@ def get_best_target(gc, unit, unit_loc, my_team):
     if len(nearby) > 0: 
         nearby = sorted(nearby, key=lambda x: x.health/x.max_health)
         for ally in nearby: 
-            if gc.can_heal(unit.id, ally.id): 
+            if gc.can_heal(unit.id, ally.id) and ally.health < ally.max_health: 
                 return ally
     return None
 
