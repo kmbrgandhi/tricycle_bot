@@ -81,6 +81,12 @@ while True:
     #    print('DESIGNATING ROLES TIME:', time.time()-start_time)
 
     factory.evaluate_stockpile()
+    if worker.check_if_saviour_died():
+        variables.saviour_worker_id = None
+        variables.saviour_worker = False
+        variables.saviour_blueprinted = False
+        variables.saviour_blueprinted_id = None
+        variables.num_unsuccessful_savior = 0
     #time_workers = 0
     #time_rangers = 0
     #time_healers = 0

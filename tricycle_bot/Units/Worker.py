@@ -162,6 +162,11 @@ def timestep(unit):
 
 		movement.try_move(gc,unit,away_from_units)
 
+def check_if_saviour_died():
+	for my_unit in variables.my_units:
+		if variables.saviour_worker_id ==my_unit.id:
+			return True
+	return False
 def near_factory(my_location):
 	my_location_coords = (my_location.x, my_location.y)
 	for coords in explore.coord_neighbors(my_location_coords, diff = explore.diffs_20):
@@ -513,17 +518,24 @@ def repair(gc, unit, my_location, current_roles):
 		current_roles["repairer"].remove(unit.id)
 
 def try_move_smartly(unit, map_loc1, map_loc2):
-	if sense_util.distance_squared_between_maplocs(map_loc1, map_loc2) < (2 * variables.bfs_fineness ** 2) + 1:
-		dir = map_loc1.direction_to(map_loc2)
-	else:
-		our_coords = (map_loc1.x, map_loc1.y)
-		target_coords_thirds = (
-		int(map_loc2.x / variables.bfs_fineness), int(map_loc2.y / variables.bfs_fineness))
-		if (our_coords, target_coords_thirds) in variables.precomputed_bfs:
-			dir = variables.precomputed_bfs[(our_coords, target_coords_thirds)]
-		else:
+	if variables.gc.is_move_ready(unit.id):
+		if int(map_loc1.x / variables.bfs_fineness) == int(map_loc2.x / variables.bfs_fineness) and int(map_loc1.y/ variables.bfs_fineness)== int(map_loc2.y / variables.bfs_fineness):#sense_util.distance_squared_between_maplocs(map_loc1, map_loc2) < (2 * variables.bfs_fineness ** 2)+1:
 			dir = map_loc1.direction_to(map_loc2)
-	movement.try_move(variables.gc, unit, dir)
+		else:
+			our_coords = (map_loc1.x, map_loc1.y)
+			target_coords_thirds = (
+			int(map_loc2.x / variables.bfs_fineness), int(map_loc2.y / variables.bfs_fineness))
+			if (our_coords, target_coords_thirds) in variables.precomputed_bfs:
+				dir = variables.precomputed_bfs[(our_coords, target_coords_thirds)]
+			else:
+				dir = map_loc1.direction_to(map_loc2)
+		shape = variables.direction_to_coord[dir]
+		options = sense_util.get_best_option(shape)
+		for option in options:
+			if variables.gc.can_move(unit.id, option):
+				# print(time.time() - start_time)
+				variables.gc.move_robot(unit.id, option)
+				break
 
 def board(gc,my_unit,my_location,current_roles):
 	finished_rockets = []
@@ -1088,12 +1100,10 @@ def blueprint(gc,my_unit,my_location,building_assignment,blueprinting_assignment
 			movement.try_move(gc,my_unit,d)
 		else:
 			# move toward queued building site
-			next_direction = my_location.direction_to(assigned_site.map_location)	
-			movement.try_move(gc,my_unit,next_direction)
-			"""
+			#next_direction = my_location.direction_to(assigned_site.map_location)
+			#movement.try_move(gc,my_unit,next_direction)
 			try_move_smartly(my_unit,my_location,assigned_site.map_location)
-			"""
-		
+
 
 class BuildSite:
 	def __init__(self,map_location,building_type):
