@@ -79,7 +79,7 @@ while True:
     worker.designate_roles()
     #if time.time() - start_time > 0.02:
     #    print('DESIGNATING ROLES TIME:', time.time()-start_time)
-    
+
     #time_workers = 0
     #time_rangers = 0
     #time_healers = 0
@@ -123,9 +123,9 @@ while True:
             # respective unit types execute their own AI
             if unit.unit_type == unit_types["worker"]:
                 try:
-                    #start_time = time.time()
+                    # start_time = time.time()
                     worker.timestep(unit)
-                    #time_workers += (time.time()-start_time)
+                    # time_workers += (time.time()-start_time)
 
                 except Exception as e:
                     print('Error:', e)

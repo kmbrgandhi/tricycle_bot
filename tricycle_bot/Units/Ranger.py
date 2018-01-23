@@ -23,6 +23,7 @@ def timestep(unit):
     ranger_roles = variables.ranger_roles
     info = variables.info
     next_turn_battle_locs = variables.next_turn_battle_locs
+
     if unit.id in ranger_roles["go_to_mars"] and info[6]==0:
          ranger_roles["go_to_mars"].remove(unit.id)
     if unit.id not in ranger_roles["fighter"] and unit.id not in ranger_roles["sniper"]:
@@ -35,7 +36,7 @@ def timestep(unit):
         else:
             ranger_roles["fighter"].append(unit.id)
     #if variables.print_count<10:
-    #    print("Preprocessing:", time.time()-start_time)
+    #print("Preprocessing:", time.time()-start_time)
 
     location = unit.location
     my_team = variables.my_team
@@ -56,6 +57,7 @@ def timestep(unit):
         #start_time = time.time()
         dir, attack_target, snipe, move_then_attack, visible_enemies, closest_enemy, signals = ranger_sense(gc, unit, variables.last_turn_battle_locs,
                                                                                                             ranger_roles, map_loc, variables.direction_to_coord, variables.precomputed_bfs, targeting_units, variables.bfs_fineness, variables.rocket_locs)
+        #print("middlepart",time.time() - start_coord)
         #if variables.print_count < 10:
         #    print("Sensing:", time.time() - start_time)
         #start_time = time.time()
@@ -77,6 +79,7 @@ def timestep(unit):
                 else:
                     targeting_units[attack_target.id]+= 1
                 gc.attack(unit.id, attack_target.id)
+                add_healer_target(gc, map_loc)
         else:
             if attack_target is not None and gc.is_attack_ready(unit.id) and gc.can_attack(unit.id, attack_target.id):
                 if attack_target.id not in targeting_units:
@@ -84,6 +87,7 @@ def timestep(unit):
                 else:
                     targeting_units[attack_target.id]+=1
                 gc.attack(unit.id, attack_target.id)
+                add_healer_target(gc, map_loc)
 
             if dir != None and gc.is_move_ready(unit.id) and gc.can_move(unit.id, dir):
                 gc.move_robot(unit.id, dir)
@@ -92,7 +96,7 @@ def timestep(unit):
             gc.begin_snipe(unit.id, snipe.location)
         """
         #if variables.print_count < 10:
-        #    print("Doing tasks:", time.time() - start_time)
+        #print("Doing tasks:", time.time() - start_time)
     #if variables.print_count<10:
     #    variables.print_count+=1
 
@@ -123,6 +127,20 @@ def check_radius_squares_factories(gc, location):
         if gc.can_sense_location(nearby_loc) and gc.has_unit_at_location(nearby_loc) and gc.sense_unit_at_location(nearby_loc).unit_type == bc.UnitType.Factory:
             return True
     return False
+
+def add_healer_target(gc, ranger_loc): 
+    healer_target_locs = variables.healer_target_locs
+    valid = True
+
+    locs_near = gc.all_locations_within(ranger_loc, variables.healer_radius)
+    for near in locs_near:
+        near_coords = (near.x, near.y)
+        if near_coords in healer_target_locs: 
+            valid = False
+            break
+    if valid: 
+        healer_target_locs.add((ranger_loc.x, ranger_loc.y))
+
 
 def go_to_mars_sense(gc, unit, battle_locs, location, enemies, direction_to_coord, precomputed_bfs, targeting_units, bfs_fineness, rocket_locs):
     #print('GOING TO MARS')

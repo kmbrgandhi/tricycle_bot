@@ -957,7 +957,7 @@ def blueprinting_queue_limit(gc):
 	return 1
 
 def get_factory_limit():
-	return 4
+	return max(4,int(variables.my_karbonite/30))
 
 def get_rocket_limit():
 	return 3
@@ -1023,6 +1023,9 @@ def blueprint(gc,my_unit,my_location,building_assignment,blueprinting_assignment
 			# move toward queued building site
 			next_direction = my_location.direction_to(assigned_site.map_location)	
 			movement.try_move(gc,my_unit,next_direction)
+			"""
+			try_move_smartly(my_unit,my_location,assigned_site.map_location)
+			"""
 		
 
 class BuildSite:

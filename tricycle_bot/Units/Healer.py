@@ -33,7 +33,7 @@ def timestep(unit):
     my_team = variables.my_team
     directions = variables.directions
 
-    ranger_locs = variables.last_turn_ranger_locs
+    assigned_healers = variables.assigned_healers
     target_locs = variables.healer_target_locs
 
     best_dir = None
@@ -43,6 +43,13 @@ def timestep(unit):
 
     if location.is_on_map():
         unit_loc = location.map_location()
+
+        ## Healing
+        best_target = get_best_target(gc, unit, unit_loc, my_team)
+        if best_target is not None: 
+            target_loc = best_target.location.map_location()
+            add_healer_target(gc, target_loc)
+            assigned_healers[unit.id] = target_loc
 
         ## Movement
         # If sees enemies close enough then tries to move away from them 
@@ -55,28 +62,26 @@ def timestep(unit):
             if add_location: 
                 battle_locs[(enemy_loc.x,enemy_loc.y)] = clusters.Cluster(allies=set(),enemies=set([enemies[0].id]))
 
-        # # Otherwise, goes to battle locations where they are in need of healers
-        # elif unit.id in target_locs:
-        #     best_loc = target_locs[unit.id]
+        # Otherwise, goes to battle locations where they are in need of healers
+        elif unit.id in assigned_healers:
+            best_loc = assigned_healers[unit.id]
 
-        # elif len(ranger_locs) > 0: 
-        #     best_loc = get_best_location(gc, unit, unit_loc, ranger_locs, planet, diagonal) ## MapLocation
-        #     target_locs[unit.id] = best_loc
-        elif len(battle_locs) > 0: 
-            best_loc = get_best_location(gc, unit, unit_loc, battle_locs, planet, diagonal)
+        elif len(target_locs) > 0: 
+            best_loc = get_best_target_loc(gc, unit, unit_loc, target_locs, planet, diagonal) ## MapLocation
+            assigned_healers[unit.id] = best_loc
+
+        # elif len(battle_locs) > 0: 
+        #     best_loc = get_best_location(gc, unit, unit_loc, battle_locs, planet, diagonal)
 
         else: 
             best_dir = get_explore_dir(gc, unit, unit_loc, directions)
-
-        ## Healing
-        best_target = get_best_target(gc, unit, unit_loc, my_team)
 
         ## Do shit
         if best_target is not None and gc.is_heal_ready(unit.id):
             gc.heal(unit.id, best_target.id)
         if best_dir is not None and gc.is_move_ready(unit.id): 
             gc.move_robot(unit.id, best_dir)
-        elif best_dir is None and best_loc is not None and gc.is_move_ready(unit.id):
+        elif best_loc is not None and gc.is_move_ready(unit.id):
             best_dir = get_best_direction(gc, unit.id, unit_loc, best_loc, direction_to_coord, precomputed_bfs, bfs_fineness)
             if best_dir is not None: 
                 gc.move_robot(unit.id, best_dir)
@@ -107,6 +112,30 @@ def get_explore_dir(gc, unit, location, directions):
     if gc.can_move(unit.id, dir):
         return dir
     return None
+
+def get_best_target_loc(gc, unit, unit_loc, battle_locs, planet, diagonal):
+    best = None
+    best_coeff = -float('inf')
+    for loc in battle_locs: 
+        map_loc = bc.MapLocation(planet,loc[0],loc[1])
+        distance_coeff = (1 - (float(unit_loc.distance_squared_to(map_loc))/diagonal))
+        if distance_coeff > best_coeff: 
+            best_coeff = distance_coeff
+            best = map_loc
+    return best
+
+def add_healer_target(gc, target_loc): 
+    healer_target_locs = variables.healer_target_locs
+    valid = True
+
+    locs_near = gc.all_locations_within(target_loc, variables.healer_radius)
+    for near in locs_near:
+        near_coords = (near.x, near.y)
+        if near_coords in healer_target_locs: 
+            valid = False
+            break
+    if valid: 
+        healer_target_locs.add((target_loc.x, target_loc.y))
 
 def get_best_location(gc, unit, unit_loc, battle_locs, planet, diagonal): 
     """
@@ -174,14 +203,15 @@ def update_healers():
     """
     gc = variables.gc
     target_locs = variables.healer_target_locs
+    assigned_healers = variables.assigned_healers
     planet = gc.planet()
     my_team = variables.my_team
 
     remove = set()
-    for healer_id in target_locs:
+    for healer_id in assigned_healers:
         try: 
             healer = gc.unit(healer_id)
-            loc = target_locs[healer_id]
+            loc = assigned_healers[healer_id]
             if gc.can_sense_location(loc):
                 allies = gc.sense_nearby_units_by_team(loc, 4, my_team)
                 if len(allies) == 0: 
@@ -190,7 +220,8 @@ def update_healers():
             remove.add(healer_id)
 
     for healer_id in remove: 
-        del target_locs[healer_id]
+        if healer_id in assigned_healers: 
+            del assigned_healers[healer_id]
 
 
 
