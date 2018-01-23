@@ -52,32 +52,51 @@ def timestep(unit):
 				return
 		mine_mars(gc,unit,my_location)
 		return
-	"""
-	if gc.round() > 300 and not variables.saviour_worker and near_factory(my_location):
+	if gc.round() > 250 and not variables.saviour_worker and near_factory(my_location):
 		variables.saviour_worker = True
 		variables.saviour_worker_id = unit.id
 
 	if variables.saviour_worker_id is not None and variables.saviour_worker_id == unit.id:
 		if variables.saviour_blueprinted:
-			if not gc.unit(variables.saviour_blueprinted.id).structure_is_built():
-				if gc.can_build(unit.id, variables.saviour_blueprinted.id):
-					gc.build(unit.id, variables.saviour_blueprinted.id)
+			if not gc.unit(variables.saviour_blueprinted_id).structure_is_built():
+				if gc.can_build(unit.id, variables.saviour_blueprinted_id):
+					gc.build(unit.id, variables.saviour_blueprinted_id)
 			else:
-				gc.load(variables.saviour_blueprinted.id, unit.id)
-				variables.saviour_worker_id = None
-				variables.saviour_worker = False
-				variables.saviour_blueprinted = False
-				variables.saviour_blueprinted_id = None
+				if gc.can_load(variables.saviour_blueprinted_id, unit.id):
+					gc.load(variables.saviour_blueprinted_id, unit.id)
+					variables.saviour_worker_id = None
+					variables.saviour_worker = False
+					variables.saviour_blueprinted = False
+					variables.saviour_blueprinted_id = None
+					variables.num_unsuccessful_savior = 0
 		else:
+			blueprinted = False
 			for dir in variables.directions:
 				map_loc = my_location.add(dir)
 				map_loc_coords = (map_loc.x, map_loc.y)
-				if map_loc_coords in variables.passable_locations_earth and variables.passable_locations_earth[map_loc]:
+				if map_loc_coords in variables.passable_locations_earth and variables.passable_locations_earth[map_loc_coords]:
 					if gc.can_blueprint(unit.id, variables.unit_types["rocket"], dir):
 						gc.blueprint(unit.id, variables.unit_types["rocket"], dir)
 						variables.saviour_blueprinted = True
-						variables.saviour_blueprinted_id= gc.sense_unit_at_location(map_loc).id
-	"""
+						new_blueprint = gc.sense_unit_at_location(map_loc)
+						variables.saviour_blueprinted_id= new_blueprint.id
+						variables.all_building_locations[variables.saviour_blueprinted_id] = map_loc
+						blueprinted = True
+						break
+					elif variables.num_unsuccessful_savior > 5:
+						in_the_way_unit = gc.sense_unit_at_location(map_loc)
+						gc.disintegrate_unit(in_the_way_unit.id)
+						if gc.can_blueprint(unit.id, variables.unit_types["rocket"], dir):
+							gc.blueprint(unit.id, variables.unit_types["rocket"], dir)
+							variables.saviour_blueprinted = True
+							new_blueprint = gc.sense_unit_at_location(map_loc)
+							variables.saviour_blueprinted_id = new_blueprint.id
+							variables.all_building_locations[variables.saviour_blueprinted_id] = map_loc
+							blueprinted = True
+							break
+
+			if not blueprinted:
+				variables.num_unsuccessful_savior+=1
 
 
 
