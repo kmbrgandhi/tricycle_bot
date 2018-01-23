@@ -165,9 +165,9 @@ def go_to_mars_sense(gc, unit, battle_locs, location, enemies, direction_to_coor
     target_loc = variables.which_rocket[unit.id][0]
 
     # # rocket was destroyed
-    # if not gc.has_unit_at_location(target_loc):
-    #     variables.ranger_roles["go_to_mars"].remove(unit.id)
-    #     return dir, attack, snipe, move_then_attack, visible_enemies, closest_enemy, signals
+    if not gc.has_unit_at_location(target_loc):
+        variables.ranger_roles["go_to_mars"].remove(unit.id)
+        return dir, attack, snipe, move_then_attack, visible_enemies, closest_enemy, signals
     #print(unit.id)
     #print('MY LOCATION:', start_coords)
     #print('GOING TO:', target_loc)
