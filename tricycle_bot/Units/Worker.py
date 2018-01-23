@@ -108,9 +108,6 @@ def timestep(unit):
 				variables.num_unsuccessful_savior+=1
 
 
-
-
-
 	my_role = "idle"
 	for role in current_roles:
 		if unit.id in current_roles[role]:
@@ -123,9 +120,6 @@ def timestep(unit):
 	current_num_workers = info[0]
 	max_num_workers = get_replication_cap(gc,karbonite_locations, info, num_enemies)
 	worker_spacing = 8
-
-	#print("REPLICATION CAP: ",max_num_workers)
-	# replicates if unit is able to (cooldowns, available directions etc.)	
 	
 	if current_num_workers < max_num_workers:
 		try_replicate = replicate(gc,unit)
@@ -175,12 +169,7 @@ def near_factory(my_location):
 
 # returns whether unit is a miner or builder, currently placeholder until we can use team-shared data to designate unit roles
 def designate_roles():
-	"""
-	my_location = my_unit.location.map_location()
-	#print(my_location)
-	start_map = gc.starting_map(bc.Planet(0))
-	nearby = gc.sense_nearby_units(my_location, my_unit.vision_range)
-	"""
+
 	my_units = variables.my_units
 	unit_types = variables.unit_types
 	current_roles = variables.current_worker_roles
@@ -248,21 +237,19 @@ def designate_roles():
 				workers.append(my_unit)
 				worker_id_list.append(my_unit.id)
 
-		#print("current_roles within designate roles",current_roles)
-		#print("part 1",time.time()-start_time)
 		update_for_dead_workers(gc,current_roles,blueprinting_queue,blueprinting_assignment,building_assignment)
-		#print("current_roles after update",current_roles)
+
 		update_building_assignment(gc,building_assignment,blueprinting_assignment)
 		update_deposit_info(gc,karbonite_locations)
 
-		#print("part 2",time.time()-start_time)
+
 		max_num_builders = 5
 		max_num_blueprinters = 2 #len(blueprinting_queue)*2 + 1 # at least 1 blueprinter, 2 blueprinters per cluster
 		num_miners_per_deposit = 2 #approximate, just to cap miner count as deposit number decreases
 
 
 		closest_workers_to_blueprint = {} # dictionary mapping blueprint_id to a list of worker id sorted by distance to the blueprint
-		#workers_in_recruitment_range = {}
+
 		for building_id in building_assignment:
 			assigned_workers = building_assignment[building_id]
 			blueprint_location = gc.unit(building_id).location.map_location()
@@ -274,12 +261,7 @@ def designate_roles():
 				for worker_unit in workers_dist_to_blueprint_sorted:
 					if worker_unit.id in current_roles["blueprinter"] or worker_unit.id in current_roles["builder"]:
 						continue
-					"""
-					if building_id not in workers_in_recruitment_range:
-						worker_unit_loc = worker_unit.location.map_location()
-						if sense_util.distance_squared_between_maplocs(worker_unit_loc, blueprint_location) > recruitment_radius:
-							workers_in_recruitment_range[building_id] = len(closest_worker_ids)
-					"""
+
 					if sense_util.distance_squared_between_maplocs(worker_unit.location.map_location(), blueprint_location) <= variables.recruitment_radius:
 						closest_worker_ids.append(worker_unit.id)
 				closest_workers_to_blueprint[building_id] = closest_worker_ids
@@ -349,21 +331,6 @@ def designate_roles():
 							role_revised = True
 							my_role = "builder"
 							break
-
-						"""
-						if building_id in workers_in_recruitment_range:
-							num_workers_in_range = workers_in_recruitment_range[building_id]
-						else:
-							num_workers_in_range = len(closest_worker_list)
-						if len(assigned_workers) > min_workers_per_building and num_workers_in_range == 0:
-							continue
-						if num_open_slots_to_build <= num_workers_in_range:
-							recruitable_workers = closest_worker_list[:num_open_slots_to_build]
-						else:
-							optimal_number = max(min_workers_per_building,num_workers_in_range)
-							recruitable_workers = closest_worker_list[:optimal_number]
-						"""
-
 
 			# recruit nearby worker to place down a blueprint
 			if my_role != "blueprinter" and my_role != "builder" and not role_revised:
@@ -835,20 +802,15 @@ def build(gc,my_unit,my_location,start_map,building_assignment,current_roles):
 					if gc.has_unit_at_location(adjacent_location): continue
 
 					if adjacent_location in adjacent_locs_to_blueprint:
-						print("found adjacent region",adjacent_location)
+						#print("found adjacent region",adjacent_location)
 						direction = my_location.direction_to(adjacent_location)
-
-						#print("karbonite enough?",variables.my_karbonite >= 30)
-						#print("ability heat",my_unit.ability_heat)
-						#print("ability cooldown",my_unit.ability_cooldown)
-						#print("can replicate",gc.can_replicate(my_unit.id,direction))
 
 						if gc.can_replicate(my_unit.id,direction):
 							#print("right before replication")
 							gc.replicate(my_unit.id,direction)
 							new_unit = gc.sense_unit_at_location(adjacent_location)
 
-							print("new replicated unit",new_unit.id)
+							#print("new replicated unit",new_unit.id)
 							current_roles["builder"].append(new_unit.id)
 							building_assignment[assigned_building.id].append(new_unit.id)
 							break
@@ -964,52 +926,7 @@ def get_optimal_building_location(gc, start_map, center, building_type, karbonit
 
 	return max(list(karbonite_adjacent_locations.keys()), key=lambda loc: karbonite_adjacent_locations[loc])
 
-"""
-# generates locations to build factories that are close to karbonite deposits	
-def get_optimal_building_location(gc,start_map,center,karbonite_locations,blueprinting_queue,blueprinting_assignment):
-	potential_locations = []
-	karbonite_adjacent_locations = {}
-	no_deposits_located = True
 
-	for location in gc.all_locations_within(center,20):
-		start_time = time.time()
-		if (location.x, location.y) in variables.passable_locations_earth and variables.passable_locations_earth[(location.x, location.y)] and variables.invalid_building_locations[(location.x,location.y)]:
-			#print("optimal building location time",time.time() - start_time)
-			loc_key = (location.x,location.y)
-
-			if loc_key in karbonite_locations:
-				if karbonite_locations[loc_key] > 0:
-					continue
-
-			start_time = time.time()
-			for adjacent_location in adjacent_locations(location):
-				if location == adjacent_location: continue
-
-				adj_key = (adjacent_location.x,adjacent_location.y)
-
-				if adj_key in karbonite_locations:
-					karbonite_value = karbonite_locations[adj_key]
-				else:
-					karbonite_value = 0
-
-				if loc_key not in karbonite_adjacent_locations:
-					karbonite_adjacent_locations[loc_key] = karbonite_value
-				else:
-					karbonite_adjacent_locations[loc_key] += karbonite_value
-			#print("par t2 location time",time.time() - start_time)
-			if karbonite_adjacent_locations[loc_key] > 0:
-				no_deposits_located = False
-
-	if len(karbonite_adjacent_locations) == 0:
-		return None
-	elif no_deposits_located:
-		for default_location in adjacent_locations(center):
-			if is_valid_blueprint_location(gc,start_map,default_location,blueprinting_queue,blueprinting_assignment):
-				return (default_location.x,default_location.y)
-	
-	return max(list(karbonite_adjacent_locations.keys()),key=lambda loc:karbonite_adjacent_locations[loc])
-
-"""
 # function to flexibly determine when a good time to expand factories
 def can_blueprint_factory(gc,factory_count):
 	if gc.round()>250 and variables.num_enemies<5:
