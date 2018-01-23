@@ -135,12 +135,14 @@ def check_radius_squares_factories(gc, unit, radius=1):
 def get_best_direction(gc, unit_id, unit_loc, target_loc, direction_to_coord, precomputed_bfs, bfs_fineness):
     start_coords = (unit_loc.x, unit_loc.y)
     target_coords_thirds = (int(target_loc.x/bfs_fineness), int(target_loc.y/bfs_fineness))
-    shape = direction_to_coord[precomputed_bfs[(start_coords, target_coords_thirds)]]
-    options = sense_util.get_best_option(shape)
-    for option in options: 
-        if gc.can_move(unit_id, option):
-            return option 
+    if (start_coords, target_coords_thirds) in precomputed_bfs:
+        shape = direction_to_coord[precomputed_bfs[(start_coords, target_coords_thirds)]]
+        options = sense_util.get_best_option(shape)
+        for option in options: 
+            if gc.can_move(unit_id, option):
+                return option 
     return None
+
 
 def get_best_target(gc, unit, unit_loc, my_team):
     ## Attempt to heal nearby units

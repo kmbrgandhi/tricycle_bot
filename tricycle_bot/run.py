@@ -54,6 +54,7 @@ while True:
     variables.curr_round = gc.round()
     variables.num_enemies = 0
     variables.print_count = 0
+
     print("PYROUND:", variables.curr_round)
     print("TIME LEFT:", gc.get_time_left_ms())
     for poss_enemy in variables.units:
@@ -71,12 +72,12 @@ while True:
     ranger.update_rangers() 
     # print('RANGER UPDATE TIME: ', time.time()-start_time)
 
-    start_time = time.time()
+    #start_time = time.time()
     worker.designate_roles()
-    print('DESIGNATING ROLES TIME:', time.time()-start_time)
+    #print('DESIGNATING ROLES TIME:', time.time()-start_time)
     
-    time_workers = 0
-    time_rangers = 0
+    #time_workers = 0
+    #time_rangers = 0
     # time_factories = 0
     # time_knights = 0
     
