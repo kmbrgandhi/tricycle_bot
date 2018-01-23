@@ -896,6 +896,9 @@ def get_optimal_building_location(gc, start_map, center, building_type, karbonit
 		if location_coords in variables.passable_locations_earth and variables.passable_locations_earth[location_coords] and variables.invalid_building_locations[location_coords]:
 			# print("optimal building location time",time.time() - start_time)
 
+			adjacent_spaces = get_workers_per_building(gc,start_map,location)
+			if adjacent_spaces < 3: continue
+
 			if location_coords in karbonite_locations:
 				if karbonite_locations[location_coords] > 0:
 					continue
@@ -913,6 +916,7 @@ def get_optimal_building_location(gc, start_map, center, building_type, karbonit
 			# print("par t2 location time",time.time() - start_time)
 			if karbonite_adjacent_locations[location_coords] > 0:
 				no_deposits_located = False
+
 
 	if len(karbonite_adjacent_locations) == 0:
 		return None
