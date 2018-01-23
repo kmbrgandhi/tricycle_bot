@@ -55,8 +55,8 @@ def timestep(unit):
 		if unit.id in current_roles[role]:
 			my_role = role
 	
-	print()
-	print("on unit #",unit.id, "position: ",my_location, "role: ",my_role)
+	#print()
+	#print("on unit #",unit.id, "position: ",my_location, "role: ",my_role)
 
 	#print("KARBONITE: ",gc.karbonite()
 	
@@ -217,8 +217,8 @@ def designate_roles():
 
 			closest_workers_to_site[assigned_blueprinting_site] = closest_worker_ids
 
-		print("blueprinting_assignment",blueprinting_assignment)
-		print("building_assignment",building_assignment)
+		#print("blueprinting_assignment",blueprinting_assignment)
+		#print("building_assignment",building_assignment)
 		#print("blueprinting_queue",blueprinting_queue)
 
 
@@ -312,7 +312,7 @@ def designate_roles():
 							#print("time for building location",time.time() - inside_time)
 							if best_location_tuple is not None:
 								best_location = bc.MapLocation(earth, best_location_tuple[0], best_location_tuple[1])
-								print(worker.id,"can build a factory")
+								#print(worker.id,"can build a factory")
 								if my_role != "idle" and worker.id in current_roles[my_role]:
 									current_roles[my_role].remove(worker.id)
 
@@ -333,8 +333,8 @@ def designate_roles():
 								#blueprinting_queue.append(new_site)	
 								#print(worker.id," just added to building queue",best_location)
 
-								print(worker.id,"cannot build a rocket or factory")
-						print(worker.id,"cannot build a rocket or factory")
+								#print(worker.id,"cannot build a rocket or factory")
+						#print(worker.id,"cannot build a rocket or factory")
 			## DESIGNATION FOR UNASSIGNED WORKERS ##
 			if my_role != "idle":
 				continue
@@ -910,7 +910,7 @@ def building_in_progress_cap(gc):
 
 def blueprint(gc,my_unit,my_location,building_assignment,blueprinting_assignment,current_roles):
 	directions = variables.directions
-	print('BLUEPRINTING')
+	#print('BLUEPRINTING')
 
 	# assign this unit to build a blueprint, if nothing to build just move away from other factories
 	if my_unit.id not in blueprinting_assignment:
@@ -922,7 +922,7 @@ def blueprint(gc,my_unit,my_location,building_assignment,blueprinting_assignment
 		assigned_site = blueprinting_assignment[my_unit.id]
 
 		# if my_unit.id in blueprinting_assignment:
-		print("unit",my_unit.id,"blueprinting at",blueprinting_assignment[my_unit.id])
+		#print("unit",my_unit.id,"blueprinting at",blueprinting_assignment[my_unit.id])
 		#print(unit.id, "is assigned to building in", assigned_site.map_location)
 		direction_to_site = my_location.direction_to(assigned_site.map_location)
 

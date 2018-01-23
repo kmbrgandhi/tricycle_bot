@@ -71,12 +71,12 @@ while True:
     ranger.update_rangers() 
     # print('RANGER UPDATE TIME: ', time.time()-start_time)
 
-    # start_time = time.time()
+    #start_time = time.time()
     worker.designate_roles()
-    # print('DESIGNATING ROLES TIME:', time.time()-start_time)
+    #print('DESIGNATING ROLES TIME:', time.time()-start_time)
     
-    # time_workers = 0
-    # time_rangers = 0
+    #time_workers = 0
+    #time_rangers = 0
     # time_factories = 0
     # time_knights = 0
     

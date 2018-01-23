@@ -23,8 +23,8 @@ def timestep(unit):
     ranger_roles = variables.ranger_roles
     info = variables.info
     next_turn_battle_locs = variables.next_turn_battle_locs
-    # if unit.id in ranger_roles["go_to_mars"] and info[6]==0:
-    #     ranger_roles["go_to_mars"].remove(unit.id)
+    if unit.id in ranger_roles["go_to_mars"] and info[6]==0:
+         ranger_roles["go_to_mars"].remove(unit.id)
     if unit.id not in ranger_roles["fighter"] and unit.id not in ranger_roles["sniper"]:
         c = 13
         if info[6]>0 and len(ranger_roles["go_to_mars"]) < 4*info[6]:
@@ -93,14 +93,15 @@ def timestep(unit):
         """
         #if variables.print_count < 10:
         #    print("Doing tasks:", time.time() - start_time)
-    if variables.print_count<10:
-        variables.print_count+=1
+    #if variables.print_count<10:
+    #    variables.print_count+=1
 
 def get_attack(gc, unit, location, targeting_units):
     enemy_team = variables.enemy_team
     vuln_enemies = gc.sense_nearby_units_by_team(location, unit.attack_range(), enemy_team)
     if len(vuln_enemies)==0:
         return None
+    return vuln_enemies[0]
     for enemy in vuln_enemies:
         if enemy.id in targeting_units and int(enemy.health/unit.damage())<targeting_units[enemy.id]:
             return enemy
@@ -199,27 +200,28 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
         #    print("Getting closest enemy:", time.time() - start_time)
         #sorted_enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(location))
         #closest_enemy = closest_among_ungarrisoned(sorted_enemies)
-        #start_time = time.time()
+        start_time = time.time()
         attack = get_attack(gc, unit, location, targeting_units)
         #if variables.print_count < 10:
         #    print("Getting attack:", time.time() - start_time)
         if attack is not None:
             if closest_enemy is not None:
-                #start_time = time.time()
+                start_time = time.time()
+                """
                 if check_radius_squares_factories(gc, location):
                     dir = optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location())
-                elif (exists_bad_enemy(closest_enemy)) or not gc.can_attack(unit.id, closest_enemy.id):
+                """
+                if (exists_bad_enemy(closest_enemy)) or not gc.can_attack(unit.id, closest_enemy.id):
                     #if variables.print_count < 10:
                     #    print("Checking if condition:", time.time() - start_time)
-                    #start_time = time.time()
+                    start_time = time.time()
                     dir = sense_util.best_available_direction(gc, unit, [closest_enemy])
                     #if variables.print_count < 10:
-                     #   print("Getting best available direction:", time.time() - start_time)
+                    #    print("Getting best available direction:", time.time() - start_time)
 
                 #and (closest_enemy.location.map_location().distance_squared_to(location)) ** (
                 #0.5) + 2 < unit.attack_range() ** (0.5)) or not gc.can_attack(unit.id, attack.id):
         else:
-            #start_time = time.time()
             if gc.is_move_ready(unit.id):
 
                 if closest_enemy is not None:
@@ -231,20 +233,22 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
                     if attack is not None:
                         move_then_attack = True
                 else:
-                    dir = get_explore_dir(gc, unit, location)
+                    dir = run_towards_init_loc(gc, unit, location, direction_to_coord, precomputed_bfs, bfs_fineness)
             #if variables.print_count < 10:
-             #   print("Getting direction:", time.time() - start_time)
+            #    print("Getting direction:", time.time() - start_time)
     else:
-        #start_time = time.time()
         # if there are no enemies in sight, check if there is an ongoing battle.  If so, go there.
         if len(battle_locs)>0:
+            #print('IS GOING TO BATTLE')
             dir = go_to_battle(gc, unit, battle_locs, location, direction_to_coord, precomputed_bfs, bfs_fineness)
             #queued_paths[unit.id] = target
         else:
             #dir = move_away(gc, unit, battle_locs)
             if variables.curr_planet == bc.Planet.Earth:
+                #print('IS RUNNING TOWARDS INIT LOC')
                 dir = run_towards_init_loc(gc, unit, location, direction_to_coord, precomputed_bfs, bfs_fineness)
             else:
+                #print('EXPLORING')
                 dir = get_explore_dir(gc, unit, location)
         """
         elif unit.id in queued_paths:
@@ -334,6 +338,7 @@ def how_many_adjacent(gc, unit):
     return total
 
 def go_to_battle(gc, unit, battle_locs, location, direction_to_coord, precomputed_bfs, bfs_fineness):
+    #start_time = time.time()
     # send a unit to battle
     weakest = random.choice(list(battle_locs.keys()))
     target = battle_locs[weakest][0]
@@ -349,6 +354,7 @@ def go_to_battle(gc, unit, battle_locs, location, direction_to_coord, precompute
     options = sense_util.get_best_option(shape)
     for option in options:
         if gc.can_move(unit.id, option):
+            #print(time.time() - start_time)
             return option
     return directions[8]
     #return optimal_direction_towards(gc, unit, unit.location.map_location(), target, directions), target
@@ -414,6 +420,7 @@ def pick_from_init_enemy_locs(init_loc):
     return None
 
 def run_towards_init_loc(gc, unit, location,  direction_to_coord, precomputed_bfs, bfs_fineness):
+    #start_time = time.time()
     curr_planet_map = gc.starting_map(gc.planet())
     coords_init_location = (location.x, location.y)
     coords_loc = pick_from_init_enemy_locs(coords_init_location)
@@ -424,7 +431,9 @@ def run_towards_init_loc(gc, unit, location,  direction_to_coord, precomputed_bf
     options = sense_util.get_best_option(shape)
     for option in options:
         if gc.can_move(unit.id, option):
+            #print(time.time() - start_time)
             return option
+
     return directions[8]
 
 
