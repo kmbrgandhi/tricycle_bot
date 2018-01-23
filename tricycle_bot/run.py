@@ -118,9 +118,9 @@ while True:
             # respective unit types execute their own AI
             if unit.unit_type == unit_types["worker"]:
                 try:
-                    #start_time = time.time()
+                    start_time = time.time()
                     worker.timestep(unit)
-                    #time_workers += (time.time()-start_time)
+                    time_workers += (time.time()-start_time)
 
                 except Exception as e:
                     print('Error:', e)
@@ -132,9 +132,9 @@ while True:
                 #time_knights+=(time.time()-start_time)
             elif unit.unit_type == unit_types["ranger"]:
                 try:
-                    #start_time = time.time()
+                    start_time = time.time()
                     ranger.timestep(unit)
-                    #time_rangers += (time.time()-start_time)
+                    time_rangers += (time.time()-start_time)
                     #print(time.time()-start_time)
                 except Exception as e:
                     #print('RANGER ERROR.')
@@ -171,8 +171,8 @@ while True:
 
     # send the actions we've performed, and wait for our next turn.
 
-    #print('TIME SPENT ON WORKERS:', time_workers)
-    #print('TIME SPENT ON RANGERS:', time_rangers)
+    print('TIME SPENT ON WORKERS:', time_workers)
+    print('TIME SPENT ON RANGERS:', time_rangers)
     #print('TIME SPENT ON FACTORIES:', time_factories)
     #print('TIME SPENT ON ROCKETS:', time_knights)
     #print('TOTAL TIME:', time.time()-beginning_start_time)

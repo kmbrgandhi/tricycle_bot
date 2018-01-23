@@ -40,7 +40,6 @@ def timestep(unit):
 			gc.produce_robot(unit.id, bc.UnitType.Ranger)
 		else:
 			gc.produce_robot(unit.id, bc.UnitType.Healer)
-
 		#current_production += order[best].factory_cost()
 """
 def should_produce_robot(gc, mining_rate, current_production, karbonite_lower_limit):

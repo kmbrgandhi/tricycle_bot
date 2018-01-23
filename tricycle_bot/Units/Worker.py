@@ -73,13 +73,19 @@ def timestep(unit):
 
 	# runs this block every turn if unit is miner
 	if my_role == "miner":
+		start_time = time.time()
 		mine(gc,unit,my_location,earth_start_map,karbonite_locations,current_roles, building_assignment, battle_locs)
+		print("mining time: ",time.time() - start_time)
 	# if unit is builder
 	elif my_role == "builder":
+		start_time = time.time()
 		build(gc,unit,my_location,earth_start_map,building_assignment,current_roles)
+		print("building time: ",time.time() - start_time)
 	# if unit is blueprinter
 	elif my_role == "blueprinter":
+		start_time = time.time()
 		blueprint(gc,unit,my_location,building_assignment,blueprinting_assignment,current_roles)
+		print("blueprinting time: ",time.time() - start_time)
 	# if unit is boarder
 	elif my_role == "boarder": 
 		board(gc,unit,my_location,current_roles)
@@ -174,6 +180,7 @@ def designate_roles():
 		#print("part 1",time.time()-start_time)
 		update_for_dead_workers(gc,current_roles,blueprinting_queue,blueprinting_assignment,building_assignment)
 		update_building_assignment(gc,building_assignment,blueprinting_assignment)
+		update_deposit_info(gc,karbonite_locations)
 
 		#print("part 2",time.time()-start_time)
 		max_num_builders = 5
@@ -467,7 +474,7 @@ def get_replication_cap(gc,karbonite_locations, info, num_enemies):
 	#print(len(karbonite_locations))
 	if num_enemies > 2*sum(info[1:4])/3:
 		#print('replication cap yes')
-		return 3
+		return 6
 	if info[5] > 1:
 		return min(3 + float(500+gc.round())/7000 * len(karbonite_locations),15)
 	else:
@@ -483,13 +490,13 @@ def replicate(gc,unit):
 	return replicated
 
 # FOR EARTH ONLY
-def update_deposit_info(gc,unit,position,karbonite_locations):
+def update_deposit_info(gc,karbonite_locations):
 	planet = variables.earth
 	karbonite_locations_keys = list(karbonite_locations.keys())[:]
 	for x,y in karbonite_locations_keys:
 		map_location = bc.MapLocation(planet,x,y)
 		# we can only update info about deposits we can see with our units
-		if not position.is_within_range(unit.vision_range,map_location):
+		if not gc.can_sense_location(map_location):
 			continue	
 		current_karbonite = gc.karbonite_at(map_location)
 		if current_karbonite == 0:
@@ -501,28 +508,31 @@ def update_deposit_info(gc,unit,position,karbonite_locations):
 def get_closest_deposit(gc,unit,position,karbonite_locations):	
 	
 	planet = variables.earth
-
-	update_deposit_info(gc,unit,position,karbonite_locations)	
-	
 	current_distance = float('inf')
 	closest_deposit = bc.MapLocation(planet,-1,-1)
+	position_coord = (position.x,position.y)
+	start_time = time.time()
 	for x,y in karbonite_locations.keys():
-		map_location = bc.MapLocation(planet,x,y)
-		distance_to_deposit = sense_util.distance_squared_between_maplocs(position, map_location)
+		karbonite_location = bc.MapLocation(planet,x,y)
+		karbonite_coord = (x,y)
+		distance_to_deposit = variables.distance_to_karbonite_deposits[(position_coord,karbonite_coord)]
 		#keep updating current closest deposit to unit
 		if distance_to_deposit < current_distance:
 			current_distance = distance_to_deposit 
-			closest_deposit = map_location
+			closest_deposit = karbonite_location
+	print("getting closest deposit time:",time.time() - start_time)
 	return closest_deposit	
 	
 def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, building_assignment, battle_locs):
 
+	start_time = time.time()
 	closest_deposit = get_closest_deposit(gc,my_unit,my_location,karbonite_locations)
+
+	print("closest deposit time",time.time() - start_time)
 	#check to see if there even are deposits
 	if start_map.on_map(closest_deposit):
 		direction_to_deposit = my_location.direction_to(closest_deposit)
 		#print(unit.id, "is trying to mine at", direction_to_deposit)
-
 		enemy_units = gc.sense_nearby_units_by_team(my_location, my_unit.vision_range, sense_util.enemy_team(gc))
 		dangerous_types = [variables.unit_types["knight"], variables.unit_types["ranger"], variables.unit_types["mage"]]
 		dangerous_enemies = []
