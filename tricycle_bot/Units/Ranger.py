@@ -35,7 +35,7 @@ def timestep(unit):
         else:
             ranger_roles["fighter"].append(unit.id)
     #if variables.print_count<10:
-    #    print("Preprocessing:", time.time()-start_time)
+    #print("Preprocessing:", time.time()-start_time)
 
     location = unit.location
     my_team = variables.my_team
@@ -56,6 +56,7 @@ def timestep(unit):
         #start_time = time.time()
         dir, attack_target, snipe, move_then_attack, visible_enemies, closest_enemy, signals = ranger_sense(gc, unit, variables.last_turn_battle_locs,
                                                                                                             ranger_roles, map_loc, variables.direction_to_coord, variables.precomputed_bfs, targeting_units, variables.bfs_fineness, variables.rocket_locs)
+        #print("middlepart",time.time() - start_coord)
         #if variables.print_count < 10:
         #    print("Sensing:", time.time() - start_time)
         #start_time = time.time()
@@ -92,7 +93,7 @@ def timestep(unit):
             gc.begin_snipe(unit.id, snipe.location)
         """
         #if variables.print_count < 10:
-        #    print("Doing tasks:", time.time() - start_time)
+        #print("Doing tasks:", time.time() - start_time)
     #if variables.print_count<10:
     #    variables.print_count+=1
 
