@@ -57,7 +57,6 @@ def timestep(unit):
 	
 	#print()
 	#print("on unit #",unit.id, "position: ",my_location, "role: ",my_role)
-
 	#print("KARBONITE: ",gc.karbonite()
 	
 	current_num_workers = info[0]
@@ -66,8 +65,10 @@ def timestep(unit):
 
 	#print("REPLICATION CAP: ",max_num_workers)
 	# replicates if unit is able to (cooldowns, available directions etc.)	
+	
 	if current_num_workers < max_num_workers:
 		try_replicate = replicate(gc,unit)
+		#print("replicated by other means")
 		if try_replicate:
 			return
 
@@ -144,8 +145,6 @@ def designate_roles():
 		rocket_count = 0
 		rocket_ready_for_loading = False
 		please_move = False	
-		min_workers_per_building = 3
-		recruitment_radius = 20
 
 		workers = []
 		worker_id_list = []
@@ -177,8 +176,10 @@ def designate_roles():
 				workers.append(my_unit)
 				worker_id_list.append(my_unit.id)
 
+		#print("current_roles within designate roles",current_roles)
 		#print("part 1",time.time()-start_time)
 		update_for_dead_workers(gc,current_roles,blueprinting_queue,blueprinting_assignment,building_assignment)
+		#print("current_roles after update",current_roles)
 		update_building_assignment(gc,building_assignment,blueprinting_assignment)
 		update_deposit_info(gc,karbonite_locations)
 
@@ -189,7 +190,7 @@ def designate_roles():
 
 
 		closest_workers_to_blueprint = {} # dictionary mapping blueprint_id to a list of worker id sorted by distance to the blueprint
-		workers_in_recruitment_range = {}
+		#workers_in_recruitment_range = {}
 		for building_id in building_assignment:
 			assigned_workers = building_assignment[building_id]
 			blueprint_location = gc.unit(building_id).location.map_location()
@@ -201,13 +202,16 @@ def designate_roles():
 				for worker_unit in workers_dist_to_blueprint_sorted:
 					if worker_unit.id in current_roles["blueprinter"] or worker_unit.id in current_roles["builder"]:
 						continue
+					"""
 					if building_id not in workers_in_recruitment_range:
 						worker_unit_loc = worker_unit.location.map_location()
 						if sense_util.distance_squared_between_maplocs(worker_unit_loc, blueprint_location) > recruitment_radius:
 							workers_in_recruitment_range[building_id] = len(closest_worker_ids)
-
-					closest_worker_ids.append(worker_unit.id)
+					"""
+					if sense_util.distance_squared_between_maplocs(worker_unit.location.map_location(), blueprint_location) <= variables.recruitment_radius:
+						closest_worker_ids.append(worker_unit.id)
 				closest_workers_to_blueprint[building_id] = closest_worker_ids
+				#print("building id",building_id,"closest worker ids",closest_worker_ids)
 
 		#print("closest workers to blueprint",closest_workers_to_blueprint)
 		#print("workers in recruitment range",workers_in_recruitment_range)
@@ -248,6 +252,8 @@ def designate_roles():
 					my_role = role
 					#print("worker id",worker.id,"is_role_assigned",is_role_assigned)
 					break
+
+			#print("unit: ",worker.id,my_role)
 			# recruit nearby workers to finish building
 			if my_role != "blueprinter" and my_role != "builder":
 				for building_id in building_assignment:
@@ -257,20 +263,11 @@ def designate_roles():
 					#print("workers per building",workers_per_building)
 					num_open_slots_to_build = workers_per_building - len(assigned_workers)
 
-					if num_open_slots_to_build > 0:
-						closest_worker_list = closest_workers_to_blueprint[building_id]
-						if building_id in workers_in_recruitment_range:
-							num_workers_in_range = workers_in_recruitment_range[building_id]
-						else:
-							num_workers_in_range = len(closest_worker_list)
 
-						if len(assigned_workers) > min_workers_per_building and num_workers_in_range == 0:
-							continue
-						if num_open_slots_to_build <= num_workers_in_range:
-							recruitable_workers = closest_worker_list[:num_open_slots_to_build]
-						else:
-							optimal_number = max(min_workers_per_building,num_workers_in_range)
-							recruitable_workers = closest_worker_list[:optimal_number]
+					if num_open_slots_to_build > 0 and building_id in closest_workers_to_blueprint:
+
+						closest_worker_list = closest_workers_to_blueprint[building_id]
+						recruitable_workers = closest_worker_list[:min(num_open_slots_to_build,len(closest_worker_list))]
 
 						if worker.id in recruitable_workers:
 							if my_role != "idle" and worker.id in current_roles[my_role]:
@@ -281,8 +278,23 @@ def designate_roles():
 							my_role = "builder"
 							break
 
+						"""
+						if building_id in workers_in_recruitment_range:
+							num_workers_in_range = workers_in_recruitment_range[building_id]
+						else:
+							num_workers_in_range = len(closest_worker_list)
+						if len(assigned_workers) > min_workers_per_building and num_workers_in_range == 0:
+							continue
+						if num_open_slots_to_build <= num_workers_in_range:
+							recruitable_workers = closest_worker_list[:num_open_slots_to_build]
+						else:
+							optimal_number = max(min_workers_per_building,num_workers_in_range)
+							recruitable_workers = closest_worker_list[:optimal_number]
+						"""
+
+
 			# recruit nearby worker to place down a blueprint
-			if my_role != "blueprinter" and not role_revised:
+			if my_role != "blueprinter" and my_role != "builder" and not role_revised:
 				building_in_progress_count = len(building_assignment.keys()) + len(blueprinting_assignment.keys())
 				if building_in_progress_count < building_in_progress_cap(gc):
 
@@ -292,6 +304,7 @@ def designate_roles():
 						if can_blueprint_rocket(gc,rocket_count):
 
 							best_location_tuple = get_optimal_building_location(gc,start_map,worker_location,unit_types["rocket"],karbonite_locations,blueprinting_queue,blueprinting_assignment)
+							#print("best location is",best_location_tuple)
 							#print("time for building location",time.time() - inside_time)
 							if best_location_tuple is not None:
 								best_location = bc.MapLocation(earth, best_location_tuple[0], best_location_tuple[1])
@@ -384,7 +397,8 @@ def get_workers_per_building(gc,start_map,building_location):
 
 
 def update_for_dead_workers(gc,current_roles,blueprinting_queue,blueprinting_assignment,building_assignment):
-	live_unit_ids = variables.list_of_unit_ids
+	live_unit_ids = [unit.id for unit in gc.my_units()]
+	
 	for role in current_roles.keys():
 		for worker_id in current_roles[role][:]:
 
@@ -478,7 +492,7 @@ def get_replication_cap(gc,karbonite_locations, info, num_enemies):
 	if info[5] > 1:
 		return min(3 + float(500+gc.round())/7000 * len(karbonite_locations),15)
 	else:
-		return 6
+		return 3
 
 def replicate(gc,unit):
 	replicated = False
@@ -716,9 +730,8 @@ def build(gc,my_unit,my_location,start_map,building_assignment,current_roles):
 	for building_id in building_assignment:
 		if my_unit.id in building_assignment[building_id] and building_id in variables.list_of_unit_ids:
 			assigned_building = gc.unit(building_id)
-			#print("assigned_building",assigned_building.location.map_location())
 			if assigned_building.structure_is_built():
-				#print(my_unit.id,"assigned_building was already built")
+				print(my_unit.id,"assigned_building was already built")
 				del building_assignment[building_id]
 				assigned_building = assign_unit_to_build(gc,my_unit,my_location,start_map,building_assignment)
 				unit_was_not_assigned = False
@@ -737,10 +750,39 @@ def build(gc,my_unit,my_location,start_map,building_assignment,current_roles):
 
 	#print("unit has been assigned to build at",assigned_building.location.map_location())
 	assigned_location = assigned_building.location.map_location()
+	adjacent_locs_to_blueprint = adjacent_locations(assigned_location)
+
 	if my_location.is_adjacent_to(assigned_location):
+		if len(building_assignment[assigned_building.id]) < variables.min_workers_per_building:
+			#print("going to try to replicate")
+			if variables.my_karbonite >= variables.unit_types["worker"].replicate_cost():
+				adjacent_to_my_location = adjacent_locations(my_location)
+				for adjacent_location in adjacent_to_my_location:
+					if adjacent_location == my_location or adjacent_location == assigned_location: 
+						continue
+					if gc.has_unit_at_location(adjacent_location): continue
+
+					if adjacent_location in adjacent_locs_to_blueprint:
+						print("found adjacent region",adjacent_location)
+						direction = my_location.direction_to(adjacent_location)
+
+						#print("karbonite enough?",variables.my_karbonite >= 30)
+						#print("ability heat",my_unit.ability_heat)
+						#print("ability cooldown",my_unit.ability_cooldown)
+						#print("can replicate",gc.can_replicate(my_unit.id,direction))
+
+						if gc.can_replicate(my_unit.id,direction):
+							#print("right before replication")
+							gc.replicate(my_unit.id,direction)
+							new_unit = gc.sense_unit_at_location(adjacent_location)
+
+							print("new replicated unit",new_unit.id)
+							current_roles["builder"].append(new_unit.id)
+							building_assignment[assigned_building.id].append(new_unit.id)
+							break
 
 		if gc.can_build(my_unit.id,assigned_building.id):
-			#print(my_unit.id, "is building factory at ",assigned_location)
+			#print(my_unit.id, "is building at ",assigned_location)
 			gc.build(my_unit.id,assigned_building.id)
 			if assigned_building.structure_is_built():
 				current_roles["builder"].remove(my_unit.id)
@@ -754,7 +796,7 @@ def build(gc,my_unit,my_location,start_map,building_assignment,current_roles):
 
 
 def adjacent_locations(location):
-	d = [(0,1),(1,1),(1,0),(1,-1),(0,-1),(-1,-1),(-1,0),(-1,1)]
+	d = [(0,0),(0,1),(1,1),(1,0),(1,-1),(0,-1),(-1,-1),(-1,0),(-1,1)]
 	planet = location.planet
 	x = location.x
 	y = location.y
@@ -961,13 +1003,10 @@ def blueprint(gc,my_unit,my_location,building_assignment,blueprinting_assignment
 				# update shared data structures
 
 				building_assignment[new_blueprint.id] = [my_unit.id] # initialize new building
-				#print("building_assignment",building_assignment)
-				#print("blueprinting assignment before",blueprinting_assignment)
+
 				del blueprinting_assignment[my_unit.id]
 				current_roles["blueprinter"].remove(my_unit.id)
 				current_roles["builder"].append(my_unit.id)
-				#print("blueprinting assignment after",blueprinting_assignment)
-				#print(my_unit.id, " just created a blueprint!")
 			else:
 				pass
 				#print(my_unit.id, "can't build but is right next to assigned site")

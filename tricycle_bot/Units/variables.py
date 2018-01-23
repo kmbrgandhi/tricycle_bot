@@ -63,6 +63,8 @@ list_of_unit_ids = [unit.id for unit in my_units]
 
 factory_spacing = 10
 rocket_spacing = 2
+min_workers_per_building = 4
+recruitment_radius = 17
 
 blueprinting_queue = []
 building_assignment = {}
