@@ -111,9 +111,10 @@ def get_attack(gc, unit, location, targeting_units):
             return enemy
     return max(vuln_enemies, key=lambda x: coefficient_computation(gc, unit, x, x.location.map_location(), location))
 
-def exists_bad_enemy(enemy):
-    if attack_range_non_robots(enemy)>0:
-        return True
+def exists_bad_enemy(enemies):
+    for enemy in enemies:
+        if attack_range_non_robots(enemy)>0:
+            return True
     #random_num = random.random()
     #if random_num>0.5:
     #    return True
@@ -263,7 +264,7 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
                 start_time = time.time()
                 if check_radius_squares_factories(gc, location):
                     dir = optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location())
-                elif (exists_bad_enemy(closest_enemy)) or not gc.can_attack(unit.id, closest_enemy.id):
+                elif (exists_bad_enemy(enemies)) or not gc.can_attack(unit.id, closest_enemy.id):
                     #if variables.print_count < 10:
                     #    print("Checking if condition:", time.time() - start_time)
                     start_time = time.time()
