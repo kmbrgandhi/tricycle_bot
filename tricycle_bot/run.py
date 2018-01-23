@@ -60,24 +60,30 @@ while True:
     for poss_enemy in variables.units:
         if poss_enemy.team != variables.my_team and poss_enemy.unit_type in variables.attacker:
             variables.num_enemies += 1
-    #start_time = time.time()
+    start_time = time.time()
     knight.update_battles()
-    #print('KNIGHT UPDATE BATTLES:', time.time()-start_time)
+    #if time.time()-start_time > 0.02:
+    #    print('KNIGHT UPDATE BATTLES:', time.time()-start_time)
 
-    #start_time = time.time()
+    start_time = time.time()
     healer.update_healers()
-    #print('HEALER UPDATE TIME:', time.time()-start_time)
+    #if time.time() - start_time > 0.02:
+    #    print('HEALER UPDATE TIME:', time.time()-start_time)
 
-    # start_time = time.time()
-    ranger.update_rangers() 
-    # print('RANGER UPDATE TIME: ', time.time()-start_time)
+    start_time = time.time()
+    ranger.update_rangers()
+    #if time.time() - start_time > 0.02:
+    #    print('RANGER UPDATE TIME: ', time.time()-start_time)
 
-    #start_time = time.time()
+    start_time = time.time()
     worker.designate_roles()
-    #print('DESIGNATING ROLES TIME:', time.time()-start_time)
-    
-    time_workers = 0
-    time_rangers = 0
+    #if time.time() - start_time > 0.02:
+    #    print('DESIGNATING ROLES TIME:', time.time()-start_time)
+
+    factory.evaluate_stockpile()
+    #time_workers = 0
+    #time_rangers = 0
+    #time_healers = 0
     # time_factories = 0
     # time_knights = 0
     
@@ -132,9 +138,9 @@ while True:
                 #time_knights+=(time.time()-start_time)
             elif unit.unit_type == unit_types["ranger"]:
                 try:
-                    # start_time = time.time()
+                    #start_time = time.time()
                     ranger.timestep(unit)
-                    # time_rangers += (time.time()-start_time)
+                    #time_rangers += (time.time()-start_time)
                     #print(time.time()-start_time)
                 except Exception as e:
                     #print('RANGER ERROR.')
@@ -149,7 +155,9 @@ while True:
             elif unit.unit_type == unit_types["mage"]:
                 mage.timestep(unit)
             elif unit.unit_type == unit_types["healer"]:
+                #start_time = time.time()
                 healer.timestep(unit)
+                #time_healers+=(time.time()-start_time)
             elif unit.unit_type == unit_types["factory"]:
                 #start_time = time.time()
                 factory.timestep(unit)
@@ -170,11 +178,12 @@ while True:
         traceback.print_exc()
 
     # send the actions we've performed, and wait for our next turn.
-
-
-    #print('TIME SPENT ON WORKERS:', time_workers)
-    #print('TIME SPENT ON RANGERS:', time_rangers)
-    #print('TIME SPENT ON FACTORIES:', time_factories)
+    #if time_workers > 0.03:
+    #    print('TIME SPENT ON WORKERS:', time_workers)
+    #if time_rangers>0.03:
+    #    print('TIME SPENT ON RANGERS:', time_rangers)
+    #if time_healers > 0.03:
+    #    print('TIME SPENT ON HEALERS:', time_healers)
     #print('TIME SPENT ON ROCKETS:', time_knights)
     #print('TOTAL TIME:', time.time()-beginning_start_time)
     gc.next_turn()

@@ -14,6 +14,7 @@ def timestep(unit):
     curr_round = variable.gc.round()
     garrison = unit.structure_garrison()
     gc = variable.gc
+
     if variable.curr_planet == bc.Planet.Earth and unit.structure_is_built():
         if unit.id not in variable.rocket_locs:
             variable.rocket_locs[unit.id] = unit.location.map_location()
@@ -24,18 +25,24 @@ def timestep(unit):
                 variable.rocket_landing_sites[unit.id] = explore.get_maploc(bc.Planet.Mars, random.choice(list(variable.passable_locations_mars.keys())))
                 #rocket_launch_site[unit.id] = compute_optimal_landing_site(gc, curr_round, time, rocket_launch_site)
 
-        elif len(garrison)>3 and variable.gc.round() == variable.rocket_launch_times[unit.id] and variable.gc.can_launch_rocket(unit.id, variable.rocket_landing_sites[unit.id]):
+        elif ((len(garrison)>5 and gc.round()<400) or len(garrison)>3 and gc.round()>400) and variable.gc.round() == variable.rocket_launch_times[unit.id] and variable.gc.can_launch_rocket(unit.id, variable.rocket_landing_sites[unit.id]):
             variable.gc.launch_rocket(unit.id, variable.rocket_landing_sites[unit.id])
             del variable.rocket_locs[unit.id]
             return
 
         curr_loc = unit.location.map_location()
-        for dir in variable.directions:
+        for dir in variable.directions[:-1]:
             near = curr_loc.add(dir)
             if gc.has_unit_at_location(near):
                 nearby_unit = gc.sense_unit_at_location(near)
                 if nearby_unit.unit_type!=variable.unit_types["factory"] and nearby_unit.unit_type!=variable.unit_types["rocket"] and gc.can_load(unit.id, nearby_unit.id):
                     gc.load(unit.id, nearby_unit.id)
+                    if nearby_unit.id == variable.saviour_worker_id:
+                        variable.saviour_worker_id = None
+                        variable.saviour_worker = False
+                        variable.saviour_blueprinted = False
+                        variable.saviour_blueprinted_id = None
+                        variable.num_unsuccessful_savior = 0
                     break
 
 

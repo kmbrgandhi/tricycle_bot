@@ -34,22 +34,53 @@ def timestep(unit):
     directions = variables.directions
 
     assigned_healers = variables.assigned_healers
-    target_locs = variables.healer_target_locs
+    assigned_overcharge = variables.assigned_overcharge
+    healer_target_locs = variables.healer_target_locs
+    overcharge_targets = variables.overcharge_targets
 
     best_dir = None
     best_loc = None
     best_target = None
+    heal = False
+    overcharge = False
     location = unit.location
 
     if location.is_on_map():
         unit_loc = location.map_location()
 
-        ## Healing
-        best_target = get_best_target(gc, unit, unit_loc, my_team)
-        if best_target is not None: 
-            target_loc = best_target.location.map_location()
-            add_healer_target(gc, target_loc)
-            assigned_healers[unit.id] = target_loc
+        ## Assign role 
+        if unit.id not in assigned_overcharge and unit.id not in assigned_healers:
+            overcharge_to_total = 1
+            total = len(assigned_healers) + len(assigned_overcharge)
+            if total > 0: overcharge_to_total = len(assigned_overcharge) / total
+            # Assign to overcharge if there are targets and ratio is good
+            if variables.research.get_level(bc.UnitType.Healer) == 3 and overcharge_to_total < 0.2 and len(overcharge_targets) > 0: 
+                best_target = gc.unit(overcharge_targets.pop())
+                assigned_overcharge[unit.id] = best_target
+            # Assign to best healer target or target location
+            else: 
+                best_target = get_best_target(gc, unit, unit_loc, my_team)
+                if best_target is not None: 
+                    target_loc = best_target.location.map_location()
+                    heal = True
+                    add_healer_target(gc, target_loc)
+                    assigned_healers[unit.id] = target_loc
+                elif len(healer_target_locs) > 0:
+                    best_loc = get_best_target_loc(gc, unit, unit_loc, healer_target_locs, planet, diagonal) ## MapLocation
+                    assigned_healers[unit.id] = best_loc
+
+        ## Overcharge  
+        if unit.id in assigned_overcharge:
+            ally = assigned_overcharge[unit.id]
+            if gc.can_overcharge(unit.id, ally.id):
+                overcharge = True
+                best_target = ally
+        elif not overcharge and best_target is None: 
+            best_target = get_best_target(gc, unit, unit_loc, my_team)
+            if best_target is not None: 
+                target_loc = best_target.location.map_location()
+                heal = True
+                add_healer_target(gc, target_loc)
 
         ## Movement
         # If sees enemies close enough then tries to move away from them 
@@ -63,25 +94,34 @@ def timestep(unit):
                 battle_locs[(enemy_loc.x,enemy_loc.y)] = clusters.Cluster(allies=set(),enemies=set([enemies[0].id]))
 
         # Otherwise, goes to battle locations where they are in need of healers
-        elif unit.id in assigned_healers:
-            best_loc = assigned_healers[unit.id]
-
-        elif len(target_locs) > 0: 
-            best_loc = get_best_target_loc(gc, unit, unit_loc, target_locs, planet, diagonal) ## MapLocation
-            assigned_healers[unit.id] = best_loc
-
-        # elif len(battle_locs) > 0: 
-        #     best_loc = get_best_location(gc, unit, unit_loc, battle_locs, planet, diagonal)
-
         else: 
-            best_dir = get_explore_dir(gc, unit, unit_loc, directions)
+            if unit.id in assigned_overcharge: 
+                ally = assigned_overcharge[unit.id]
+                best_loc = ally.location.map_location()
+            elif unit.id in assigned_healers: 
+                best_loc = assigned_healers[unit.id]
+            elif len(healer_target_locs) > 0: 
+                best_loc = get_best_target_loc(gc, unit, unit_loc, healer_target_locs, planet, diagonal) ## MapLocation
+                assigned_healers[unit.id] = best_loc
+
+            # elif len(battle_locs) > 0: 
+            #     best_loc = get_best_location(gc, unit, unit_loc, battle_locs, planet, diagonal)
+
+            else: 
+                best_dir = get_explore_dir(gc, unit, unit_loc, directions)
+
 
         ## Do shit
-        if best_target is not None and gc.is_heal_ready(unit.id):
-            gc.heal(unit.id, best_target.id)
+        if best_target is not None:
+            if overcharge and gc.is_overcharge_ready(unit.id):
+                gc.overcharge(unit.id, best_target.id)
+            if heal and gc.is_heal_ready(unit.id):
+                gc.heal(unit.id, best_target.id)
         if best_dir is not None and gc.is_move_ready(unit.id): 
             gc.move_robot(unit.id, best_dir)
         elif best_loc is not None and gc.is_move_ready(unit.id):
+            #print('GETTING BEST DIRECTION')
+            #print(best_loc)
             best_dir = get_best_direction(gc, unit.id, unit_loc, best_loc, direction_to_coord, precomputed_bfs, bfs_fineness)
             if best_dir is not None: 
                 gc.move_robot(unit.id, best_dir)
@@ -126,6 +166,7 @@ def get_best_target_loc(gc, unit, unit_loc, battle_locs, planet, diagonal):
 
 def add_healer_target(gc, target_loc): 
     healer_target_locs = variables.healer_target_locs
+    assigned_healers = variables.assigned_healers
     valid = True
 
     locs_near = gc.all_locations_within(target_loc, variables.healer_radius)
@@ -198,15 +239,19 @@ def evaluate_battle_location(gc, loc, battle_locs):
 
 def update_healers():
     """
-    Remove dead healers from dictionary.
+    Remove dead healers from healer dict and overcharge dict.
     If healer target loc has no allied units then remove from dictionary.
+    Checks overcharge targets are still alive. 
     """
     gc = variables.gc
     target_locs = variables.healer_target_locs
     assigned_healers = variables.assigned_healers
+    assigned_overcharge = variables.assigned_overcharge
+    overcharge_targets = variables.overcharge_targets
     planet = gc.planet()
     my_team = variables.my_team
 
+    ## Remove dead healers from assigned healers OR healers with expired locations
     remove = set()
     for healer_id in assigned_healers:
         try: 
@@ -216,12 +261,36 @@ def update_healers():
                 allies = gc.sense_nearby_units_by_team(loc, 4, my_team)
                 if len(allies) == 0: 
                     remove.add(healer_id)
+                    if (loc.x,loc.y) in target_locs: 
+                        target_locs.remove((loc.x,loc.y))
         except:
             remove.add(healer_id)
 
     for healer_id in remove: 
         if healer_id in assigned_healers: 
             del assigned_healers[healer_id]
+
+    ## Remove dead healers from assigned overcharge
+    remove = set()
+    for healer_id in assigned_overcharge:
+        try:
+            healer = gc.unit(healer_id)
+        except:
+            remove.add(healer_id)
+
+    for healer_id in remove:
+        del assigned_overcharge[healer_id]
+
+    ## Remove dead overcharge targets 
+    remove = set()
+    for ally_id in overcharge_targets: 
+        try: 
+            ally = gc.unit(ally_id)
+        except:
+            remove.add(ally_id)
+
+    for ally_id in remove:
+        overcharge_targets.remove(ally_id)
 
 
 

@@ -116,7 +116,9 @@ for unit in earth_start_map.initial_units:
 ## HEALER VARIABLES ##
 healer_radius = 9
 healer_target_locs = set()
+overcharge_targets = set() ## stored as IDs
 assigned_healers = {}
+assigned_overcharge = {}
 
 #ROCKETS
 rocket_launch_times = {}
@@ -142,6 +144,11 @@ coord_to_direction = {(-1, -1): non_list_directions.Southwest, (-1, 1): non_list
 direction_to_coord = {v: k for k, v in coord_to_direction.items()}
 
 passable_locations_mars = {}
+saviour_worker = False
+saviour_worker_id = None
+saviour_blueprinted = False
+saviour_blueprinted_id = None
+num_unsuccessful_savior = 0
 
 mars = bc.Planet.Mars
 mars_map = gc.starting_map(mars)
@@ -206,7 +213,7 @@ if curr_planet == bc.Planet.Earth:
     precomputed_bfs = explore.precompute_earth(passable_locations_earth, coord_to_direction, wavepoints)
 
 else:
-    bfs_fineness = max(int(((mars_width * mars_height) ** 0.5) / 10), 2) + 1
+    bfs_fineness = 2 #max(int(((mars_width * mars_height) ** 0.5) / 10), 2) + 1
     wavepoints = {}
     if mars_width % bfs_fineness == 0:
         upper_width = int(mars_width / bfs_fineness)
@@ -235,7 +242,9 @@ else:
     precomputed_bfs = explore.precompute_mars(passable_locations_mars, coord_to_direction, wavepoints)
 
 attacker = set([bc.UnitType.Ranger, bc.UnitType.Knight, bc.UnitType.Mage, bc.UnitType.Healer])
-
+stockpile_until_75 = False
+between_stockpiles = 0
+stockpile_has_been_above = False
 # class Constants: 
 #     def __init__(self, directions, my_team, enemy_team, starting_map, locs_next_to_terrain, karbonite_locations):
 #         self.directions = directions

@@ -46,8 +46,69 @@ def timestep(unit):
 	my_location = unit.location.map_location()
 
 	if my_location.planet is variables.mars:
+		if gc.round()>700:
+			try_replicate = replicate(gc, unit)
+			if try_replicate:
+				return
 		mine_mars(gc,unit,my_location)
 		return
+	if gc.round() > 225 and not variables.saviour_worker and near_factory(my_location):
+		variables.saviour_worker = True
+		variables.saviour_worker_id = unit.id
+
+	if variables.saviour_worker_id is not None and variables.saviour_worker_id == unit.id:
+		if variables.saviour_blueprinted:
+			try:
+				corr_rocket = gc.unit(variables.saviour_blueprinted_id)
+				if not corr_rocket.structure_is_built():
+					if gc.can_build(unit.id, variables.saviour_blueprinted_id):
+						gc.build(unit.id, variables.saviour_blueprinted_id)
+				else:
+					if gc.can_load(variables.saviour_blueprinted_id, unit.id):
+						gc.load(variables.saviour_blueprinted_id, unit.id)
+						variables.saviour_worker_id = None
+						variables.saviour_worker = False
+						variables.saviour_blueprinted = False
+						variables.saviour_blueprinted_id = None
+						variables.num_unsuccessful_savior = 0
+			except:
+				variables.saviour_worker_id = None
+				variables.saviour_worker = False
+				variables.saviour_blueprinted = False
+				variables.saviour_blueprinted_id = None
+				variables.num_unsuccessful_savior = 0
+		else:
+			blueprinted = False
+			for dir in variables.directions:
+				map_loc = my_location.add(dir)
+				map_loc_coords = (map_loc.x, map_loc.y)
+				if map_loc_coords in variables.passable_locations_earth and variables.passable_locations_earth[map_loc_coords]:
+					if gc.can_blueprint(unit.id, variables.unit_types["rocket"], dir):
+						gc.blueprint(unit.id, variables.unit_types["rocket"], dir)
+						variables.saviour_blueprinted = True
+						new_blueprint = gc.sense_unit_at_location(map_loc)
+						variables.saviour_blueprinted_id= new_blueprint.id
+						variables.all_building_locations[variables.saviour_blueprinted_id] = map_loc
+						blueprinted = True
+						break
+					elif variables.num_unsuccessful_savior > 5:
+						if gc.has_unit_at_location(map_loc):
+							in_the_way_unit = gc.sense_unit_at_location(map_loc)
+							gc.disintegrate_unit(in_the_way_unit.id)
+							if gc.can_blueprint(unit.id, variables.unit_types["rocket"], dir):
+								gc.blueprint(unit.id, variables.unit_types["rocket"], dir)
+								variables.saviour_blueprinted = True
+								new_blueprint = gc.sense_unit_at_location(map_loc)
+								variables.saviour_blueprinted_id = new_blueprint.id
+								variables.all_building_locations[variables.saviour_blueprinted_id] = map_loc
+								blueprinted = True
+								break
+
+			if not blueprinted:
+				variables.num_unsuccessful_savior+=1
+
+
+
 
 
 	my_role = "idle"
@@ -74,17 +135,17 @@ def timestep(unit):
 
 	# runs this block every turn if unit is miner
 	if my_role == "miner":
-		start_time = time.time()
+		# start_time = time.time()
 		mine(gc,unit,my_location,earth_start_map,karbonite_locations,current_roles, building_assignment, battle_locs)
 		#print("mining time: ",time.time() - start_time)
 	# if unit is builder
 	elif my_role == "builder":
-		start_time = time.time()
+		# start_time = time.time()
 		build(gc,unit,my_location,earth_start_map,building_assignment,current_roles)
 		#print("building time: ",time.time() - start_time)
 	# if unit is blueprinter
 	elif my_role == "blueprinter":
-		start_time = time.time()
+		# start_time = time.time()
 		blueprint(gc,unit,my_location,building_assignment,blueprinting_assignment,current_roles)
 		#print("blueprinting time: ",time.time() - start_time)
 	# if unit is boarder
@@ -100,6 +161,17 @@ def timestep(unit):
 		#print(unit.id, "at", unit.location.map_location(), "is trying to move to", away_from_units)
 
 		movement.try_move(gc,unit,away_from_units)
+
+def near_factory(my_location):
+	my_location_coords = (my_location.x, my_location.y)
+	for coords in explore.coord_neighbors(my_location_coords, diff = explore.diffs_20):
+		if coords in variables.passable_locations_earth and variables.passable_locations_earth[coords]:
+			map_loc = bc.MapLocation(bc.Planet.Earth, coords[0], coords[1])
+			if variables.gc.can_sense_location(map_loc) and variables.gc.has_unit_at_location(map_loc):
+				unit = variables.gc.sense_unit_at_location(map_loc)
+				if unit.unit_type == variables.unit_types["factory"]:
+					return True
+	return False
 
 # returns whether unit is a miner or builder, currently placeholder until we can use team-shared data to designate unit roles
 def designate_roles():
@@ -525,7 +597,7 @@ def get_closest_deposit(gc,unit,position,karbonite_locations,in_vision_range=Fal
 	current_distance = float('inf')
 	closest_deposit = bc.MapLocation(planet,-1,-1)
 	position_coord = (position.x,position.y)
-	start_time = time.time()
+	# start_time = time.time()
 
 	is_deposit_in_vision_range = False
 
@@ -958,7 +1030,7 @@ def get_factory_limit():
 	return max(4,int(variables.my_karbonite/30))
 
 def get_rocket_limit():
-	return 2
+	return 3
 
 def get_closest_site(my_unit,my_location,blueprinting_queue):
 	

@@ -10,7 +10,7 @@ import time
 
 order = [bc.UnitType.Worker, bc.UnitType.Knight, bc.UnitType.Ranger, bc.UnitType.Mage,
          bc.UnitType.Healer, bc.UnitType.Factory, bc.UnitType.Rocket]  # storing order of units
-ranger_unit_priority = [1, 0.5, 2, 0.5, 3, 5, 3]
+ranger_unit_priority = [0.7, 1, 2, 1, 3, 5, 3]
 directions = variables.directions
 
 def timestep(unit):
@@ -30,8 +30,8 @@ def timestep(unit):
         c = 13
         if info[6]>0 and len(ranger_roles["go_to_mars"]) < 4*info[6]:
             ranger_roles["go_to_mars"].append(unit.id)
-        if len(ranger_roles["fighter"]) > c * len(ranger_roles["sniper"]) and variables.research.get_level(
-            bc.UnitType.Ranger) == 3 and False:
+        if False and len(ranger_roles["fighter"]) > c * len(ranger_roles["sniper"]) and variables.research.get_level(
+            bc.UnitType.Ranger) == 3:
             ranger_roles["sniper"].append(unit.id)
         else:
             ranger_roles["fighter"].append(unit.id)
@@ -44,10 +44,10 @@ def timestep(unit):
     if location.is_on_map():
         #start_time = time.time()
         map_loc = location.map_location()
-        if variables.curr_planet == bc.Planet.Earth and unit.id not in ranger_roles["go_to_mars"] and unit.id in ranger_roles["fighter"]:
+        if variables.curr_planet == bc.Planet.Earth and len(ranger_roles["go_to_mars"])<14 and unit.id not in ranger_roles["go_to_mars"] and unit.id in ranger_roles["fighter"]:
             for rocket in variables.rocket_locs:
                 target_loc = variables.rocket_locs[rocket]
-                if sense_util.distance_squared_between_maplocs(map_loc, target_loc) < 40:
+                if sense_util.distance_squared_between_maplocs(map_loc, target_loc) < 150:
                     variables.which_rocket[unit.id] = (target_loc, rocket)
                     ranger_roles["go_to_mars"].append(unit.id)
                     ranger_roles["fighter"].remove(unit.id)
@@ -105,18 +105,19 @@ def get_attack(gc, unit, location, targeting_units):
     vuln_enemies = gc.sense_nearby_units_by_team(location, unit.attack_range(), enemy_team)
     if len(vuln_enemies)==0:
         return None
-    return vuln_enemies[0]
+    #return vuln_enemies[0]
     for enemy in vuln_enemies:
         if enemy.id in targeting_units and int(enemy.health/unit.damage())<targeting_units[enemy.id]:
             return enemy
     return max(vuln_enemies, key=lambda x: coefficient_computation(gc, unit, x, x.location.map_location(), location))
 
-def exists_bad_enemy(enemy):
-    if attack_range_non_robots(enemy)>0:
-        return True
-    random_num = random.random()
-    if random_num>0.5:
-        return True
+def exists_bad_enemy(enemies):
+    for enemy in enemies:
+        if attack_range_non_robots(enemy)>0:
+            return True
+    #random_num = random.random()
+    #if random_num>0.5:
+    #    return True
     return False
 
 def check_radius_squares_factories(gc, location):
@@ -174,14 +175,50 @@ def go_to_mars_sense(gc, unit, battle_locs, location, enemies, direction_to_coor
         rocket = gc.sense_unit_at_location(target_loc)
         if gc.can_load(rocket.id, unit.id):
             gc.load(rocket.id, unit.id)
-    else:
+    elif sense_util.distance_squared_between_maplocs(location, target_loc) < 17:
         #print('REALLY CLOSE')
+        poss_dir = location.direction_to(target_loc)
+        shape = variables.direction_to_coord[poss_dir]
+        options = sense_util.get_best_option(shape)
+        for option in options:
+            if gc.can_move(unit.id, option):
+                # print(time.time() - start_time)
+                dir = option
+                break
+        if dir is None:
+            dir = directions[8]
+        """
         result = explore.bfs_with_destination((target_loc.x, target_loc.y), start_coords, variables.gc, variables.curr_planet, variables.passable_locations_earth, variables.coord_to_direction)
         if result is None:
             variables.ranger_roles["go_to_mars"].remove(unit.id)
             dir = None
         else:
             dir = result
+        """
+    else:
+        start_coords = (location.x, location.y)
+        target_coords_thirds = (int(target_loc.x / bfs_fineness), int(target_loc.y / bfs_fineness))
+        if (start_coords, target_coords_thirds) not in precomputed_bfs:
+            poss_dir = location.direction_to(target_loc)
+            shape = variables.direction_to_coord[poss_dir]
+            options = sense_util.get_best_option(shape)
+            for option in options:
+                if gc.can_move(unit.id, option):
+                    # print(time.time() - start_time)
+                    dir = option
+                    break
+            if dir is None:
+                dir = directions[8]
+        else:
+            shape = direction_to_coord[precomputed_bfs[(start_coords, target_coords_thirds)]]
+            options = sense_util.get_best_option(shape)
+            for option in options:
+                if gc.can_move(unit.id, option):
+                    # print(time.time() - start_time)
+                    dir = option
+                    break
+            if dir is None:
+                dir = directions[8]
         #print(dir)
 
     return dir, attack, snipe, move_then_attack, visible_enemies, closest_enemy, signals
@@ -199,12 +236,12 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
     closest_enemy = None
     move_then_attack = False
     visible_enemies = False
-    #start_time = time.time()
+    start_time = time.time()
     #if variables.print_count < 10:
     #    print("Sensing nearby units:", time.time() - start_time)
     if len(enemies) > 0:
         visible_enemies= True
-        #start_time = time.time()
+        start_time = time.time()
         closest_enemy = None
         closest_dist = float('inf')
         for enemy in enemies:
@@ -225,11 +262,9 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
         if attack is not None:
             if closest_enemy is not None:
                 start_time = time.time()
-                """
                 if check_radius_squares_factories(gc, location):
                     dir = optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location())
-                """
-                if (exists_bad_enemy(closest_enemy)) or not gc.can_attack(unit.id, closest_enemy.id):
+                elif (exists_bad_enemy(enemies)) or not gc.can_attack(unit.id, closest_enemy.id):
                     #if variables.print_count < 10:
                     #    print("Checking if condition:", time.time() - start_time)
                     start_time = time.time()
