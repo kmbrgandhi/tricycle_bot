@@ -80,6 +80,7 @@ while True:
     #if time.time() - start_time > 0.02:
     #    print('DESIGNATING ROLES TIME:', time.time()-start_time)
 
+    factory.evaluate_stockpile()
     #time_workers = 0
     #time_rangers = 0
     #time_healers = 0

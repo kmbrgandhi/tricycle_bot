@@ -10,7 +10,7 @@ import time
 
 order = [bc.UnitType.Worker, bc.UnitType.Knight, bc.UnitType.Ranger, bc.UnitType.Mage,
          bc.UnitType.Healer, bc.UnitType.Factory, bc.UnitType.Rocket]  # storing order of units
-ranger_unit_priority = [1, 0.5, 2, 0.5, 3, 5, 3]
+ranger_unit_priority = [0.7, 1, 2, 1, 3, 5, 3]
 directions = variables.directions
 
 def timestep(unit):
@@ -105,7 +105,7 @@ def get_attack(gc, unit, location, targeting_units):
     vuln_enemies = gc.sense_nearby_units_by_team(location, unit.attack_range(), enemy_team)
     if len(vuln_enemies)==0:
         return None
-    return vuln_enemies[0]
+    #return vuln_enemies[0]
     for enemy in vuln_enemies:
         if enemy.id in targeting_units and int(enemy.health/unit.damage())<targeting_units[enemy.id]:
             return enemy

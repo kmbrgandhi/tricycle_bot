@@ -209,7 +209,7 @@ if curr_planet == bc.Planet.Earth:
     precomputed_bfs = explore.precompute_earth(passable_locations_earth, coord_to_direction, wavepoints)
 
 else:
-    bfs_fineness = max(int(((mars_width * mars_height) ** 0.5) / 10), 2) + 1
+    bfs_fineness = 2 #max(int(((mars_width * mars_height) ** 0.5) / 10), 2) + 1
     wavepoints = {}
     if mars_width % bfs_fineness == 0:
         upper_width = int(mars_width / bfs_fineness)
@@ -238,7 +238,9 @@ else:
     precomputed_bfs = explore.precompute_mars(passable_locations_mars, coord_to_direction, wavepoints)
 
 attacker = set([bc.UnitType.Ranger, bc.UnitType.Knight, bc.UnitType.Mage, bc.UnitType.Healer])
-
+stockpile_until_75 = False
+between_stockpiles = 0
+stockpile_has_been_above = False
 # class Constants: 
 #     def __init__(self, directions, my_team, enemy_team, starting_map, locs_next_to_terrain, karbonite_locations):
 #         self.directions = directions
