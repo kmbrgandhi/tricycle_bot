@@ -60,7 +60,7 @@ def timestep(unit):
             # Assign to best healer target or target location
             else: 
                 best_target = get_best_target(gc, unit, unit_loc, my_team)
-                if best_target is not None: 
+                if best_target is not None:
                     target_loc = best_target.location.map_location()
                     heal = True
                     add_healer_target(gc, target_loc)
