@@ -276,8 +276,8 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
                 #0.5) + 2 < unit.attack_range() ** (0.5)) or not gc.can_attack(unit.id, attack.id):
         else:
             if gc.is_move_ready(unit.id):
-
-                if closest_enemy is not None:
+                distance = sense_util.distance_squared_between_maplocs(location, closest_enemy.location.map_location())
+                if closest_enemy is not None and distance < 55:
                     dir = optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location())
 
 
@@ -285,6 +285,10 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
                     attack = get_attack(gc, unit, next_turn_loc, targeting_units)
                     if attack is not None:
                         move_then_attack = True
+                elif len(battle_locs) > 0:
+                    # print('IS GOING TO BATTLE')
+                    dir = go_to_battle(gc, unit, battle_locs, location, direction_to_coord, precomputed_bfs,
+                                       bfs_fineness)
                 else:
                     dir = run_towards_init_loc(gc, unit, location, direction_to_coord, precomputed_bfs, bfs_fineness)
             #if variables.print_count < 10:
