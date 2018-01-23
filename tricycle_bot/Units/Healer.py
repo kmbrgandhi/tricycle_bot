@@ -139,7 +139,7 @@ def get_best_direction(gc, unit_id, unit_loc, target_loc, direction_to_coord, pr
         shape = direction_to_coord[precomputed_bfs[(start_coords, target_coords_thirds)]]
         options = sense_util.get_best_option(shape)
         for option in options: 
-            if gc.can_move(unit.id, option):
+            if gc.can_move(unit_id, option):
                 return option 
     return None
 
