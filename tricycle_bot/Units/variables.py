@@ -88,6 +88,7 @@ for dx in [-4,-3,-2,-1,0,1,2,3,4]:
     for dy in [-4,-3,-2,-1,0,1,2,3,4]:
         building_scouting_diff.append((dx,dy))
 
+"""
 distance_to_karbonite_deposits = {}
 for i,j in karbonite_locations:
     karbonite_location = (i,j)
@@ -95,7 +96,7 @@ for i,j in karbonite_locations:
         for y in range(earth_start_map.height):
             map_location = (x,y)
             distance_to_karbonite_deposits[(map_location,karbonite_location)] = sense_util.distance_squared_between_coords(map_location,karbonite_location)
-
+"""
 
 current_worker_roles = {"miner":[],"builder":[],"blueprinter":[],"boarder":[], "repairer":[]}
 

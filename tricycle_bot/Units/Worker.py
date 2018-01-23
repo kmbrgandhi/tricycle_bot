@@ -505,27 +505,43 @@ def update_deposit_info(gc,karbonite_locations):
 			karbonite_locations[(x,y)] = current_karbonite
 	
 # returns map location of closest karbonite deposit	
-def get_closest_deposit(gc,unit,position,karbonite_locations):	
+def get_closest_deposit(gc,unit,position,karbonite_locations,in_vision_range=False):	
 	
 	planet = variables.earth
 	current_distance = float('inf')
 	closest_deposit = bc.MapLocation(planet,-1,-1)
 	position_coord = (position.x,position.y)
 	start_time = time.time()
-	for x,y in karbonite_locations.keys():
-		karbonite_location = bc.MapLocation(planet,x,y)
-		karbonite_coord = (x,y)
-		distance_to_deposit = variables.distance_to_karbonite_deposits[(position_coord,karbonite_coord)]
-		#keep updating current closest deposit to unit
-		if distance_to_deposit < current_distance:
-			current_distance = distance_to_deposit 
-			closest_deposit = karbonite_location
+
+	is_deposit_in_vision_range = False
+
+	for location_coord in explore.coord_neighbors(position_coord, diff=explore.diffs_50, include_self=True):
+		if location_coord in karbonite_locations:
+			is_deposit_in_vision_range = True
+			
+			karbonite_location = bc.MapLocation(planet,location_coord[0],location_coord[1])
+			distance_to_deposit = sense_util.distance_squared_between_coords(position_coord,location_coord)
+			if distance_to_deposit < current_distance:
+				current_distance = distance_to_deposit 
+				closest_deposit = karbonite_location
+
+	if not is_deposit_in_vision_range:
+		for x,y in karbonite_locations.keys():
+			karbonite_location = bc.MapLocation(planet,x,y)
+			karbonite_coord = (x,y)
+			distance_to_deposit = sense_util.distance_squared_between_coords(position_coord,karbonite_coord)
+			#keep updating current closest deposit to unit
+			if distance_to_deposit < current_distance:
+				current_distance = distance_to_deposit 
+				closest_deposit = karbonite_location
+
 	print("getting closest deposit time:",time.time() - start_time)
-	return closest_deposit	
+	return closest_deposit
 	
 def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, building_assignment, battle_locs):
 
 	start_time = time.time()
+
 	closest_deposit = get_closest_deposit(gc,my_unit,my_location,karbonite_locations)
 
 	print("closest deposit time",time.time() - start_time)
