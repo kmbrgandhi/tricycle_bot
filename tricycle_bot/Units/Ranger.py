@@ -140,9 +140,9 @@ def go_to_mars_sense(gc, unit, battle_locs, location, enemies, direction_to_coor
     start_coords = (location.x, location.y)
 
     # # rocket was launched
-    # if unit.id not in variables.which_rocket or variables.which_rocket[unit.id][1] not in variables.rocket_locs:
-    #     variables.ranger_roles["go_to_mars"].remove(unit.id)
-    #     return dir, attack, snipe, move_then_attack, visible_enemies, closest_enemy, signals
+    if unit.id not in variables.which_rocket or variables.which_rocket[unit.id][1] not in variables.rocket_locs:
+        variables.ranger_roles["go_to_mars"].remove(unit.id)
+        return dir, attack, snipe, move_then_attack, visible_enemies, closest_enemy, signals
     target_loc = variables.which_rocket[unit.id][0]
 
     # # rocket was destroyed
@@ -468,11 +468,11 @@ def update_rangers():
             launched_rocket = True  
         else:
             launched_rocket = False
-        target_loc = which_rocket[ranger_id][0]
-        if not gc.has_unit_at_location(target_loc): 
-            destroyed_rocket = True
-        else:
-            destroyed_rocket = False
-        if no_rockets or launched_rocket or destroyed_rocket: 
+            target_loc = which_rocket[ranger_id][0]
+            if not gc.has_unit_at_location(target_loc):
+                destroyed_rocket = True
+            else:
+                destroyed_rocket = False
+        if no_rockets or launched_rocket or destroyed_rocket:
             ranger_roles["go_to_mars"].remove(ranger_id)
 

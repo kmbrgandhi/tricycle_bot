@@ -54,6 +54,7 @@ while True:
     variables.curr_round = gc.round()
     variables.num_enemies = 0
     variables.print_count = 0
+
     print("PYROUND:", variables.curr_round)
     print("TIME LEFT:", gc.get_time_left_ms())
     for poss_enemy in variables.units:
