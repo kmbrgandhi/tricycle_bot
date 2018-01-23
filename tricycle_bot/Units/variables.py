@@ -114,7 +114,9 @@ for unit in earth_start_map.initial_units:
 ## HEALER VARIABLES ##
 healer_radius = 9
 healer_target_locs = set()
+overcharge_targets = set() ## stored as IDs
 assigned_healers = {}
+assigned_overcharge = {}
 
 #ROCKETS
 rocket_launch_times = {}
