@@ -111,7 +111,9 @@ for unit in earth_start_map.initial_units:
         earth_battles[(loc.x,loc.y)] = clusters.Cluster(allies=set(),enemies=set([unit.id]))
 
 ## HEALER VARIABLES ##
-healer_target_locs = {}
+healer_radius = 9
+healer_target_locs = set()
+assigned_healers = {}
 
 #ROCKETS
 rocket_launch_times = {}
@@ -124,7 +126,7 @@ ranger_to_cluster = {}
 ranger_clusters = set()
 targeting_units = {}
 which_rocket = {}
-last_turn_ranger_locs = {}
+ranger_locs = {}
 
 #FIGHTERS
 producing = [0, 0, 0, 0, 0]
