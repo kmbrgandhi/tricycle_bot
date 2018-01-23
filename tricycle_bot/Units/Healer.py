@@ -68,7 +68,7 @@ def timestep(unit):
 
         elif len(target_locs) > 0: 
             best_loc = get_best_target_loc(gc, unit, unit_loc, target_locs, planet, diagonal) ## MapLocation
-            target_locs[unit.id] = best_loc
+            assigned_healers[unit.id] = best_loc
 
         # elif len(battle_locs) > 0: 
         #     best_loc = get_best_location(gc, unit, unit_loc, battle_locs, planet, diagonal)
@@ -203,14 +203,15 @@ def update_healers():
     """
     gc = variables.gc
     target_locs = variables.healer_target_locs
+    assigned_healers = variables.assigned_healers
     planet = gc.planet()
     my_team = variables.my_team
 
     remove = set()
-    for healer_id in target_locs:
+    for healer_id in assigned_healers:
         try: 
             healer = gc.unit(healer_id)
-            loc = target_locs[healer_id]
+            loc = assigned_healers[healer_id]
             if gc.can_sense_location(loc):
                 allies = gc.sense_nearby_units_by_team(loc, 4, my_team)
                 if len(allies) == 0: 
@@ -219,8 +220,8 @@ def update_healers():
             remove.add(healer_id)
 
     for healer_id in remove: 
-        if healer_id in target_locs: 
-            target_locs.remove(healer_id)
+        if healer_id in assigned_healers: 
+            del assigned_healers[healer_id]
 
 
 
