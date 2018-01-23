@@ -110,6 +110,7 @@ def timestep(unit):
             else: 
                 best_dir = get_explore_dir(gc, unit, unit_loc, directions)
 
+
         ## Do shit
         if best_target is not None:
             if overcharge and gc.is_overcharge_ready(unit.id):
@@ -119,6 +120,8 @@ def timestep(unit):
         if best_dir is not None and gc.is_move_ready(unit.id): 
             gc.move_robot(unit.id, best_dir)
         elif best_loc is not None and gc.is_move_ready(unit.id):
+            #print('GETTING BEST DIRECTION')
+            #print(best_loc)
             best_dir = get_best_direction(gc, unit.id, unit_loc, best_loc, direction_to_coord, precomputed_bfs, bfs_fineness)
             if best_dir is not None: 
                 gc.move_robot(unit.id, best_dir)

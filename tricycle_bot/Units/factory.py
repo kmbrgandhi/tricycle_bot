@@ -30,17 +30,36 @@ def timestep(unit):
 		optimal_unload_dir = optimal_unload(gc, unit, directions, building_assignments, battle_locs)
 		if optimal_unload_dir is not None:
 			gc.unload(unit.id, optimal_unload_dir)
-	rockets_need_filling = (composition[6] >0) and (len(variables.ranger_roles["go_to_mars"])<10)
-	if gc.can_produce_robot(unit.id, bc.UnitType.Ranger) and (rockets_need_filling or gc.round() < 150 or num_attacking_units<max((variables.earth_start_map.width*variables.earth_start_map.height)**(0.5), 40) or num_attacking_units < 2.7*variables.num_enemies): #and should_produce_robot(gc, mining_rate, current_production, karbonite_lower_limit): # otherwise produce a unit, based on most_off_optimal
+
+
+	rockets_need_filling = (len(variables.rocket_locs) >0) and (len(variables.ranger_roles["go_to_mars"])<10)
+	if not variables.stockpile_until_75 and gc.can_produce_robot(unit.id, bc.UnitType.Ranger) and (rockets_need_filling or gc.round() < 150 or num_attacking_units<min(max(1.5*(variables.earth_start_map.width*variables.earth_start_map.height)**(0.5), 40), 100) or num_attacking_units < 2.7*variables.num_enemies): #and should_produce_robot(gc, mining_rate, current_production, karbonite_lower_limit): # otherwise produce a unit, based on most_off_optimal
 		if total_units[0]<4 and gc.can_produce_robot(unit.id, bc.UnitType.Worker):
 			gc.produce_robot(unit.id, bc.UnitType.Worker)
-		elif total_units[1]<5 and gc.round() < 70:
+		elif total_units[1]<5 and gc.round() < 70 and (variables.earth_start_map.height * variables.earth_start_map.width)>1000:
 			gc.produce_robot(unit.id, bc.UnitType.Knight)
 		elif total_units[2] < 0.9 * num_non_workers:
 			gc.produce_robot(unit.id, bc.UnitType.Ranger)
 		else:
 			gc.produce_robot(unit.id, bc.UnitType.Healer)
 		#current_production += order[best].factory_cost()
+
+def evaluate_stockpile():
+	if variables.gc.round()>225:
+		if not variables.stockpile_until_75:
+			if variables.between_stockpiles > 15 and variables.gc.karbonite()<75:
+				variables.stockpile_until_75 = True
+				variables.between_stockpiles = 0
+			else:
+				variables.between_stockpiles+=1
+		if variables.stockpile_until_75:
+			if variables.gc.karbonite()>90:
+				if variables.stockpile_has_been_above:
+					variables.stockpile_until_75 = False
+					variables.between_stockpiles = 0
+					variables.stockpile_has_been_above = False
+				else:
+					variables.stockpile_has_been_above = True
 """
 def should_produce_robot(gc, mining_rate, current_production, karbonite_lower_limit):
 	# produce a robot if net karbonite at the end of the turn will be more than karbonite_lower_limit
