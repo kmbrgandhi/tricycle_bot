@@ -217,7 +217,8 @@ def update_battles():
         cluster = battle_locs[loc_coords]
         del battle_locs[loc_coords]
         for unit_id in cluster.allies: 
-            del assigned_knights[unit_id]
+            if unit_id in assigned_knights: 
+                del assigned_knights[unit_id]
 
     ## Units
     remove = set()
