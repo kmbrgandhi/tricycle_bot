@@ -79,7 +79,7 @@ def timestep(unit):
 				variables.saviour_blueprinted_id = None
 				variables.num_unsuccessful_savior = 0
 				variables.saviour_time_between =0
-		elif variables.saviour_time_between>3:
+		elif variables.saviour_time_between>0:
 			blueprinted = False
 			for dir in variables.directions:
 				map_loc = my_location.add(dir)
