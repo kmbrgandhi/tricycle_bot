@@ -149,6 +149,7 @@ saviour_worker_id = None
 saviour_blueprinted = False
 saviour_blueprinted_id = None
 num_unsuccessful_savior = 0
+saviour_time_between = 0
 
 mars = bc.Planet.Mars
 mars_map = gc.starting_map(mars)

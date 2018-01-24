@@ -25,7 +25,7 @@ def timestep(unit):
                 variable.rocket_landing_sites[unit.id] = explore.get_maploc(bc.Planet.Mars, random.choice(list(variable.passable_locations_mars.keys())))
                 #rocket_launch_site[unit.id] = compute_optimal_landing_site(gc, curr_round, time, rocket_launch_site)
 
-        elif ((len(garrison)>5 and gc.round()<400) or (len(garrison)>3 and gc.round()>400) or (gc.round()>700)) and variable.gc.round() == variable.rocket_launch_times[unit.id] and variable.gc.can_launch_rocket(unit.id, variable.rocket_landing_sites[unit.id]):
+        elif ((len(garrison)>6 and gc.round()<400) or (len(garrison)>4 and gc.round()>400) or (gc.round()>745)) and variable.gc.round() == variable.rocket_launch_times[unit.id] and variable.gc.can_launch_rocket(unit.id, variable.rocket_landing_sites[unit.id]):
             variable.gc.launch_rocket(unit.id, variable.rocket_landing_sites[unit.id])
             del variable.rocket_locs[unit.id]
             return
@@ -43,6 +43,7 @@ def timestep(unit):
                         variable.saviour_blueprinted = False
                         variable.saviour_blueprinted_id = None
                         variable.num_unsuccessful_savior = 0
+                        variable.saviour_time_between = 0
                     break
 
 
