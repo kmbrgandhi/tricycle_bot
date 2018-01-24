@@ -71,13 +71,15 @@ def timestep(unit):
 						variables.saviour_blueprinted = False
 						variables.saviour_blueprinted_id = None
 						variables.num_unsuccessful_savior = 0
+						variables.saviour_time_between =0
 			except:
 				variables.saviour_worker_id = None
 				variables.saviour_worker = False
 				variables.saviour_blueprinted = False
 				variables.saviour_blueprinted_id = None
 				variables.num_unsuccessful_savior = 0
-		else:
+				variables.saviour_time_between =0
+		elif variables.saviour_time_between>0:
 			blueprinted = False
 			for dir in variables.directions:
 				map_loc = my_location.add(dir)
@@ -106,7 +108,8 @@ def timestep(unit):
 
 			if not blueprinted:
 				variables.num_unsuccessful_savior+=1
-
+		else:
+			variables.saviour_time_between+=1
 
 	my_role = "idle"
 	for role in current_roles:
@@ -581,7 +584,8 @@ def get_closest_deposit(gc,unit,position,karbonite_locations,in_vision_range=Fal
 	is_deposit_in_vision_range = False
 
 	for location_coord in explore.coord_neighbors(position_coord, diff=explore.diffs_50, include_self=True):
-		if location_coord in karbonite_locations:
+		location_coord_thirds = (int(location_coord[0]/variables.bfs_fineness), int(location_coord[1]/variables.bfs_fineness))
+		if location_coord in karbonite_locations and (position_coord, location_coord_thirds) in variables.precomputed_bfs:
 			is_deposit_in_vision_range = True
 			
 			karbonite_location = bc.MapLocation(planet,location_coord[0],location_coord[1])
@@ -594,9 +598,11 @@ def get_closest_deposit(gc,unit,position,karbonite_locations,in_vision_range=Fal
 		for x,y in karbonite_locations.keys():
 			karbonite_location = bc.MapLocation(planet,x,y)
 			karbonite_coord = (x,y)
+			karbonite_coord_thirds = (int(karbonite_coord[0] / variables.bfs_fineness), int(karbonite_coord[1] / variables.bfs_fineness))
+
 			distance_to_deposit = sense_util.distance_squared_between_coords(position_coord,karbonite_coord)
 			#keep updating current closest deposit to unit
-			if distance_to_deposit < current_distance:
+			if distance_to_deposit < current_distance and (position_coord, karbonite_coord_thirds) in variables.precomputed_bfs:
 				current_distance = distance_to_deposit 
 				closest_deposit = karbonite_location
 
@@ -782,7 +788,7 @@ def build(gc,my_unit,my_location,start_map,building_assignment,current_roles):
 		if my_unit.id in building_assignment[building_id] and building_id in variables.list_of_unit_ids:
 			assigned_building = gc.unit(building_id)
 			if assigned_building.structure_is_built():
-				print(my_unit.id,"assigned_building was already built")
+				#print(my_unit.id,"assigned_building was already built")
 				del building_assignment[building_id]
 				assigned_building = assign_unit_to_build(gc,my_unit,my_location,start_map,building_assignment)
 				unit_was_not_assigned = False
