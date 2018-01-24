@@ -254,8 +254,7 @@ def update_healers():
     ## Remove dead healers from assigned healers OR healers with expired locations
     remove = set()
     for healer_id in assigned_healers:
-        try: 
-            healer = gc.unit(healer_id)
+        if healer_id in variables.list_of_unit_ids: 
             loc = assigned_healers[healer_id]
             if gc.can_sense_location(loc):
                 allies = gc.sense_nearby_units_by_team(loc, 4, my_team)
@@ -263,7 +262,7 @@ def update_healers():
                     remove.add(healer_id)
                     if (loc.x,loc.y) in target_locs: 
                         target_locs.remove((loc.x,loc.y))
-        except:
+        else:
             remove.add(healer_id)
 
     for healer_id in remove: 
@@ -273,9 +272,7 @@ def update_healers():
     ## Remove dead healers from assigned overcharge
     remove = set()
     for healer_id in assigned_overcharge:
-        try:
-            healer = gc.unit(healer_id)
-        except:
+        if healer_id not in variables.list_of_unit_ids:
             remove.add(healer_id)
 
     for healer_id in remove:
@@ -284,9 +281,7 @@ def update_healers():
     ## Remove dead overcharge targets 
     remove = set()
     for ally_id in overcharge_targets: 
-        try: 
-            ally = gc.unit(ally_id)
-        except:
+        if ally_id not in variables.list_of_unit_ids:
             remove.add(ally_id)
 
     for ally_id in remove:
