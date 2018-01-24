@@ -55,8 +55,8 @@ while True:
     variables.num_enemies = 0
     variables.print_count = 0
 
-    print("PYROUND:", variables.curr_round)
-    print("TIME LEFT:", gc.get_time_left_ms())
+    #print("PYROUND:", variables.curr_round)
+    #print("TIME LEFT:", gc.get_time_left_ms())
     for poss_enemy in variables.units:
         if poss_enemy.team != variables.my_team and poss_enemy.unit_type in variables.attacker:
             variables.num_enemies += 1
@@ -80,13 +80,14 @@ while True:
     #if time.time() - start_time > 0.02:
     #    print('DESIGNATING ROLES TIME:', time.time()-start_time)
 
-    factory.evaluate_stockpile()
-    if worker.check_if_saviour_died():
+    if not worker.check_if_saviour_died():
         variables.saviour_worker_id = None
         variables.saviour_worker = False
         variables.saviour_blueprinted = False
         variables.saviour_blueprinted_id = None
         variables.num_unsuccessful_savior = 0
+        variables.saviour_time_between = 0
+
     #time_workers = 0
     #time_rangers = 0
     #time_healers = 0
@@ -126,6 +127,7 @@ while True:
                 num_rocket+=1
         variables.info = [num_workers, num_knights, num_rangers, num_mages, num_healers, num_factory, num_rocket]
         info = variables.info
+        factory.evaluate_stockpile()
         for unit in variables.my_units:
             # respective unit types execute their own AI
             if unit.unit_type == unit_types["worker"]:

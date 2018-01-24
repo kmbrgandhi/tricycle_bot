@@ -223,9 +223,7 @@ def update_battles():
     ## Units
     remove = set()
     for knight_id in assigned_knights:
-        try:
-            knight = gc.unit(knight_id)
-        except:
+        if knight_id not in variables.list_of_unit_ids:
             loc = assigned_knights[knight_id]
             remove.add((knight_id,(loc.x,loc.y)))
 

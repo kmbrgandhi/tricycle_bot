@@ -5,7 +5,6 @@ import traceback
 import Units.map_info as map_info
 import Units.sense_util as sense_util
 import Units.explore as explore
-import Units.clusters as clusters
 import time
 
 gc = bc.GameController()
@@ -57,7 +56,7 @@ curr_round = gc.round()
 
 print_count = 0
 
-list_of_unit_ids = [unit.id for unit in my_units]
+list_of_unit_ids = set([unit.id for unit in my_units])
 
 ## WORKER VARIABLES ##
 
@@ -128,12 +127,6 @@ earth_battles = {}
 mars_battles = {}
 assigned_knights = {}
 init_enemy_locs = []
-for unit in earth_start_map.initial_units: 
-	if unit.team == enemy_team:
-		loc = unit.location.map_location()
-		init_enemy_locs.append(loc)
-		earth_battles[(loc.x,loc.y)] = clusters.Cluster(allies=set(),enemies=set([unit.id]))
-		
 
 ## HEALER VARIABLES ##
 healer_radius = 9
@@ -171,6 +164,7 @@ saviour_worker_id = None
 saviour_blueprinted = False
 saviour_blueprinted_id = None
 num_unsuccessful_savior = 0
+saviour_time_between = 0
 
 mars = bc.Planet.Mars
 mars_map = gc.starting_map(mars)
