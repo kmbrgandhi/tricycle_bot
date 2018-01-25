@@ -116,8 +116,8 @@ def timestep(unit):
 		if unit.id in current_roles[role]:
 			my_role = role
 	
-	print()
-	print("on unit #",unit.id, "position: ",my_location, "role: ",my_role)
+	#print()
+	#print("on unit #",unit.id, "position: ",my_location, "role: ",my_role)
 	#print("KARBONITE: ",gc.karbonite()
 	
 	current_num_workers = info[0]
@@ -283,8 +283,8 @@ def designate_roles():
 
 			closest_workers_to_site[assigned_blueprinting_site] = closest_worker_ids
 
-		print("blueprinting_assignment",blueprinting_assignment)
-		print("building_assignment",building_assignment)
+		#print("blueprinting_assignment",blueprinting_assignment)
+		#print("building_assignment",building_assignment)
 		#print("blueprinting_queue",blueprinting_queue)
 
 
@@ -862,10 +862,10 @@ def build(gc,my_unit,my_location,start_map,building_assignment,current_roles):
 		if gc.can_build(my_unit.id,assigned_building.id):
 			#print(my_unit.id, "is building at ",assigned_location)
 			gc.build(my_unit.id,assigned_building.id)
-			print("assigned_building location",assigned_building.location.map_location())
-			print("assigned building is done?",assigned_building.structure_is_built())
+			#print("assigned_building location",assigned_building.location.map_location())
+			#print("assigned building is done?",assigned_building.structure_is_built())
 			if assigned_building.structure_is_built():
-				print("HELLOOOOO?")
+				#print("HELLOOOOO?")
 				current_roles["builder"].remove(my_unit.id)
 				del building_assignment[building_id]
 		return
