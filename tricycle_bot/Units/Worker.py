@@ -55,8 +55,6 @@ def timestep(unit):
 	if gc.round() > 225 and not variables.saviour_worker and near_factory(my_location):
 		variables.saviour_worker = True
 		variables.saviour_worker_id = unit.id
-
-	if variables.saviour_worker_id is not None and variables.saviour_worker_id == unit.id:
 		if variables.saviour_blueprinted:
 			try:
 				corr_rocket = gc.unit(variables.saviour_blueprinted_id)
@@ -73,6 +71,7 @@ def timestep(unit):
 						variables.num_unsuccessful_savior = 0
 						variables.saviour_time_between =0
 			except:
+				#print('got an exception')
 				variables.saviour_worker_id = None
 				variables.saviour_worker = False
 				variables.saviour_blueprinted = False
@@ -95,6 +94,7 @@ def timestep(unit):
 						break
 					elif variables.num_unsuccessful_savior > 5:
 						if gc.has_unit_at_location(map_loc):
+							#print('disintegrating')
 							in_the_way_unit = gc.sense_unit_at_location(map_loc)
 							gc.disintegrate_unit(in_the_way_unit.id)
 							if gc.can_blueprint(unit.id, variables.unit_types["rocket"], dir):
@@ -643,6 +643,8 @@ def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, bui
 				if try_replicate:
 					return
 			# mine if adjacent to deposit
+
+			#print("trying to harvest at:",closest_deposit)
 			if gc.can_harvest(my_unit.id,direction_to_deposit):
 				gc.harvest(my_unit.id,direction_to_deposit)
 				current_roles["miner"].remove(my_unit.id)
@@ -859,16 +861,35 @@ def build(gc,my_unit,my_location,start_map,building_assignment,current_roles):
 							building_assignment[assigned_building.id].append(new_unit.id)
 							break
 
+		# movement around building
+		
+		open_spaces = explore.coord_neighbors((assigned_location.x,assigned_location.y), diff = explore.diff_neighbors, include_self = False)
+		self_adjacent = explore.coord_neighbors((my_location.x,my_location.y), diff = explore.diff_neighbors, include_self = False)
+		for x,y in open_spaces:
+			if (x,y) in variables.passable_locations_earth and variables.passable_locations_earth[(x,y)] and (x,y) in open_spaces:
+				map_loc = bc.MapLocation(variables.earth,x,y)
+				if not gc.has_unit_at_location(map_loc):
+					#print("i am at",my_location)
+					#print("moving to location",map_loc)
+					direction_to_move = my_location.direction_to(map_loc)
+					if gc.is_move_ready(my_unit.id) and gc.can_move(my_unit.id,direction_to_move):
+						gc.move_robot(my_unit.id,direction_to_move)
+
+
 		if gc.can_build(my_unit.id,assigned_building.id):
 			#print(my_unit.id, "is building at ",assigned_location)
 			gc.build(my_unit.id,assigned_building.id)
 			#print("assigned_building location",assigned_building.location.map_location())
 			#print("assigned building is done?",assigned_building.structure_is_built())
 			if assigned_building.structure_is_built():
-				#print("HELLOOOOO?")
-				current_roles["builder"].remove(my_unit.id)
+				workers = building_assignment[building_id]
 				del building_assignment[building_id]
-		return
+				for worker_id in workers:
+					current_roles["builder"].remove(worker_id)
+			return
+
+
+
 	# if not adjacent move toward it
 	else:
 		try_move_smartly(my_unit, my_location, assigned_location)

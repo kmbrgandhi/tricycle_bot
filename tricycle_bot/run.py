@@ -65,8 +65,8 @@ while True:
     variables.producing= [0, 0, 0, 0, 0]
     unit_types = variables.unit_types
 
-    #print("PYROUND:", variables.curr_round)
-    #print("TIME LEFT:", gc.get_time_left_ms())
+    print("PYROUND:", variables.curr_round)
+    print("TIME LEFT:", gc.get_time_left_ms())
     for poss_enemy in variables.units:
         if poss_enemy.team != variables.my_team and poss_enemy.unit_type in variables.attacker:
             variables.num_enemies += 1
