@@ -60,7 +60,7 @@ list_of_unit_ids = set([unit.id for unit in my_units])
 
 ## WORKER VARIABLES ##
 
-factory_spacing = 10
+factory_spacing = 5
 rocket_spacing = 2
 min_workers_per_building = 4
 recruitment_radius = 17

@@ -55,8 +55,8 @@ while True:
     variables.num_enemies = 0
     variables.print_count = 0
 
-    #print("PYROUND:", variables.curr_round)
-    #print("TIME LEFT:", gc.get_time_left_ms())
+    print("PYROUND:", variables.curr_round)
+    print("TIME LEFT:", gc.get_time_left_ms())
     for poss_enemy in variables.units:
         if poss_enemy.team != variables.my_team and poss_enemy.unit_type in variables.attacker:
             variables.num_enemies += 1
@@ -94,7 +94,7 @@ while True:
     # time_factories = 0
     # time_knights = 0
     
-    #print("current worker roles: ", variables.current_worker_roles)
+    print("current worker roles: ", variables.current_worker_roles)
 
     try:
         # walk through our units:
