@@ -118,12 +118,17 @@ def timestep(unit):
                 gc.heal(unit.id, best_target.id)
         if best_dir is not None and gc.is_move_ready(unit.id): 
             gc.move_robot(unit.id, best_dir)
+            new_loc = unit_loc.add(best_dir)
+            variables.unit_locations[unit.id] = (new_loc.x, new_loc.y)
         elif best_loc is not None and gc.is_move_ready(unit.id):
             #print('GETTING BEST DIRECTION')
             #print(best_loc)
             best_dir = get_best_direction(gc, unit.id, unit_loc, best_loc, direction_to_coord, precomputed_bfs, bfs_fineness)
             if best_dir is not None: 
                 gc.move_robot(unit.id, best_dir)
+                ## CHANGE LOC IN NEW DATA STRUCTURE
+                new_loc = unit_loc.add(best_dir)
+                variables.unit_locations[unit.id] = (new_loc.x, new_loc.y)
 
 def dir_away_from_enemy(gc, unit, unit_loc, enemy_loc):
     ideal_dir_from_enemy = enemy_loc.direction_to(unit_loc)
@@ -263,7 +268,7 @@ def update_healers():
     ## Remove dead healers from assigned healers OR healers with expired locations
     remove = set()
     for healer_id in assigned_healers:
-        if healer_id in variables.list_of_unit_ids: 
+        if healer_id in variables.my_unit_ids: 
             loc = assigned_healers[healer_id]
             if gc.can_sense_location(loc):
                 num_allies = get_dangerous_allies(gc, loc, 4, my_team) 
@@ -281,7 +286,7 @@ def update_healers():
     ## Remove dead healers from assigned overcharge
     remove = set()
     for healer_id in assigned_overcharge:
-        if healer_id not in variables.list_of_unit_ids:
+        if healer_id not in variables.my_unit_ids:
             remove.add(healer_id)
 
     for healer_id in remove:
@@ -290,7 +295,7 @@ def update_healers():
     ## Remove dead overcharge targets 
     remove = set()
     for ally_id in overcharge_targets: 
-        if ally_id not in variables.list_of_unit_ids:
+        if ally_id not in variables.my_unit_ids:
             remove.add(ally_id)
 
     for ally_id in remove:
