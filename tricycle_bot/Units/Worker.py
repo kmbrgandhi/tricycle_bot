@@ -497,6 +497,9 @@ def try_move_smartly(unit, map_loc1, map_loc2):
 		for option in options:
 			if variables.gc.can_move(unit.id, option):
 				variables.gc.move_robot(unit.id, option)
+				## CHANGE LOC IN NEW DATA STRUCTURE
+				new_loc = map_loc1.add(option)
+				variables.unit_locations[unit.id] = (new_loc.x, new_loc.y)
 				break
 
 def board(gc,my_unit,my_location,current_roles):
@@ -806,7 +809,7 @@ def build(gc,my_unit,my_location,start_map,building_assignment,current_roles):
 	# loop through building assignments and look for my_unit.id if it is assigned
 	"""
 	for building_id in building_assignment:
-		if my_unit.id in building_assignment[building_id] and building_id in variables.list_of_unit_ids:
+		if my_unit.id in building_assignment[building_id] and building_id in variables.my_unit_ids:
 			assigned_building = gc.unit(building_id)
 			if assigned_building.structure_is_built():
 				#print(my_unit.id,"assigned_building was already built")
@@ -827,7 +830,7 @@ def build(gc,my_unit,my_location,start_map,building_assignment,current_roles):
 		return
 	"""
 	for building_id in building_assignment:
-		if my_unit.id in building_assignment[building_id] and building_id in variables.list_of_unit_ids:
+		if my_unit.id in building_assignment[building_id] and building_id in variables.my_unit_ids:
 			assigned_building = gc.unit(building_id)
 
 

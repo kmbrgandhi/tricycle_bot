@@ -53,12 +53,7 @@ def timestep(unit):
 		#current_production += order[best].factory_cost()
 
 def evaluate_stockpile():
-	composition = variables.info
-	producing = variables.producing
-	total_units = [composition[0] + producing[0], composition[1] + producing[1], composition[2] + producing[2],
-				   composition[3] + producing[3], composition[4] + producing[4]]
-	num_attacking_units = sum(total_units[1:4])
-	if (variables.gc.round()>200 and num_attacking_units > 0.5*variables.num_enemies) or variables.gc.round()>380:
+	if variables.gc.round()>180:
 		if not variables.stockpile_until_75:
 			if variables.between_stockpiles > 15 and variables.gc.karbonite()<90:
 				variables.stockpile_until_75 = True

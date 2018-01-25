@@ -56,7 +56,11 @@ curr_round = gc.round()
 
 print_count = 0
 
-list_of_unit_ids = set([unit.id for unit in my_units])
+## ALL UNITS ##
+my_unit_ids = set([unit.id for unit in my_units])
+unit_locations = {} ## unit id: (x, y)
+for unit in my_units:
+    unit_locations[unit.id] = (unit.location.map_location().x, unit.location.map_location().y)
 
 ## WORKER VARIABLES ##
 
