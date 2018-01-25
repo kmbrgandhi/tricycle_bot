@@ -553,7 +553,7 @@ def pick_from_init_enemy_locs(init_loc):
 
 def run_towards_init_loc(gc, unit, location,  direction_to_coord, precomputed_bfs, bfs_fineness):
     #start_time = time.time()
-    curr_planet_map = gc.starting_map(gc.planet())
+    curr_planet_map = gc.starting_map(variables.curr_planet)
     coords_init_location = (location.x, location.y)
     coords_loc = pick_from_init_enemy_locs(coords_init_location)
     if coords_loc is None:

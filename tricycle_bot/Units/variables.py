@@ -150,6 +150,7 @@ saviour_blueprinted = False
 saviour_blueprinted_id = None
 num_unsuccessful_savior = 0
 saviour_time_between = 0
+cost_of_rocket = 75
 
 mars = bc.Planet.Mars
 mars_map = gc.starting_map(mars)
@@ -182,7 +183,7 @@ if curr_planet == bc.Planet.Earth:
             else:
                 passable_locations_earth[coords]= False
 
-    bfs_fineness = max(int(((earth_width * earth_height)**0.5)/10), 2)
+    bfs_fineness = max(int(((earth_width * earth_height)**0.5)/10)-1, 1)
     wavepoints = {}
     if earth_width%bfs_fineness==0:
         upper_width = int(earth_width/bfs_fineness)
@@ -212,6 +213,9 @@ if curr_planet == bc.Planet.Earth:
             if actual is not None:
                 wavepoints[(x_th, y_th)] = actual
     precomputed_bfs = explore.precompute_earth(passable_locations_earth, coord_to_direction, wavepoints)
+    start_time = time.time()
+    precomputed_bfs_dist = explore.precompute_earth_dist(passable_locations_earth, coord_to_direction, wavepoints)
+    print(time.time()-start_time)
 
 else:
     bfs_fineness = 2 #max(int(((mars_width * mars_height) ** 0.5) / 10), 2) + 1

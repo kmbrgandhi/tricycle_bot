@@ -94,7 +94,14 @@ def timestep(unit):
 						blueprinted = True
 						break
 					elif variables.num_unsuccessful_savior > 5:
-						if gc.has_unit_at_location(map_loc):
+						variables.saviour_worker_id = None
+						variables.saviour_worker = False
+						variables.saviour_blueprinted = False
+						variables.saviour_blueprinted_id = None
+						variables.num_unsuccessful_savior = 0
+						variables.saviour_time_between = 0
+						"""
+						if gc.has_unit_at_location(map_loc) and gc.karbonite()>75:
 							in_the_way_unit = gc.sense_unit_at_location(map_loc)
 							gc.disintegrate_unit(in_the_way_unit.id)
 							if gc.can_blueprint(unit.id, variables.unit_types["rocket"], dir):
@@ -105,8 +112,9 @@ def timestep(unit):
 								variables.all_building_locations[variables.saviour_blueprinted_id] = map_loc
 								blueprinted = True
 								break
+						"""
 
-			if not blueprinted:
+			if not blueprinted and gc.karbonite() > 75:
 				variables.num_unsuccessful_savior+=1
 		else:
 			variables.saviour_time_between+=1
