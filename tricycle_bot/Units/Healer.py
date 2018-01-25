@@ -236,6 +236,16 @@ def evaluate_battle_location(gc, loc, battle_locs):
     
     return valid
 
+def get_dangerous_allies(gc, loc, radius, team):
+    DANGEROUS = [bc.UnitType.Knight, bc.UnitType.Ranger, bc.UnitType.Mage]
+    allies = gc.sense_nearby_units_by_team(loc, radius, team)
+    dangerous_allies = 0
+    for ally in allies: 
+        if ally.unit_type in DANGEROUS: 
+            dangerous_allies += 1
+
+    return dangerous_allies
+
 def update_healers():
     """
     Remove dead healers from healer dict and overcharge dict.
@@ -256,8 +266,8 @@ def update_healers():
         if healer_id in variables.list_of_unit_ids: 
             loc = assigned_healers[healer_id]
             if gc.can_sense_location(loc):
-                allies = gc.sense_nearby_units_by_team(loc, 4, my_team)
-                if len(allies) == 0: 
+                num_allies = get_dangerous_allies(gc, loc, 4, my_team) 
+                if num_allies == 0: 
                     remove.add(healer_id)
                     if (loc.x,loc.y) in target_locs: 
                         target_locs.remove((loc.x,loc.y))
