@@ -369,7 +369,7 @@ def designate_roles():
 					elif can_blueprint_factory(gc,factory_count):
 
 						best_location_tuple = get_optimal_building_location(gc,start_map,worker_location,unit_types["factory"],karbonite_locations,blueprinting_queue,blueprinting_assignment)
-						#print("time for building location",time.time() - inside_time)
+						print(worker.id,"building in ",best_location_tuple)
 						if best_location_tuple is not None:
 							best_location = bc.MapLocation(earth, best_location_tuple[0], best_location_tuple[1])
 							#print(worker.id,"can build a factory")
@@ -425,10 +425,12 @@ def get_workers_per_building(gc,start_map,building_location):
 	max_workers_per_building = 4
 	num_adjacent_spaces = 0
 	adjacent = adjacent_locations(building_location)
+	self_coord = (building_location.x,building_location.y)
 
+	print("checking workers per building")
 	for location in adjacent:
 		location_coord = (location.x,location.y)
-		if location_coord not in variables.passable_locations_earth or location_coord == (0,0): continue
+		if location_coord not in variables.passable_locations_earth or location_coord == self_coord: continue
 		if variables.passable_locations_earth[location_coord]:
 			num_adjacent_spaces += 1
 
@@ -926,28 +928,6 @@ def factory_spacing_locations(location):
 	return output
 
 
-"""
-def is_valid_blueprint_location(gc,start_map,location,blueprinting_queue,blueprinting_assignment):
-
-	blueprint_spacing = 10
-	nearby = gc.sense_nearby_units(location,blueprint_spacing)
-
-	if start_map.on_map(location) and location not in variables.impassable_terrain_earth:
-		for other in nearby:
-			if other.unit_type == variables.unit_types["factory"] or other.unit_type == variables.unit_types["rocket"]:
-				return False
-		for worker_id in blueprinting_assignment:
-			assigned_site = blueprinting_assignment[worker_id]
-			if sense_util.distance_squared_between_maplocs(location, assigned_site.map_location) < blueprint_spacing:
-				return False
-		for enemy_loc in variables.init_enemy_locs:
-			if sense_util.distance_squared_between_maplocs(location, enemy_loc) < 50:
-				return False
-		return True
-
-	return False
-"""
-
 # generates locations to build factories that are close to karbonite deposits
 def get_optimal_building_location(gc, start_map, center, building_type, karbonite_locations, blueprinting_queue, blueprinting_assignment):
 	potential_locations = []
@@ -967,8 +947,9 @@ def get_optimal_building_location(gc, start_map, center, building_type, karbonit
 		#print("can we build here?",variables.invalid_building_locations[location_coords],location)
 		if location_coords in variables.passable_locations_earth and variables.passable_locations_earth[location_coords] and variables.invalid_building_locations[location_coords]:
 			# print("optimal building location time",time.time() - start_time)
-
 			adjacent_spaces = get_workers_per_building(gc,start_map,location)
+
+			print("location",location,"adjacent spaces",adjacent_spaces)
 			if adjacent_spaces < 3: continue
 
 			for adjacent_location in explore.coord_neighbors(location_coords):
