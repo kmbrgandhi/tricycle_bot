@@ -55,6 +55,8 @@ def timestep(unit):
 	if gc.round() > 225 and not variables.saviour_worker and near_factory(my_location):
 		variables.saviour_worker = True
 		variables.saviour_worker_id = unit.id
+
+	if variables.saviour_worker_id is not None and variables.saviour_worker_id == unit.id:
 		if variables.saviour_blueprinted:
 			try:
 				corr_rocket = gc.unit(variables.saviour_blueprinted_id)
@@ -69,16 +71,13 @@ def timestep(unit):
 						variables.saviour_blueprinted = False
 						variables.saviour_blueprinted_id = None
 						variables.num_unsuccessful_savior = 0
-						variables.saviour_time_between =0
 			except:
-				#print('got an exception')
 				variables.saviour_worker_id = None
 				variables.saviour_worker = False
 				variables.saviour_blueprinted = False
 				variables.saviour_blueprinted_id = None
 				variables.num_unsuccessful_savior = 0
-				variables.saviour_time_between =0
-		elif variables.saviour_time_between>0:
+		else:
 			blueprinted = False
 			for dir in variables.directions:
 				map_loc = my_location.add(dir)
@@ -93,13 +92,7 @@ def timestep(unit):
 						blueprinted = True
 						break
 					elif variables.num_unsuccessful_savior > 5:
-						variables.saviour_worker_id = None
-						variables.saviour_worker = False
-						variables.saviour_blueprinted = False
-						variables.saviour_blueprinted_id = None
-						variables.num_unsuccessful_savior = 0
-						variables.saviour_time_between = 0
-						if gc.has_unit_at_location(map_loc) and gc.karbonite()>75:
+						if gc.has_unit_at_location(map_loc):
 							in_the_way_unit = gc.sense_unit_at_location(map_loc)
 							gc.disintegrate_unit(in_the_way_unit.id)
 							if gc.can_blueprint(unit.id, variables.unit_types["rocket"], dir):
@@ -111,10 +104,12 @@ def timestep(unit):
 								blueprinted = True
 								break
 
-			if not blueprinted and gc.karbonite() > 75:
+			if not blueprinted:
 				variables.num_unsuccessful_savior+=1
-		else:
-			variables.saviour_time_between+=1
+
+
+
+
 
 	my_role = "idle"
 	for role in current_roles:
@@ -123,25 +118,33 @@ def timestep(unit):
 	
 	#print()
 	#print("on unit #",unit.id, "position: ",my_location, "role: ",my_role)
+
 	#print("KARBONITE: ",gc.karbonite()
 	
 	current_num_workers = info[0]
-	max_num_workers = get_worker_cap(gc,karbonite_locations, info, num_enemies)
+	max_num_workers = get_replication_cap(gc,karbonite_locations, info, num_enemies)
 	worker_spacing = 8
+
+	#print("REPLICATION CAP: ",max_num_workers)
+	# replicates if unit is able to (cooldowns, available directions etc.)	
+	if current_num_workers < max_num_workers:
+		try_replicate = replicate(gc,unit)
+		if try_replicate:
+			return
 
 	# runs this block every turn if unit is miner
 	if my_role == "miner":
-		# start_time = time.time()
+		start_time = time.time()
 		mine(gc,unit,my_location,earth_start_map,karbonite_locations,current_roles, building_assignment, battle_locs)
 		#print("mining time: ",time.time() - start_time)
 	# if unit is builder
 	elif my_role == "builder":
-		# start_time = time.time()
+		start_time = time.time()
 		build(gc,unit,my_location,earth_start_map,building_assignment,current_roles)
 		#print("building time: ",time.time() - start_time)
 	# if unit is blueprinter
 	elif my_role == "blueprinter":
-		# start_time = time.time()
+		start_time = time.time()
 		blueprint(gc,unit,my_location,building_assignment,blueprinting_assignment,current_roles)
 		#print("blueprinting time: ",time.time() - start_time)
 	# if unit is boarder
@@ -158,11 +161,6 @@ def timestep(unit):
 
 		movement.try_move(gc,unit,away_from_units)
 
-def check_if_saviour_died():
-	for my_unit in variables.my_units:
-		if variables.saviour_worker_id ==my_unit.id:
-			return True
-	return False
 def near_factory(my_location):
 	my_location_coords = (my_location.x, my_location.y)
 	for coords in explore.coord_neighbors(my_location_coords, diff = explore.diffs_20):
@@ -176,7 +174,12 @@ def near_factory(my_location):
 
 # returns whether unit is a miner or builder, currently placeholder until we can use team-shared data to designate unit roles
 def designate_roles():
-
+	"""
+	my_location = my_unit.location.map_location()
+	#print(my_location)
+	start_map = gc.starting_map(bc.Planet(0))
+	nearby = gc.sense_nearby_units(my_location, my_unit.vision_range)
+	"""
 	my_units = variables.my_units
 	unit_types = variables.unit_types
 	current_roles = variables.current_worker_roles
@@ -213,6 +216,8 @@ def designate_roles():
 		rocket_count = 0
 		rocket_ready_for_loading = False
 		please_move = False	
+		min_workers_per_building = 3
+		recruitment_radius = 20
 
 		workers = []
 		worker_id_list = []
@@ -244,19 +249,19 @@ def designate_roles():
 				workers.append(my_unit)
 				worker_id_list.append(my_unit.id)
 
+		#print("part 1",time.time()-start_time)
 		update_for_dead_workers(gc,current_roles,blueprinting_queue,blueprinting_assignment,building_assignment)
-
 		update_building_assignment(gc,building_assignment,blueprinting_assignment)
 		update_deposit_info(gc,karbonite_locations)
 
-
+		#print("part 2",time.time()-start_time)
 		max_num_builders = 5
 		max_num_blueprinters = 2 #len(blueprinting_queue)*2 + 1 # at least 1 blueprinter, 2 blueprinters per cluster
 		num_miners_per_deposit = 2 #approximate, just to cap miner count as deposit number decreases
 
 
 		closest_workers_to_blueprint = {} # dictionary mapping blueprint_id to a list of worker id sorted by distance to the blueprint
-
+		workers_in_recruitment_range = {}
 		for building_id in building_assignment:
 			assigned_workers = building_assignment[building_id]
 			blueprint_location = gc.unit(building_id).location.map_location()
@@ -268,9 +273,12 @@ def designate_roles():
 				for worker_unit in workers_dist_to_blueprint_sorted:
 					if worker_unit.id in current_roles["blueprinter"] or worker_unit.id in current_roles["builder"]:
 						continue
+					if building_id not in workers_in_recruitment_range:
+						worker_unit_loc = worker_unit.location.map_location()
+						if sense_util.distance_squared_between_maplocs(worker_unit_loc, blueprint_location) > recruitment_radius:
+							workers_in_recruitment_range[building_id] = len(closest_worker_ids)
 
-					if sense_util.distance_squared_between_maplocs(worker_unit.location.map_location(), blueprint_location) <= variables.recruitment_radius:
-						closest_worker_ids.append(worker_unit.id)
+					closest_worker_ids.append(worker_unit.id)
 				closest_workers_to_blueprint[building_id] = closest_worker_ids
 
 		#print("closest workers to blueprint",closest_workers_to_blueprint)
@@ -312,8 +320,6 @@ def designate_roles():
 					my_role = role
 					#print("worker id",worker.id,"is_role_assigned",is_role_assigned)
 					break
-
-			#print("unit: ",worker.id,my_role)
 			# recruit nearby workers to finish building
 			if my_role != "blueprinter" and my_role != "builder":
 				for building_id in building_assignment:
@@ -323,11 +329,20 @@ def designate_roles():
 					#print("workers per building",workers_per_building)
 					num_open_slots_to_build = workers_per_building - len(assigned_workers)
 
-
-					if num_open_slots_to_build > 0 and building_id in closest_workers_to_blueprint:
-
+					if num_open_slots_to_build > 0:
 						closest_worker_list = closest_workers_to_blueprint[building_id]
-						recruitable_workers = closest_worker_list[:min(num_open_slots_to_build,len(closest_worker_list))]
+						if building_id in workers_in_recruitment_range:
+							num_workers_in_range = workers_in_recruitment_range[building_id]
+						else:
+							num_workers_in_range = len(closest_worker_list)
+
+						if len(assigned_workers) > min_workers_per_building and num_workers_in_range == 0:
+							continue
+						if num_open_slots_to_build <= num_workers_in_range:
+							recruitable_workers = closest_worker_list[:num_open_slots_to_build]
+						else:
+							optimal_number = max(min_workers_per_building,num_workers_in_range)
+							recruitable_workers = closest_worker_list[:optimal_number]
 
 						if worker.id in recruitable_workers:
 							if my_role != "idle" and worker.id in current_roles[my_role]:
@@ -339,67 +354,66 @@ def designate_roles():
 							break
 
 			# recruit nearby worker to place down a blueprint
-			if my_role != "blueprinter" and my_role != "builder" and not role_revised:
+			if my_role != "blueprinter" and not role_revised:
 				building_in_progress_count = len(building_assignment.keys()) + len(blueprinting_assignment.keys())
-				#print("building_assignment",building_assignment)
-				#print("blueprinting_assignment",blueprinting_assignment)
-				#print("building_in_progress_count",building_in_progress_count)
 				if building_in_progress_count < building_in_progress_cap(gc):
 
-					if can_blueprint_rocket(gc,rocket_count):
+					# if it finds a nice location for building, put it in queue	
+					if len(blueprinting_assignment) < blueprinting_queue_limit(gc):
 
-						best_location_tuple = get_optimal_building_location(gc,start_map,worker_location,unit_types["rocket"],karbonite_locations,blueprinting_queue,blueprinting_assignment)
-						#print("best location is",best_location_tuple)
-						#print("time for building location",time.time() - inside_time)
-						if best_location_tuple is not None:
-							best_location = bc.MapLocation(earth, best_location_tuple[0], best_location_tuple[1])
+						if can_blueprint_rocket(gc,rocket_count):
 
-							if my_role != "idle" and worker.id in current_roles[my_role]:
-								current_roles[my_role].remove(worker.id)
+							best_location_tuple = get_optimal_building_location(gc,start_map,worker_location,unit_types["rocket"],karbonite_locations,blueprinting_queue,blueprinting_assignment)
+							#print("time for building location",time.time() - inside_time)
+							if best_location_tuple is not None:
+								best_location = bc.MapLocation(earth, best_location_tuple[0], best_location_tuple[1])
 
-							current_roles["blueprinter"].append(worker.id)
-							new_site = BuildSite(best_location,unit_types["rocket"])
-							blueprinting_assignment[worker.id] = new_site
+								if my_role != "idle" and worker.id in current_roles[my_role]:
+									current_roles[my_role].remove(worker.id)
 
-							nearby_sites = adjacent_locations(best_location)
+								current_roles["blueprinter"].append(worker.id)
+								new_site = BuildSite(best_location,unit_types["rocket"])
+								blueprinting_assignment[worker.id] = new_site
 
-							for site in nearby_sites:
-								site_coord = (site.x,site.y)
-								if site_coord not in variables.passable_locations_earth or not variables.passable_locations_earth[site_coord]: continue
-								if invalid_building_locations[site_coord]:
-									invalid_building_locations[site_coord] = False
+								nearby_sites = adjacent_locations(best_location)
 
-							my_role = "blueprinter"
-							#blueprinting_queue.append(new_site)
-					elif can_blueprint_factory(gc,factory_count):
+								for site in nearby_sites:
+									site_coord = (site.x,site.y)
+									if site_coord not in variables.passable_locations_earth or not variables.passable_locations_earth[site_coord]: continue
+									if invalid_building_locations[site_coord]:
+										invalid_building_locations[site_coord] = False
 
-						best_location_tuple = get_optimal_building_location(gc,start_map,worker_location,unit_types["factory"],karbonite_locations,blueprinting_queue,blueprinting_assignment)
-						#print("time for building location",time.time() - inside_time)
-						if best_location_tuple is not None:
-							best_location = bc.MapLocation(earth, best_location_tuple[0], best_location_tuple[1])
-							#print(worker.id,"can build a factory")
-							if my_role != "idle" and worker.id in current_roles[my_role]:
-								current_roles[my_role].remove(worker.id)
+								my_role = "blueprinter"
+								#blueprinting_queue.append(new_site)
+						elif can_blueprint_factory(gc,factory_count):
 
-							current_roles["blueprinter"].append(worker.id)
-							new_site = BuildSite(best_location,unit_types["factory"])
-							blueprinting_assignment[worker.id] = new_site
-							best_location_coords = (best_location.x, best_location.y)
+							best_location_tuple = get_optimal_building_location(gc,start_map,worker_location,unit_types["factory"],karbonite_locations,blueprinting_queue,blueprinting_assignment)
+							#print("time for building location",time.time() - inside_time)
+							if best_location_tuple is not None:
+								best_location = bc.MapLocation(earth, best_location_tuple[0], best_location_tuple[1])
+								#print(worker.id,"can build a factory")
+								if my_role != "idle" and worker.id in current_roles[my_role]:
+									current_roles[my_role].remove(worker.id)
 
-							nearby_sites = factory_spacing_locations(best_location)
+								current_roles["blueprinter"].append(worker.id)
+								new_site = BuildSite(best_location,unit_types["factory"])
+								blueprinting_assignment[worker.id] = new_site
+								best_location_coords = (best_location.x, best_location.y)
 
-							for site in nearby_sites:
-								site_coord = (site.x,site.y)
-								if site_coord not in variables.passable_locations_earth or not variables.passable_locations_earth[site_coord]: continue
-								if invalid_building_locations[site_coord]:
-									invalid_building_locations[site_coord] = False
+								nearby_sites = factory_spacing_locations(best_location)
 
-							my_role = "blueprinter"
-							#blueprinting_queue.append(new_site)	
-							#print(worker.id," just added to building queue",best_location)
+								for site in nearby_sites:
+									site_coord = (site.x,site.y)
+									if site_coord not in variables.passable_locations_earth or not variables.passable_locations_earth[site_coord]: continue
+									if invalid_building_locations[site_coord]:
+										invalid_building_locations[site_coord] = False
 
-							#print(worker.id,"cannot build a rocket or factory")
-					#print(worker.id,"cannot build a rocket or factory")
+								my_role = "blueprinter"
+								#blueprinting_queue.append(new_site)	
+								#print(worker.id," just added to building queue",best_location)
+
+								#print(worker.id,"cannot build a rocket or factory")
+						#print(worker.id,"cannot build a rocket or factory")
 			## DESIGNATION FOR UNASSIGNED WORKERS ##
 			if my_role != "idle":
 				continue
@@ -427,7 +441,7 @@ def designate_roles():
 
 
 def get_workers_per_building(gc,start_map,building_location):
-	max_workers_per_building = 4
+	max_workers_per_building = 6
 	num_adjacent_spaces = 0
 	adjacent = adjacent_locations(building_location)
 
@@ -442,8 +456,7 @@ def get_workers_per_building(gc,start_map,building_location):
 
 
 def update_for_dead_workers(gc,current_roles,blueprinting_queue,blueprinting_assignment,building_assignment):
-	live_unit_ids = [unit.id for unit in gc.my_units()]
-	
+	live_unit_ids = variables.list_of_unit_ids
 	for role in current_roles.keys():
 		for worker_id in current_roles[role][:]:
 
@@ -486,26 +499,17 @@ def repair(gc, unit, my_location, current_roles):
 		current_roles["repairer"].remove(unit.id)
 
 def try_move_smartly(unit, map_loc1, map_loc2):
-	if variables.gc.is_move_ready(unit.id):
-		if int(map_loc1.x / variables.bfs_fineness) == int(map_loc2.x / variables.bfs_fineness) and int(map_loc1.y/ variables.bfs_fineness)== int(map_loc2.y / variables.bfs_fineness):#sense_util.distance_squared_between_maplocs(map_loc1, map_loc2) < (2 * variables.bfs_fineness ** 2)+1:
-			dir = map_loc1.direction_to(map_loc2)
+	if sense_util.distance_squared_between_maplocs(map_loc1, map_loc2) < (2 * variables.bfs_fineness ** 2) + 1:
+		dir = map_loc1.direction_to(map_loc2)
+	else:
+		our_coords = (map_loc1.x, map_loc1.y)
+		target_coords_thirds = (
+		int(map_loc2.x / variables.bfs_fineness), int(map_loc2.y / variables.bfs_fineness))
+		if (our_coords, target_coords_thirds) in variables.precomputed_bfs:
+			dir = variables.precomputed_bfs[(our_coords, target_coords_thirds)]
 		else:
-			our_coords = (map_loc1.x, map_loc1.y)
-			target_coords_thirds = (
-			int(map_loc2.x / variables.bfs_fineness), int(map_loc2.y / variables.bfs_fineness))
-			if (our_coords, target_coords_thirds) in variables.precomputed_bfs:
-				dir = variables.precomputed_bfs[(our_coords, target_coords_thirds)]
-			else:
-				dir = map_loc1.direction_to(map_loc2)
-		shape = variables.direction_to_coord[dir]
-		options = sense_util.get_best_option(shape)
-		for option in options:
-			if variables.gc.can_move(unit.id, option):
-				variables.gc.move_robot(unit.id, option)
-				## CHANGE LOC IN NEW DATA STRUCTURE
-				new_loc = map_loc1.add(option)
-				variables.unit_locations[unit.id] = (new_loc.x, new_loc.y)
-				break
+			dir = map_loc1.direction_to(map_loc2)
+	movement.try_move(variables.gc, unit, dir)
 
 def board(gc,my_unit,my_location,current_roles):
 	finished_rockets = []
@@ -537,25 +541,20 @@ def board(gc,my_unit,my_location,current_roles):
 		#movement.try_move(gc,my_unit,direction_to_rocket)
 		
 # parameters: amount of karbonite on the map, factory number ( diff behavior before and after our first factory), 
-def get_worker_cap(gc,karbonite_locations, info, num_enemies):
+def get_replication_cap(gc,karbonite_locations, info, num_enemies):
 	#print("KARBONITE INFO LENGTH: ",len(karbonite_locations))
 	#print(len(karbonite_locations))
 	if num_enemies > 2*sum(info[1:4])/3:
 		#print('replication cap yes')
 		return 6
-	elif info[5] >= 1:
+	if info[5] > 1:
 		return min(3 + float(500+gc.round())/7000 * len(karbonite_locations),15)
 	else:
-		return 4
+		return 6
 
-def replicate(gc,unit,direction=None):
+def replicate(gc,unit):
 	replicated = False
-
-	if direction is not None:
-		if gc.can_replicate(unit.id,direction):
-			replicated = True
-			gc.replicate(unit.id,direction)
-	elif variables.my_karbonite >= variables.unit_types["worker"].replicate_cost():
+	if variables.my_karbonite >= variables.unit_types["worker"].replicate_cost():
 		for direction in variables.directions:
 			if gc.can_replicate(unit.id,direction):
 				replicated = True
@@ -584,13 +583,12 @@ def get_closest_deposit(gc,unit,position,karbonite_locations,in_vision_range=Fal
 	current_distance = float('inf')
 	closest_deposit = bc.MapLocation(planet,-1,-1)
 	position_coord = (position.x,position.y)
-	# start_time = time.time()
+	start_time = time.time()
 
 	is_deposit_in_vision_range = False
 
 	for location_coord in explore.coord_neighbors(position_coord, diff=explore.diffs_50, include_self=True):
-		location_coord_thirds = (int(location_coord[0]/variables.bfs_fineness), int(location_coord[1]/variables.bfs_fineness))
-		if location_coord in karbonite_locations and (position_coord, location_coord_thirds) in variables.precomputed_bfs:
+		if location_coord in karbonite_locations:
 			is_deposit_in_vision_range = True
 			
 			karbonite_location = bc.MapLocation(planet,location_coord[0],location_coord[1])
@@ -603,11 +601,9 @@ def get_closest_deposit(gc,unit,position,karbonite_locations,in_vision_range=Fal
 		for x,y in karbonite_locations.keys():
 			karbonite_location = bc.MapLocation(planet,x,y)
 			karbonite_coord = (x,y)
-			karbonite_coord_thirds = (int(karbonite_coord[0] / variables.bfs_fineness), int(karbonite_coord[1] / variables.bfs_fineness))
-
 			distance_to_deposit = sense_util.distance_squared_between_coords(position_coord,karbonite_coord)
 			#keep updating current closest deposit to unit
-			if distance_to_deposit < current_distance and (position_coord, karbonite_coord_thirds) in variables.precomputed_bfs:
+			if distance_to_deposit < current_distance:
 				current_distance = distance_to_deposit 
 				closest_deposit = karbonite_location
 
@@ -616,7 +612,7 @@ def get_closest_deposit(gc,unit,position,karbonite_locations,in_vision_range=Fal
 	
 def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, building_assignment, battle_locs):
 
-	#start_time = time.time()
+	start_time = time.time()
 
 	closest_deposit = get_closest_deposit(gc,my_unit,my_location,karbonite_locations)
 
@@ -626,7 +622,7 @@ def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, bui
 		direction_to_deposit = my_location.direction_to(closest_deposit)
 		#print(unit.id, "is trying to mine at", direction_to_deposit)
 		enemy_units = gc.sense_nearby_units_by_team(my_location, my_unit.vision_range, sense_util.enemy_team(gc))
-		dangerous_types = [variables.unit_types["knight"], variables.unit_types["ranger"], variables.unit_types["mage"], variables.unit_types["factory"]]
+		dangerous_types = [variables.unit_types["knight"], variables.unit_types["ranger"], variables.unit_types["mage"]]
 		dangerous_enemies = []
 
 		# only adds enemy units that can attack
@@ -643,16 +639,7 @@ def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, bui
 			movement.try_move(gc, my_unit, dir)
 		
 		elif my_location.is_adjacent_to(closest_deposit) or my_location == closest_deposit:
-			info = variables.info
-			if info[0] < get_worker_cap(gc,variables.karbonite_locations,info,variables.num_enemies):
-				away_from_enemies = sense_util.best_available_direction(gc,my_unit,enemy_units) # includes factories
-				try_replicate = replicate(gc,my_unit,away_from_enemies)
-				#print("replicated by other means")
-				if try_replicate:
-					return
 			# mine if adjacent to deposit
-
-			#print("trying to harvest at:",closest_deposit)
 			if gc.can_harvest(my_unit.id,direction_to_deposit):
 				gc.harvest(my_unit.id,direction_to_deposit)
 				current_roles["miner"].remove(my_unit.id)
@@ -734,15 +721,8 @@ def update_building_assignment(gc,building_assignment,blueprinting_assignment):
 	invalid_building_locations = variables.invalid_building_locations
 	my_unit_ids = [unit.id for unit in gc.my_units()]
 	for building_id in keys:
-
-		if building_id not in my_unit_ids: # update for dead buildings
-
-			if building_id in building_assignment:
-				workers = building_assignment[building_id]
-				del building_assignment[building_id]
-				for worker_id in workers:
-					variables.current_worker_roles["builder"].remove(worker_id)
-
+		if building_id not in my_unit_ids:
+			del building_assignment[building_id]
 			removed_building_location = variables.all_building_locations[building_id]
 
 			reevaluated_sites = factory_spacing_locations(removed_building_location)
@@ -768,15 +748,6 @@ def update_building_assignment(gc,building_assignment,blueprinting_assignment):
 						continue
 
 				invalid_building_locations[site_coords] = True
-
-		else:
-
-			building_unit = gc.unit(building_id)
-			if building_unit.structure_is_built(): # update for completed buildings
-				workers = building_assignment[building_id]
-				del building_assignment[building_id]
-				for worker_id in workers:
-					variables.current_worker_roles["builder"].remove(worker_id)
 
 
 
@@ -814,10 +785,10 @@ def build(gc,my_unit,my_location,start_map,building_assignment,current_roles):
 
 	#print("unit",my_unit.id,"is building")
 	# loop through building assignments and look for my_unit.id if it is assigned
-	"""
 	for building_id in building_assignment:
-		if my_unit.id in building_assignment[building_id] and building_id in variables.my_unit_ids:
+		if my_unit.id in building_assignment[building_id] and building_id in variables.list_of_unit_ids:
 			assigned_building = gc.unit(building_id)
+			#print("assigned_building",assigned_building.location.map_location())
 			if assigned_building.structure_is_built():
 				#print(my_unit.id,"assigned_building was already built")
 				del building_assignment[building_id]
@@ -835,71 +806,18 @@ def build(gc,my_unit,my_location,start_map,building_assignment,current_roles):
 		#print(my_unit.id, "there are no blueprints around")
 		current_roles["builder"].remove(my_unit.id)
 		return
-	"""
-	for building_id in building_assignment:
-		if my_unit.id in building_assignment[building_id] and building_id in variables.my_unit_ids:
-			assigned_building = gc.unit(building_id)
-
 
 	#print("unit has been assigned to build at",assigned_building.location.map_location())
 	assigned_location = assigned_building.location.map_location()
-	adjacent_locs_to_blueprint = adjacent_locations(assigned_location)
-
 	if my_location.is_adjacent_to(assigned_location):
-		if len(building_assignment[assigned_building.id]) < variables.min_workers_per_building:
-			#print("going to try to replicate")
-			if variables.my_karbonite >= variables.unit_types["worker"].replicate_cost():
-				adjacent_to_my_location = adjacent_locations(my_location)
-				for adjacent_location in adjacent_to_my_location:
-					if adjacent_location == my_location or adjacent_location == assigned_location: 
-						continue
-					if gc.has_unit_at_location(adjacent_location): continue
-
-					if adjacent_location in adjacent_locs_to_blueprint:
-						#print("found adjacent region",adjacent_location)
-						direction = my_location.direction_to(adjacent_location)
-
-						if gc.can_replicate(my_unit.id,direction):
-							#print("right before replication")
-							gc.replicate(my_unit.id,direction)
-							new_unit = gc.sense_unit_at_location(adjacent_location)
-
-							#print("new replicated unit",new_unit.id)
-							current_roles["builder"].append(new_unit.id)
-							building_assignment[assigned_building.id].append(new_unit.id)
-							break
-
-		# movement around building
-		
-		open_spaces = explore.coord_neighbors((assigned_location.x,assigned_location.y), diff = explore.diff_neighbors, include_self = False)
-		self_adjacent = explore.coord_neighbors((my_location.x,my_location.y), diff = explore.diff_neighbors, include_self = False)
-		for x,y in open_spaces:
-			if (x,y) in variables.passable_locations_earth and variables.passable_locations_earth[(x,y)] and (x,y) in open_spaces:
-				map_loc = bc.MapLocation(variables.earth,x,y)
-				if not gc.has_unit_at_location(map_loc):
-					#print("i am at",my_location)
-					#print("moving to location",map_loc)
-					direction_to_move = my_location.direction_to(map_loc)
-					if gc.is_move_ready(my_unit.id) and gc.can_move(my_unit.id,direction_to_move):
-						gc.move_robot(my_unit.id,direction_to_move)
-						## CHANGE LOC IN NEW DATA STRUCTURE
-						new_loc = my_location.add(direction_to_move)
-						variables.unit_locations[my_unit.id] = (new_loc.x, new_loc.y)
 
 		if gc.can_build(my_unit.id,assigned_building.id):
-			#print(my_unit.id, "is building at ",assigned_location)
+			#print(my_unit.id, "is building factory at ",assigned_location)
 			gc.build(my_unit.id,assigned_building.id)
-			#print("assigned_building location",assigned_building.location.map_location())
-			#print("assigned building is done?",assigned_building.structure_is_built())
 			if assigned_building.structure_is_built():
-				workers = building_assignment[building_id]
+				current_roles["builder"].remove(my_unit.id)
 				del building_assignment[building_id]
-				for worker_id in workers:
-					current_roles["builder"].remove(worker_id)
-			return
-
-
-
+		return
 	# if not adjacent move toward it
 	else:
 		try_move_smartly(my_unit, my_location, assigned_location)
@@ -908,7 +826,7 @@ def build(gc,my_unit,my_location,start_map,building_assignment,current_roles):
 
 
 def adjacent_locations(location):
-	d = [(0,0),(0,1),(1,1),(1,0),(1,-1),(0,-1),(-1,-1),(-1,0),(-1,1)]
+	d = [(0,1),(1,1),(1,0),(1,-1),(0,-1),(-1,-1),(-1,0),(-1,1)]
 	planet = location.planet
 	x = location.x
 	y = location.y
@@ -933,7 +851,7 @@ def factory_spacing_locations(location):
 	return output
 
 
-"""
+
 def is_valid_blueprint_location(gc,start_map,location,blueprinting_queue,blueprinting_assignment):
 
 	blueprint_spacing = 10
@@ -953,7 +871,7 @@ def is_valid_blueprint_location(gc,start_map,location,blueprinting_queue,bluepri
 		return True
 
 	return False
-"""
+
 
 # generates locations to build factories that are close to karbonite deposits
 def get_optimal_building_location(gc, start_map, center, building_type, karbonite_locations, blueprinting_queue, blueprinting_assignment):
@@ -971,12 +889,12 @@ def get_optimal_building_location(gc, start_map, center, building_type, karbonit
 
 	for location_coords in explore.coord_neighbors(center_coords, diff=explore.diffs_20, include_self=True):
 		location = bc.MapLocation(variables.curr_planet, location_coords[0], location_coords[1])
-		#print("can we build here?",variables.invalid_building_locations[location_coords],location)
 		if location_coords in variables.passable_locations_earth and variables.passable_locations_earth[location_coords] and variables.invalid_building_locations[location_coords]:
 			# print("optimal building location time",time.time() - start_time)
 
-			adjacent_spaces = get_workers_per_building(gc,start_map,location)
-			if adjacent_spaces < 3: continue
+			if location_coords in karbonite_locations:
+				if karbonite_locations[location_coords] > 0:
+					continue
 
 			for adjacent_location in explore.coord_neighbors(location_coords):
 				if adjacent_location in karbonite_locations:
@@ -992,19 +910,64 @@ def get_optimal_building_location(gc, start_map, center, building_type, karbonit
 			if karbonite_adjacent_locations[location_coords] > 0:
 				no_deposits_located = False
 
-
 	if len(karbonite_adjacent_locations) == 0:
 		return None
 	elif no_deposits_located:
 		for default_location_coords in explore.coord_neighbors(center_coords, include_self = True):
 			default_location = bc.MapLocation(variables.curr_planet, default_location_coords[0],
 											  default_location_coords[1])
-			if default_location_coords in variables.passable_locations_earth and variables.passable_locations_earth[default_location_coords] and variables.invalid_building_locations[default_location_coords]:
+			if is_valid_blueprint_location(gc, start_map, default_location, blueprinting_queue,
+										   blueprinting_assignment):
 				return default_location_coords
 
 	return max(list(karbonite_adjacent_locations.keys()), key=lambda loc: karbonite_adjacent_locations[loc])
 
+"""
+# generates locations to build factories that are close to karbonite deposits	
+def get_optimal_building_location(gc,start_map,center,karbonite_locations,blueprinting_queue,blueprinting_assignment):
+	potential_locations = []
+	karbonite_adjacent_locations = {}
+	no_deposits_located = True
 
+	for location in gc.all_locations_within(center,20):
+		start_time = time.time()
+		if (location.x, location.y) in variables.passable_locations_earth and variables.passable_locations_earth[(location.x, location.y)] and variables.invalid_building_locations[(location.x,location.y)]:
+			#print("optimal building location time",time.time() - start_time)
+			loc_key = (location.x,location.y)
+
+			if loc_key in karbonite_locations:
+				if karbonite_locations[loc_key] > 0:
+					continue
+
+			start_time = time.time()
+			for adjacent_location in adjacent_locations(location):
+				if location == adjacent_location: continue
+
+				adj_key = (adjacent_location.x,adjacent_location.y)
+
+				if adj_key in karbonite_locations:
+					karbonite_value = karbonite_locations[adj_key]
+				else:
+					karbonite_value = 0
+
+				if loc_key not in karbonite_adjacent_locations:
+					karbonite_adjacent_locations[loc_key] = karbonite_value
+				else:
+					karbonite_adjacent_locations[loc_key] += karbonite_value
+			#print("par t2 location time",time.time() - start_time)
+			if karbonite_adjacent_locations[loc_key] > 0:
+				no_deposits_located = False
+
+	if len(karbonite_adjacent_locations) == 0:
+		return None
+	elif no_deposits_located:
+		for default_location in adjacent_locations(center):
+			if is_valid_blueprint_location(gc,start_map,default_location,blueprinting_queue,blueprinting_assignment):
+				return (default_location.x,default_location.y)
+	
+	return max(list(karbonite_adjacent_locations.keys()),key=lambda loc:karbonite_adjacent_locations[loc])
+
+"""
 # function to flexibly determine when a good time to expand factories
 def can_blueprint_factory(gc,factory_count):
 	if gc.round()>250 and variables.num_enemies<5:
@@ -1040,8 +1003,7 @@ def get_closest_site(my_unit,my_location,blueprinting_queue):
 
 # controls how many buildings we can have in progress at a time, can modify this to scale with karbonite number, round # or number of units (enemy or ally)
 def building_in_progress_cap(gc):
-
-	return max(2,variables.my_karbonite/100)
+	return 2
 
 
 def blueprint(gc,my_unit,my_location,building_assignment,blueprinting_assignment,current_roles):
@@ -1071,10 +1033,13 @@ def blueprint(gc,my_unit,my_location,building_assignment,blueprinting_assignment
 				# update shared data structures
 
 				building_assignment[new_blueprint.id] = [my_unit.id] # initialize new building
-
+				#print("building_assignment",building_assignment)
+				#print("blueprinting assignment before",blueprinting_assignment)
 				del blueprinting_assignment[my_unit.id]
 				current_roles["blueprinter"].remove(my_unit.id)
 				current_roles["builder"].append(my_unit.id)
+				#print("blueprinting assignment after",blueprinting_assignment)
+				#print(my_unit.id, " just created a blueprint!")
 			else:
 				pass
 				#print(my_unit.id, "can't build but is right next to assigned site")
@@ -1084,10 +1049,12 @@ def blueprint(gc,my_unit,my_location,building_assignment,blueprinting_assignment
 			movement.try_move(gc,my_unit,d)
 		else:
 			# move toward queued building site
-			#next_direction = my_location.direction_to(assigned_site.map_location)
-			#movement.try_move(gc,my_unit,next_direction)
+			next_direction = my_location.direction_to(assigned_site.map_location)	
+			movement.try_move(gc,my_unit,next_direction)
+			"""
 			try_move_smartly(my_unit,my_location,assigned_site.map_location)
-
+			"""
+		
 
 class BuildSite:
 	def __init__(self,map_location,building_type):

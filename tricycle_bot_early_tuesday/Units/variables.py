@@ -5,6 +5,7 @@ import traceback
 import Units.map_info as map_info
 import Units.sense_util as sense_util
 import Units.explore as explore
+import Units.clusters as clusters
 import time
 
 gc = bc.GameController()
@@ -20,12 +21,12 @@ earth = bc.Planet.Earth
 mars = bc.Planet.Mars
 
 unit_types = {"worker":bc.UnitType.Worker,
-			"knight":bc.UnitType.Knight,
-			"mage":bc.UnitType.Mage,
-			"healer":bc.UnitType.Healer,
-			"ranger":bc.UnitType.Ranger,
-			"factory":bc.UnitType.Factory,
-			"rocket":bc.UnitType.Rocket}
+            "knight":bc.UnitType.Knight,
+            "mage":bc.UnitType.Mage,
+            "healer":bc.UnitType.Healer,
+            "ranger":bc.UnitType.Ranger,
+            "factory":bc.UnitType.Factory,
+            "rocket":bc.UnitType.Rocket}
 
 ## GENERAL VARIABLES ##
 
@@ -56,18 +57,12 @@ curr_round = gc.round()
 
 print_count = 0
 
-## ALL UNITS ##
-my_unit_ids = set([unit.id for unit in my_units])
-unit_locations = {} ## unit id: (x, y)
-for unit in my_units:
-    unit_locations[unit.id] = (unit.location.map_location().x, unit.location.map_location().y)
+list_of_unit_ids = [unit.id for unit in my_units]
 
 ## WORKER VARIABLES ##
 
-factory_spacing = 5
+factory_spacing = 10
 rocket_spacing = 2
-min_workers_per_building = 4
-recruitment_radius = 17
 
 blueprinting_queue = []
 building_assignment = {}
@@ -75,53 +70,32 @@ blueprinting_assignment = {}
 all_building_locations = {}
 invalid_building_locations = {}
 
-
-ranger_reachable_sites = []
 for x in range(earth_start_map.width):
-	for y in range(earth_start_map.height):
-		location = bc.MapLocation(earth,x,y)
-		if location in impassable_terrain_earth:
-			invalid_building_locations[(x,y)] = False
-		invalid_building_locations[(x,y)] = True
+    for y in range(earth_start_map.height):
+        location = bc.MapLocation(earth,x,y)
+        if location in impassable_terrain_earth:
+            invalid_building_locations[(x,y)] = False
+        invalid_building_locations[(x,y)] = True
 
-"""
-area = earth_start_map.width * earth_start_map.height
-
-for unit in earth_start_map.initial_units: 
-	if unit.team == enemy_team:
-		loc = unit.location.map_location()
-
-		if area < 873:
-			enemy_loc_restriction = explore.coord_neighbors((loc.x,loc.y), diff=explore.diffs_50, include_self=True)
-		else: 
-			enemy_loc_restriction = gc.all_locations_within(loc,81)
-
-		for enemy_prox_loc in enemy_loc_restriction:
-			coord = (enemy_prox_loc.x,enemy_prox_loc.y)
-			if coord not in invalid_building_locations: 
-				continue
-			if invalid_building_locations[coord]:
-				invalid_building_locations[coord] = False
-"""
 
 factory_spacing_diff = []
 for dx in [-2,-1,0,1,2]:
-	for dy in [-2,-1,0,1,2]:
-		factory_spacing_diff.append((dx,dy))
+    for dy in [-2,-1,0,1,2]:
+        factory_spacing_diff.append((dx,dy))
 
 building_scouting_diff = []
 for dx in [-4,-3,-2,-1,0,1,2,3,4]:
-	for dy in [-4,-3,-2,-1,0,1,2,3,4]:
-		building_scouting_diff.append((dx,dy))
+    for dy in [-4,-3,-2,-1,0,1,2,3,4]:
+        building_scouting_diff.append((dx,dy))
 
 """
 distance_to_karbonite_deposits = {}
 for i,j in karbonite_locations:
-	karbonite_location = (i,j)
-	for x in range(earth_start_map.width):
-		for y in range(earth_start_map.height):
-			map_location = (x,y)
-			distance_to_karbonite_deposits[(map_location,karbonite_location)] = sense_util.distance_squared_between_coords(map_location,karbonite_location)
+    karbonite_location = (i,j)
+    for x in range(earth_start_map.width):
+        for y in range(earth_start_map.height):
+            map_location = (x,y)
+            distance_to_karbonite_deposits[(map_location,karbonite_location)] = sense_util.distance_squared_between_coords(map_location,karbonite_location)
 """
 
 current_worker_roles = {"miner":[],"builder":[],"blueprinter":[],"boarder":[], "repairer":[]}
@@ -131,13 +105,16 @@ earth_battles = {}
 mars_battles = {}
 assigned_knights = {}
 init_enemy_locs = []
+for unit in earth_start_map.initial_units: 
+    if unit.team == enemy_team:
+        loc = unit.location.map_location()
+        init_enemy_locs.append(loc)
+        earth_battles[(loc.x,loc.y)] = clusters.Cluster(allies=set(),enemies=set([unit.id]))
 
 ## HEALER VARIABLES ##
 healer_radius = 9
 healer_target_locs = set()
-overcharge_targets = set() ## stored as IDs
 assigned_healers = {}
-assigned_overcharge = {}
 
 #ROCKETS
 rocket_launch_times = {}
@@ -146,8 +123,11 @@ rocket_locs = {}
 
 # RANGER
 ranger_roles = {"fighter":[],"sniper":[], "go_to_mars":[]}
-targeting_units = {}    ## enemy_id: num of allied units attacking it
-which_rocket = {}       ## rocket_id: unit_id
+ranger_to_cluster = {}
+ranger_clusters = set()
+targeting_units = {}
+which_rocket = {}
+ranger_locs = {}
 
 #FIGHTERS
 producing = [0, 0, 0, 0, 0]
@@ -155,8 +135,8 @@ last_turn_battle_locs = {}
 next_turn_battle_locs = {}
 
 coord_to_direction = {(-1, -1): non_list_directions.Southwest, (-1, 1): non_list_directions.Northwest, (1, -1): non_list_directions.Southeast,
-					  (1, 1): non_list_directions.Northeast, (0, 1): non_list_directions.North, (0, -1): non_list_directions.South,
-					  (1, 0): non_list_directions.East, (-1, 0): non_list_directions.West}
+                      (1, 1): non_list_directions.Northeast, (0, 1): non_list_directions.North, (0, -1): non_list_directions.South,
+                      (1, 0): non_list_directions.East, (-1, 0): non_list_directions.West}
 direction_to_coord = {v: k for k, v in coord_to_direction.items()}
 
 passable_locations_mars = {}
@@ -165,8 +145,6 @@ saviour_worker_id = None
 saviour_blueprinted = False
 saviour_blueprinted_id = None
 num_unsuccessful_savior = 0
-saviour_time_between = 0
-cost_of_rocket = 75
 
 mars = bc.Planet.Mars
 mars_map = gc.starting_map(mars)
@@ -174,10 +152,10 @@ mars_width = mars_map.width
 mars_height = mars_map.height
 
 for x in range(mars_width):
-	for y in range(mars_height):
-		coords = (x, y)
-		if mars_map.is_passable_terrain_at(bc.MapLocation(mars, x, y)):
-			passable_locations_mars[coords] = True
+    for y in range(mars_height):
+        coords = (x, y)
+        if mars_map.is_passable_terrain_at(bc.MapLocation(mars, x, y)):
+            passable_locations_mars[coords] = True
 
 num_passable_locations_mars = len(passable_locations_mars)
 
@@ -199,7 +177,7 @@ if curr_planet == bc.Planet.Earth:
             else:
                 passable_locations_earth[coords]= False
 
-    bfs_fineness = max(int(((earth_width * earth_height)**0.5)/10)-1, 1)
+    bfs_fineness = max(int(((earth_width * earth_height)**0.5)/10), 2)
     wavepoints = {}
     if earth_width%bfs_fineness==0:
         upper_width = int(earth_width/bfs_fineness)
@@ -229,38 +207,35 @@ if curr_planet == bc.Planet.Earth:
             if actual is not None:
                 wavepoints[(x_th, y_th)] = actual
     precomputed_bfs = explore.precompute_earth(passable_locations_earth, coord_to_direction, wavepoints)
-    start_time = time.time()
-    precomputed_bfs_dist = explore.precompute_earth_dist(passable_locations_earth, coord_to_direction, wavepoints)
-    print(time.time()-start_time)
 
 else:
-	bfs_fineness = 2 #max(int(((mars_width * mars_height) ** 0.5) / 10), 2) + 1
-	wavepoints = {}
-	if mars_width % bfs_fineness == 0:
-		upper_width = int(mars_width / bfs_fineness)
-	else:
-		upper_width = int(mars_width / bfs_fineness) + 1
+    bfs_fineness = 2 #max(int(((mars_width * mars_height) ** 0.5) / 10), 2) + 1
+    wavepoints = {}
+    if mars_width % bfs_fineness == 0:
+        upper_width = int(mars_width / bfs_fineness)
+    else:
+        upper_width = int(mars_width / bfs_fineness) + 1
 
-	if mars_height % 3 == 0:
-		upper_height = int(mars_height / bfs_fineness)
-	else:
-		upper_height = int(mars_height / bfs_fineness) + 1
+    if mars_height % 3 == 0:
+        upper_height = int(mars_height / bfs_fineness)
+    else:
+        upper_height = int(mars_height / bfs_fineness) + 1
 
-	for x_th in range(0, upper_width):
-		for y_th in range(0, upper_height):
-			lower_limit_x = x_th * bfs_fineness
-			lower_limit_y = y_th * bfs_fineness
-			possibs = [(lower_limit_x + i, lower_limit_y + j) for i in range(0, bfs_fineness) for j in
-					   range(0, bfs_fineness)]
-			actual = None
-			for possib in possibs:
-				if possib in passable_locations_mars and passable_locations_mars[possib]:
-					actual = possib
-					break
-			if actual is not None:
-				wavepoints[(x_th, y_th)] = actual
+    for x_th in range(0, upper_width):
+        for y_th in range(0, upper_height):
+            lower_limit_x = x_th * bfs_fineness
+            lower_limit_y = y_th * bfs_fineness
+            possibs = [(lower_limit_x + i, lower_limit_y + j) for i in range(0, bfs_fineness) for j in
+                       range(0, bfs_fineness)]
+            actual = None
+            for possib in possibs:
+                if possib in passable_locations_mars and passable_locations_mars[possib]:
+                    actual = possib
+                    break
+            if actual is not None:
+                wavepoints[(x_th, y_th)] = actual
 
-	precomputed_bfs = explore.precompute_mars(passable_locations_mars, coord_to_direction, wavepoints)
+    precomputed_bfs = explore.precompute_mars(passable_locations_mars, coord_to_direction, wavepoints)
 
 attacker = set([bc.UnitType.Ranger, bc.UnitType.Knight, bc.UnitType.Mage, bc.UnitType.Healer])
 stockpile_until_75 = False

@@ -98,7 +98,7 @@ def bfs(init_coords, passable_locations_earth):
 def precompute_earth_dist(passable_locations_earth, direction_coords, wavepoints):
     store_dict = {}
     for coordinates_fineness in wavepoints:
-        parent = bfs_distance(wavepoints[coordinates_fineness], passable_locations_earth)
+        parent = bfs(wavepoints[coordinates_fineness], passable_locations_earth)
         for dest_coords in parent:
             store_dict[(dest_coords, coordinates_fineness)] = parent[dest_coords]
     return store_dict
