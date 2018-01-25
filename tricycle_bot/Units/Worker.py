@@ -618,7 +618,7 @@ def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, bui
 		direction_to_deposit = my_location.direction_to(closest_deposit)
 		#print(unit.id, "is trying to mine at", direction_to_deposit)
 		enemy_units = gc.sense_nearby_units_by_team(my_location, my_unit.vision_range, sense_util.enemy_team(gc))
-		dangerous_types = [variables.unit_types["knight"], variables.unit_types["ranger"], variables.unit_types["mage"]]
+		dangerous_types = [variables.unit_types["knight"], variables.unit_types["ranger"], variables.unit_types["mage"], variables.unit_types["factory"]]
 		dangerous_enemies = []
 
 		# only adds enemy units that can attack
@@ -724,9 +724,9 @@ def update_building_assignment(gc,building_assignment,blueprinting_assignment):
 	invalid_building_locations = variables.invalid_building_locations
 	my_unit_ids = [unit.id for unit in gc.my_units()]
 	for building_id in keys:
-		building_unit = gc.unit(building_id)
 
 		if building_id not in my_unit_ids: # update for dead buildings
+
 			if building_id in building_assignment:
 				workers = building_assignment[building_id]
 				del building_assignment[building_id]
@@ -759,11 +759,14 @@ def update_building_assignment(gc,building_assignment,blueprinting_assignment):
 
 				invalid_building_locations[site_coords] = True
 
-		elif building_unit.structure_is_built(): # update for completed buildings
-			workers = building_assignment[building_id]
-			del building_assignment[building_id]
-			for worker_id in workers:
-				variables.current_worker_roles["builder"].remove(worker_id)
+		else:
+
+			building_unit = gc.unit(building_id)
+			if building_unit.structure_is_built(): # update for completed buildings
+				workers = building_assignment[building_id]
+				del building_assignment[building_id]
+				for worker_id in workers:
+					variables.current_worker_roles["builder"].remove(worker_id)
 
 
 
