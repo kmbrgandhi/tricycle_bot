@@ -72,6 +72,9 @@ def timestep(unit):
         if move_then_attack:
             if dir!=None and gc.is_move_ready(unit.id) and gc.can_move(unit.id, dir):
                 gc.move_robot(unit.id, dir)
+                ## CHANGE LOC IN NEW DATA STRUCTURE
+                new_loc = map_loc.add(dir)
+                variables.unit_locations[unit.id] = (new_loc.x, new_loc.y)
 
             if attack_target is not None and gc.is_attack_ready(unit.id) and gc.can_attack(unit.id, attack_target.id):
                 if attack_target.id not in targeting_units:
@@ -91,6 +94,9 @@ def timestep(unit):
 
             if dir != None and gc.is_move_ready(unit.id) and gc.can_move(unit.id, dir):
                 gc.move_robot(unit.id, dir)
+                ## CHANGE LOC IN NEW DATA STRUCTURE
+                new_loc = map_loc.add(dir)
+                variables.unit_locations[unit.id] = (new_loc.x, new_loc.y)
         """
         if snipe!=None and gc.can_begin_snipe(unit.id, snipe.location.map_location()) and gc.is_begin_snipe_ready(unit.id):
             gc.begin_snipe(unit.id, snipe.location)

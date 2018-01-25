@@ -29,7 +29,7 @@ class Cluster:
         if self.grouping_location is None or len(self.allies) == 0: return False
 
         for ally_id in self.allies: 
-            if ally_id in variables.list_of_unit_ids:
+            if ally_id in variables.my_unit_ids:
                 ally = gc.unit(ally_id)
                 if sense_util.distance_squared_between_maplocs(ally.location.map_location(), self.grouping_location) > Cluster.GROUPING_RADIUS:
                     return False
@@ -92,7 +92,7 @@ class Cluster:
         total_health = 0
 
         for ally_id in self.allies: 
-            if ally_id in variables.list_of_unit_ids:
+            if ally_id in variables.my_unit_ids:
                 ally = gc.unit(ally_id)
                 health += ally.health
                 total_health += ally.max_health
