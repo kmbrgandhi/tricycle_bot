@@ -146,11 +146,8 @@ rocket_locs = {}
 
 # RANGER
 ranger_roles = {"fighter":[],"sniper":[], "go_to_mars":[]}
-ranger_to_cluster = {}
-ranger_clusters = set()
-targeting_units = {}
-which_rocket = {}
-ranger_locs = {}
+targeting_units = {}    ## enemy_id: num of allied units attacking it
+which_rocket = {}       ## rocket_id: unit_id
 
 #FIGHTERS
 producing = [0, 0, 0, 0, 0]
