@@ -93,7 +93,7 @@ def timestep(unit):
             if add_location: 
                 battle_locs[(enemy_loc.x,enemy_loc.y)] = clusters.Cluster(allies=set(),enemies=set([enemies[0].id]))
 
-        # Otherwise, goes to battle locations where they are in need of healers
+        # Otherwise, goes to locations in need of healers
         else: 
             if unit.id in assigned_overcharge: 
                 ally = assigned_overcharge[unit.id]
@@ -103,13 +103,12 @@ def timestep(unit):
             elif len(healer_target_locs) > 0: 
                 best_loc = get_best_target_loc(gc, unit, unit_loc, healer_target_locs, planet, diagonal) ## MapLocation
                 assigned_healers[unit.id] = best_loc
-
-            # elif len(battle_locs) > 0: 
-            #     best_loc = get_best_location(gc, unit, unit_loc, battle_locs, planet, diagonal)
-
             else: 
                 best_dir = get_explore_dir(gc, unit, unit_loc, directions)
 
+        # Special movement if already within healing range of the best location
+        if best_loc is not None and unit_loc.is_within_range(unit.attack_range()-1, best_loc):
+            best_loc = None ## Change this
 
         ## Do shit
         if best_target is not None:
