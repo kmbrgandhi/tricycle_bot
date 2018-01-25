@@ -12,6 +12,7 @@ import Units.rocket as rocket
 import Units.sense_util as sense_util
 import Units.explore as explore
 import Units.variables as variables
+import Units.update_functions as update
 import research
 import time
 import cProfile
@@ -48,86 +49,13 @@ research.research_step(gc)
 while True:
     #beginning_start_time = time.time()
     time_left = gc.get_time_left_ms()
-    # We only support Python 3, which means brackets around print()
-    variables.last_turn_battle_locs = variables.next_turn_battle_locs.copy()
-    variables.next_turn_battle_locs = {}
-    variables.curr_round = gc.round()
-    variables.num_enemies = 0
-    variables.print_count = 0
 
-    #print("PYROUND:", variables.curr_round)
-    #print("TIME LEFT:", gc.get_time_left_ms())
-    for poss_enemy in variables.units:
-        if poss_enemy.team != variables.my_team and poss_enemy.unit_type in variables.attacker:
-            variables.num_enemies += 1
-    start_time = time.time()
-    knight.update_battles()
-    #if time.time()-start_time > 0.02:
-    #    print('KNIGHT UPDATE BATTLES:', time.time()-start_time)
+    update.update_variables()
 
-    start_time = time.time()
-    healer.update_healers()
-    #if time.time() - start_time > 0.02:
-    #    print('HEALER UPDATE TIME:', time.time()-start_time)
-
-    start_time = time.time()
-    ranger.update_rangers()
-    #if time.time() - start_time > 0.02:
-    #    print('RANGER UPDATE TIME: ', time.time()-start_time)
-
-    start_time = time.time()
-    worker.designate_roles()
-    #if time.time() - start_time > 0.02:
-    #    print('DESIGNATING ROLES TIME:', time.time()-start_time)
-
-    if not worker.check_if_saviour_died():
-        variables.saviour_worker_id = None
-        variables.saviour_worker = False
-        variables.saviour_blueprinted = False
-        variables.saviour_blueprinted_id = None
-        variables.num_unsuccessful_savior = 0
-        variables.saviour_time_between = 0
-
-    #time_workers = 0
-    #time_rangers = 0
-    #time_healers = 0
-    # time_factories = 0
-    # time_knights = 0
-    
-    #print("current worker roles: ", variables.current_worker_roles)
+    unit_types = variables.unit_types
+    info = variables.info
 
     try:
-        # walk through our units:
-        #start_time = time.time()
-        variables.my_units = gc.my_units()
-        variables.units = gc.units()
-        variables.my_karbonite = gc.karbonite()
-        variables.list_of_unit_ids = [unit.id for unit in variables.my_units]
-        variables.research = gc.research_info()
-        num_workers= num_knights=num_rangers= num_mages= num_healers= num_factory= num_rocket = 0
-        variables.targeting_units = {}
-        variables.producing= [0, 0, 0, 0, 0]
-        unit_types = variables.unit_types
-        #print('PROCESSING TIME:', time.time()-start_time)
-
-        for unit in variables.my_units:
-            if unit.unit_type == unit_types["worker"]:
-                num_workers+=1
-            elif unit.unit_type == unit_types["knight"]:
-                num_knights+=1
-            elif unit.unit_type == unit_types["ranger"]:
-                num_rangers+=1
-            elif unit.unit_type == unit_types["mage"]:
-                num_mages+=1
-            elif unit.unit_type == unit_types["healer"]:
-                num_healers+=1
-            elif unit.unit_type == unit_types["factory"]:
-                num_factory+=1
-            elif unit.unit_type == unit_types["rocket"]:
-                num_rocket+=1
-        variables.info = [num_workers, num_knights, num_rangers, num_mages, num_healers, num_factory, num_rocket]
-        info = variables.info
-        factory.evaluate_stockpile()
         for unit in variables.my_units:
             # respective unit types execute their own AI
             if unit.unit_type == unit_types["worker"]:
@@ -174,11 +102,6 @@ while True:
                 #start_time = time.time()
                 rocket.timestep(unit)
                 #time_knights+=(time.time()-start_time)
-
-
-
-        ## Reset knight turn clusters
-        seen_knights_ids = set()
 
     except Exception as e:
         print('Error:', e)

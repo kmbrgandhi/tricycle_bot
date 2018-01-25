@@ -93,7 +93,7 @@ def timestep(unit):
             if add_location: 
                 battle_locs[(enemy_loc.x,enemy_loc.y)] = clusters.Cluster(allies=set(),enemies=set([enemies[0].id]))
 
-        # Otherwise, goes to battle locations where they are in need of healers
+        # Otherwise, goes to locations in need of healers
         else: 
             if unit.id in assigned_overcharge: 
                 ally = assigned_overcharge[unit.id]
@@ -103,13 +103,12 @@ def timestep(unit):
             elif len(healer_target_locs) > 0: 
                 best_loc = get_best_target_loc(gc, unit, unit_loc, healer_target_locs, planet, diagonal) ## MapLocation
                 assigned_healers[unit.id] = best_loc
-
-            # elif len(battle_locs) > 0: 
-            #     best_loc = get_best_location(gc, unit, unit_loc, battle_locs, planet, diagonal)
-
             else: 
                 best_dir = get_explore_dir(gc, unit, unit_loc, directions)
 
+        # Special movement if already within healing range of the best location
+        if best_loc is not None and unit_loc.is_within_range(unit.attack_range()-1, best_loc):
+            best_loc = None ## Change this
 
         ## Do shit
         if best_target is not None:
@@ -119,12 +118,17 @@ def timestep(unit):
                 gc.heal(unit.id, best_target.id)
         if best_dir is not None and gc.is_move_ready(unit.id): 
             gc.move_robot(unit.id, best_dir)
+            new_loc = unit_loc.add(best_dir)
+            variables.unit_locations[unit.id] = (new_loc.x, new_loc.y)
         elif best_loc is not None and gc.is_move_ready(unit.id):
             #print('GETTING BEST DIRECTION')
             #print(best_loc)
             best_dir = get_best_direction(gc, unit.id, unit_loc, best_loc, direction_to_coord, precomputed_bfs, bfs_fineness)
             if best_dir is not None: 
                 gc.move_robot(unit.id, best_dir)
+                ## CHANGE LOC IN NEW DATA STRUCTURE
+                new_loc = unit_loc.add(best_dir)
+                variables.unit_locations[unit.id] = (new_loc.x, new_loc.y)
 
 def dir_away_from_enemy(gc, unit, unit_loc, enemy_loc):
     ideal_dir_from_enemy = enemy_loc.direction_to(unit_loc)
@@ -237,6 +241,16 @@ def evaluate_battle_location(gc, loc, battle_locs):
     
     return valid
 
+def get_dangerous_allies(gc, loc, radius, team):
+    DANGEROUS = [bc.UnitType.Knight, bc.UnitType.Ranger, bc.UnitType.Mage]
+    allies = gc.sense_nearby_units_by_team(loc, radius, team)
+    dangerous_allies = 0
+    for ally in allies: 
+        if ally.unit_type in DANGEROUS: 
+            dangerous_allies += 1
+
+    return dangerous_allies
+
 def update_healers():
     """
     Remove dead healers from healer dict and overcharge dict.
@@ -254,16 +268,15 @@ def update_healers():
     ## Remove dead healers from assigned healers OR healers with expired locations
     remove = set()
     for healer_id in assigned_healers:
-        try: 
-            healer = gc.unit(healer_id)
+        if healer_id in variables.my_unit_ids: 
             loc = assigned_healers[healer_id]
             if gc.can_sense_location(loc):
-                allies = gc.sense_nearby_units_by_team(loc, 4, my_team)
-                if len(allies) == 0: 
+                num_allies = get_dangerous_allies(gc, loc, 4, my_team) 
+                if num_allies == 0: 
                     remove.add(healer_id)
                     if (loc.x,loc.y) in target_locs: 
                         target_locs.remove((loc.x,loc.y))
-        except:
+        else:
             remove.add(healer_id)
 
     for healer_id in remove: 
@@ -273,9 +286,7 @@ def update_healers():
     ## Remove dead healers from assigned overcharge
     remove = set()
     for healer_id in assigned_overcharge:
-        try:
-            healer = gc.unit(healer_id)
-        except:
+        if healer_id not in variables.my_unit_ids:
             remove.add(healer_id)
 
     for healer_id in remove:
@@ -284,9 +295,7 @@ def update_healers():
     ## Remove dead overcharge targets 
     remove = set()
     for ally_id in overcharge_targets: 
-        try: 
-            ally = gc.unit(ally_id)
-        except:
+        if ally_id not in variables.my_unit_ids:
             remove.add(ally_id)
 
     for ally_id in remove:

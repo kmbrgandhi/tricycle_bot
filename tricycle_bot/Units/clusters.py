@@ -3,6 +3,7 @@ import random
 import sys
 import traceback
 import Units.sense_util as sense_util
+import Units.variables as variables
 
 class Cluster:
 
@@ -28,12 +29,10 @@ class Cluster:
         if self.grouping_location is None or len(self.allies) == 0: return False
 
         for ally_id in self.allies: 
-            try:
+            if ally_id in variables.my_unit_ids:
                 ally = gc.unit(ally_id)
                 if sense_util.distance_squared_between_maplocs(ally.location.map_location(), self.grouping_location) > Cluster.GROUPING_RADIUS:
                     return False
-            except:
-                continue
         self.grouped = True
         return True
 
@@ -93,12 +92,10 @@ class Cluster:
         total_health = 0
 
         for ally_id in self.allies: 
-            try: 
+            if ally_id in variables.my_unit_ids:
                 ally = gc.unit(ally_id)
                 health += ally.health
                 total_health += ally.max_health
-            except: 
-                continue
 
         little_allies_coeff = len(self.allies) / 20
         if total_health > 0: low_health_allies_coeff = 1 - (health / total_health)
@@ -113,3 +110,12 @@ class Cluster:
     def __repr__(self):
         return "allies: " + str(self.allies) + "\nenemies: " + str(self.enemies) + "\ngrouping location: " + str(self.grouping_location) + "\ngrouped: " + str(self.grouped)
 
+## ========================================================================================================================================================================================= ##
+
+init_units = variables.earth_start_map.initial_units
+
+for unit in init_units: 
+    if unit.team == variables.enemy_team:
+        loc = unit.location.map_location()
+        variables.init_enemy_locs.append(loc)
+        variables.earth_battles[(loc.x,loc.y)] = Cluster(allies=set(),enemies=set([unit.id]))

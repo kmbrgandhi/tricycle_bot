@@ -112,6 +112,9 @@ def timestep(unit):
             best_dir = get_best_direction(gc, unit, unit_loc, best_loc, direction_to_coord, precomputed_bfs, bfs_fineness)
             if best_dir is not None: 
                 gc.move_robot(unit.id, best_dir)
+                ## CHANGE LOC IN NEW DATA STRUCTURE
+                new_loc = unit_loc.add(best_dir)
+                variables.unit_locations[unit.id] = (new_loc.x, new_loc.y)
 
 def get_best_location(gc, unit, unit_loc, battle_locs, planet, diagonal): 
     """
@@ -223,9 +226,7 @@ def update_battles():
     ## Units
     remove = set()
     for knight_id in assigned_knights:
-        try:
-            knight = gc.unit(knight_id)
-        except:
+        if knight_id not in variables.my_unit_ids:
             loc = assigned_knights[knight_id]
             remove.add((knight_id,(loc.x,loc.y)))
 
