@@ -877,7 +877,9 @@ def build(gc,my_unit,my_location,start_map,building_assignment,current_roles):
 					direction_to_move = my_location.direction_to(map_loc)
 					if gc.is_move_ready(my_unit.id) and gc.can_move(my_unit.id,direction_to_move):
 						gc.move_robot(my_unit.id,direction_to_move)
-
+						## CHANGE LOC IN NEW DATA STRUCTURE
+						new_loc = my_location.add(direction_to_move)
+						variables.unit_locations[my_unit.id] = (new_loc.x, new_loc.y)
 
 		if gc.can_build(my_unit.id,assigned_building.id):
 			#print(my_unit.id, "is building at ",assigned_location)
