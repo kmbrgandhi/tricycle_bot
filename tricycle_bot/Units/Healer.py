@@ -4,7 +4,6 @@ import sys
 import traceback
 import Units.sense_util as sense_util
 import Units.variables as variables
-import Units.clusters as clusters
 
 import numpy as np
 
@@ -17,13 +16,6 @@ def timestep(unit):
         return
 
     gc = variables.gc
-    planet = gc.planet()
-    if planet == bc.Planet.Earth: 
-        battle_locs = variables.earth_battles
-        diagonal = variables.earth_diagonal
-    else: 
-        battle_locs = variables.mars_battles
-        diagonal = variables.mars_diagonal
 
     composition = variables.info
     direction_to_coord = variables.direction_to_coord
@@ -46,6 +38,11 @@ def timestep(unit):
     location = unit.location
 
     if location.is_on_map():
+        ## Add new ones to unit_locations, else just get the location
+        if unit.id not in variables.unit_locations:
+            loc = unit.location.map_location()
+            variables.unit_locations[unit.id] = (loc.x,loc.y)
+
         unit_loc = location.map_location()
 
         ## Assign role 
@@ -66,7 +63,7 @@ def timestep(unit):
                     add_healer_target(gc, target_loc)
                     assigned_healers[unit.id] = target_loc
                 elif len(healer_target_locs) > 0:
-                    best_loc = get_best_target_loc(gc, unit, unit_loc, healer_target_locs, planet, diagonal) ## MapLocation
+                    best_loc = get_best_target_loc(gc, unit, unit_loc, healer_target_locs) ## MapLocation
                     assigned_healers[unit.id] = best_loc
 
         ## Overcharge  
@@ -89,9 +86,6 @@ def timestep(unit):
             enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(unit_loc))
             enemy_loc = enemies[0].location.map_location()
             best_dir = dir_away_from_enemy(gc, unit, unit_loc, enemy_loc)
-            add_location = evaluate_battle_location(gc, enemy_loc, battle_locs)
-            if add_location: 
-                battle_locs[(enemy_loc.x,enemy_loc.y)] = clusters.Cluster(allies=set(),enemies=set([enemies[0].id]))
 
         # Otherwise, goes to locations in need of healers
         else: 
@@ -157,11 +151,15 @@ def get_explore_dir(gc, unit, location, directions):
         return dir
     return None
 
-def get_best_target_loc(gc, unit, unit_loc, battle_locs, planet, diagonal):
+def get_best_target_loc(gc, unit, unit_loc, battle_locs):
     best = None
     best_coeff = -float('inf')
+    if variables.curr_planet == bc.Planet.Earth: 
+        diagonal = variables.earth_diagonal
+    else: 
+        diagonal = variables.mars_diagonal
     for loc in battle_locs: 
-        map_loc = bc.MapLocation(planet,loc[0],loc[1])
+        map_loc = bc.MapLocation(variables.curr_planet,loc[0],loc[1])
         distance_coeff = (1 - (float(unit_loc.distance_squared_to(map_loc))/diagonal))
         if distance_coeff > best_coeff: 
             best_coeff = distance_coeff
@@ -181,23 +179,6 @@ def add_healer_target(gc, target_loc):
             break
     if valid: 
         healer_target_locs.add((target_loc.x, target_loc.y))
-
-def get_best_location(gc, unit, unit_loc, battle_locs, planet, diagonal): 
-    """
-    Chooses the battle location this knight should aim for
-    """
-    most_urgent = None
-    most_urgent_coeff = 0 ## 0 - 5
-
-    for loc in battle_locs: 
-        map_loc = bc.MapLocation(planet,loc[0],loc[1])
-        distance_coeff = 2*(1 - (float(unit_loc.distance_squared_to(map_loc))/diagonal))
-        coeff = battle_locs[loc].urgent
-        if coeff + distance_coeff > most_urgent_coeff:
-            most_urgent_coeff = coeff + distance_coeff
-            most_urgent = map_loc
-
-    return most_urgent
 
 def check_radius_squares_factories(gc, unit, radius=1):
     is_factory = False
@@ -227,19 +208,6 @@ def get_best_target(gc, unit, unit_loc, my_team):
             if gc.can_heal(unit.id, ally.id) and ally.health < ally.max_health: 
                 return ally
     return None
-
-def evaluate_battle_location(gc, loc, battle_locs):
-    """
-    Chooses whether or not to add this enemy's location as a new battle location.
-    """
-    valid = True
-    locs_near = gc.all_locations_within(loc, battle_radius)
-    for near in locs_near:
-        near_coords = (near.x, near.y)
-        if near_coords in battle_locs: 
-            valid = False
-    
-    return valid
 
 def get_dangerous_allies(gc, loc, radius, team):
     DANGEROUS = [bc.UnitType.Knight, bc.UnitType.Ranger, bc.UnitType.Mage]

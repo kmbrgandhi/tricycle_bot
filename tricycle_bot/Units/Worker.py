@@ -7,7 +7,6 @@ import Units.movement as movement
 import Units.explore as explore
 import Units.Ranger as Ranger
 import Units.variables as variables
-import Units.clusters as clusters
 import time
 
 battle_radius = 10
@@ -24,16 +23,10 @@ def timestep(unit):
 	current_roles = variables.current_worker_roles
 	num_enemies = variables.num_enemies
 
-	planet = gc.planet()
-	if planet == bc.Planet.Earth: 
-		battle_locs = variables.earth_battles
-		diagonal = variables.earth_diagonal
-	else: 
-		battle_locs = variables.mars_battles
-		diagonal = variables.mars_diagonal
-
 	earth_start_map = variables.earth_start_map
 	unit_types = variables.unit_types
+
+	next_turn_battle_locs = variables.next_turn_battle_locs
 
 	if unit.unit_type != unit_types["worker"]:
 		# prob should return some kind of error
@@ -42,6 +35,11 @@ def timestep(unit):
 	# make sure unit can actually perform actions ie. not in garrison
 	if not unit.location.is_on_map():
 		return
+
+	## Add new ones to unit_locations, else just get the location
+	if unit.id not in variables.unit_locations:
+		loc = unit.location.map_location()
+		variables.unit_locations[unit.id] = (loc.x,loc.y)
 
 	my_location = unit.location.map_location()
 
@@ -132,7 +130,7 @@ def timestep(unit):
 	# runs this block every turn if unit is miner
 	if my_role == "miner":
 		# start_time = time.time()
-		mine(gc,unit,my_location,earth_start_map,karbonite_locations,current_roles, building_assignment, battle_locs)
+		mine(gc,unit,my_location,earth_start_map,karbonite_locations,current_roles, building_assignment, next_turn_battle_locs)
 		#print("mining time: ",time.time() - start_time)
 	# if unit is builder
 	elif my_role == "builder":
@@ -631,10 +629,6 @@ def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, bui
 
 		# only adds enemy units that can attack
 		for unit in enemy_units:
-			enemy_loc = unit.location.map_location()
-			add_loc = evaluate_battle_location(gc, enemy_loc, battle_locs)
-			if add_loc:
-				battle_locs[(enemy_loc.x, enemy_loc.y)] = clusters.Cluster(allies=set(),enemies=set([unit.id]))
 			if unit.unit_type in dangerous_types:
 				dangerous_enemies.append(unit)
 
@@ -664,20 +658,6 @@ def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, bui
 	else:
 		current_roles["miner"].remove(my_unit.id)
 		#print(unit.id," no deposits around")
-
-def evaluate_battle_location(gc, loc, battle_locs):
-	"""
-	Chooses whether or not to add this enemy's location as a new battle location.
-	"""
-	# units_near = gc.sense_nearby_units_by_team(loc, battle_radius, constants.enemy_team)
-	valid = True
-	loc_coords = (loc.x, loc.y)
-	locs_near = explore.coord_neighbors(loc_coords, include_self = True, diff = explore.diffs_10)#gc.all_locations_within(loc, battle_radius)
-	for near_coords in locs_near:
-		if near_coords in battle_locs:
-			valid = False
-	
-	return valid
 
 def pick_closest_building_assignment(gc, unit, building_assignment):
 	closest = None

@@ -33,13 +33,19 @@ def update_variables():
     variables.units = gc.units()
     num_workers= num_knights=num_rangers= num_mages= num_healers= num_factory= num_rocket = 0
 
-    # Update which ally unit id's are still alive
+    # Update which ally unit id's are still alive & deaths per quadrant
+    update_quadrants() # Updates enemies in quadrant & resets num dead allies
+
     remove = set()
     for unit_id in variables.unit_locations: 
         if unit_id not in variables.my_unit_ids: 
             remove.add(unit_id)
     for unit_id in remove: 
+        loc = variables.unit_locations[unit_id]
         del variables.unit_locations[unit_id]
+
+        f_f_quad = (int(loc[0] / 5), int(loc[1] / 5))
+        variables.quadrant_battle_locs[f_f_quad].remove_ally(unit_id)
 
     # Something something enemies
     for poss_enemy in variables.units:
@@ -97,5 +103,13 @@ def update_variables():
     ## Factories
     factory.evaluate_stockpile()
 
+def update_quadrants(): 
+    gc = variables.gc 
 
+    battle_quadrants = variables.quadrant_battle_locs
+
+    for quadrant in battle_quadrants: 
+        q_info = battle_quadrants[quadrant]
+        q_info.reset_num_died()
+        q_info.update_enemies(gc)
 
