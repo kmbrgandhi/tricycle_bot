@@ -99,7 +99,7 @@ class QuadrantInfo():
             return 3*(self.num_died/(variables.quadrant_size**2)) + len(self.enemies)/(variables.quadrant_size**2)
 
     def __str__(self):
-        return "bottom left: " + str(self.bottom_left) + "\nallies: " + str(self.all_allies()) + "\nenemies: " + str(self.enemies) + "\ncoefficient: " + str(self.urgency_coeff()) 
+        return "bottom left: " + str(self.bottom_left) + "\nallies: " + str(self.all_allies()) + "\nenemies: " + str(self.enemies) + "\ncoefficient: " + str(self.urgency_coeff()) + "\ndied: " + str(self.num_died) + "\n" 
 
     def __repr__(self):
-        return "bottom left: " + str(self.bottom_left) + "\nallies: " + str(self.all_allies()) + "\nenemies: " + str(self.enemies) + "\ncoefficient: " + str(self.urgency_coeff()) 
+        return "bottom left: " + str(self.bottom_left) + "\nallies: " + str(self.all_allies()) + "\nenemies: " + str(self.enemies) + "\ncoefficient: " + str(self.urgency_coeff()) + "\ndied: " + str(self.num_died) + "\n" 
