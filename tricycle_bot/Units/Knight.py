@@ -61,7 +61,7 @@ def timestep(unit):
             gc.attack(unit.id, best_target.id)
                 
         # Move
-        if best_loc is not None and gc.is_move_ready(unit.id): 
+        if best_loc is not None and gc.is_move_ready(unit.id) and unit_loc != best_loc: 
             try_move_smartly(unit, unit_loc, best_loc)
         elif best_dir is not None and gc.is_move_ready(unit.id) and gc.can_move(unit.id, best_dir):
             gc.move_robot(unit.id, best_dir)
@@ -86,7 +86,7 @@ def assign_to_quadrant(gc, unit, unit_loc):
             best_coeff = coeff
 
     if best_coeff > 0: 
-        assigned_knights[unit.id] = best_quadrant
+        assigned_knights[unit.id] = quadrant_battles[best_quadrant].bottom_left
         return True, best_quadrant
     return False, None
 

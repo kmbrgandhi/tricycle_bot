@@ -20,7 +20,6 @@ class QuadrantInfo():
         self.workers = set()
 
         self.num_died = 0
-        self.urgency = 0
 
         self.occupied_locs = {}
         
@@ -30,6 +29,9 @@ class QuadrantInfo():
             for j in range(variables.quadrant_size): 
                 y = self.bottom_left[1] + j
                 self.quadrant_locs.add((x,y))
+
+    def all_allies(self): 
+        return self.knights.union(self.rangers, self.healers, self.mages, self.workers) 
 
     def reset_num_died(self):
         self.num_died = 0
@@ -81,9 +83,18 @@ class QuadrantInfo():
         elif robot_type == "worker":
             self.workers.add(ally_id) 
 
-    def urgency_coeff(self): 
+    def urgency_coeff(self, healer=False): 
         """
         1. Number of allied units who died in this quadrant
         3. Number of enemies in the quadrant
         """
-        return self.num_died/25 + len(self.enemies)/25
+        if not healer: 
+            return self.num_died/25 + len(self.enemies)/25
+        else: 
+            return 3*(self.num_died/25) + len(self.enemies)/25
+
+    def __str__(self):
+        return "bottom left: " + str(self.bottom_left) + "\nallies: " + str(self.all_allies()) + "\nenemies: " + str(self.enemies) + "\ncoefficient: " + str(self.urgency_coeff()) 
+
+    def __repr__(self):
+        return "bottom left: " + str(self.bottom_left) + "\nallies: " + str(self.all_allies()) + "\nenemies: " + str(self.enemies) + "\ncoefficient: " + str(self.urgency_coeff()) 

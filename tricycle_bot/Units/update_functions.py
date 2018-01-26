@@ -45,7 +45,7 @@ def update_variables():
         loc = variables.unit_locations[unit_id]
         del variables.unit_locations[unit_id]
 
-        f_f_quad = (int(loc[0] / variables.quadrant_size), int(loc[1] / varaibles.quadrant_size))
+        f_f_quad = (int(loc[0] / variables.quadrant_size), int(loc[1] / variables.quadrant_size))
         variables.quadrant_battle_locs[f_f_quad].remove_ally(unit_id)
 
     # Something something enemies
