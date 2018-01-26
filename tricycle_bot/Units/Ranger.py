@@ -45,11 +45,15 @@ def timestep(unit):
     location = unit.location
     my_team = variables.my_team
     targeting_units = variables.targeting_units
+
+    quadrant_battles = variables.quadrant_battle_locs
     if location.is_on_map():
         ## Add new ones to unit_locations, else just get the location
         if unit.id not in variables.unit_locations:
             loc = unit.location.map_location()
             variables.unit_locations[unit.id] = (loc.x,loc.y)
+            f_f_quad = (int(loc.x / variables.quadrant_size), int(loc.y / variables.quadrant_size))
+            quadrant_battles[f_f_quad].add_ally(unit.id, "ranger")
 
         #start_time = time.time()
         map_loc = location.map_location()
@@ -81,8 +85,7 @@ def timestep(unit):
             if dir!=None and gc.is_move_ready(unit.id) and gc.can_move(unit.id, dir):
                 gc.move_robot(unit.id, dir)
                 ## CHANGE LOC IN NEW DATA STRUCTURE
-                new_loc = map_loc.add(dir)
-                variables.unit_locations[unit.id] = (new_loc.x, new_loc.y)
+                add_new_location(unit.id, (map_loc.x, map_loc.y), dir)
 
             if attack_target is not None and gc.is_attack_ready(unit.id) and gc.can_attack(unit.id, attack_target.id):
                 if attack_target.id not in targeting_units:
@@ -90,7 +93,6 @@ def timestep(unit):
                 else:
                     targeting_units[attack_target.id]+= 1
                 gc.attack(unit.id, attack_target.id)
-                add_healer_target(gc, map_loc)
         else:
             if attack_target is not None and gc.is_attack_ready(unit.id) and gc.can_attack(unit.id, attack_target.id):
                 if attack_target.id not in targeting_units:
@@ -98,13 +100,11 @@ def timestep(unit):
                 else:
                     targeting_units[attack_target.id]+=1
                 gc.attack(unit.id, attack_target.id)
-                add_healer_target(gc, map_loc)
 
             if dir != None and gc.is_move_ready(unit.id) and gc.can_move(unit.id, dir):
                 gc.move_robot(unit.id, dir)
                 ## CHANGE LOC IN NEW DATA STRUCTURE
-                new_loc = map_loc.add(dir)
-                variables.unit_locations[unit.id] = (new_loc.x, new_loc.y)
+                add_new_location(unit.id, (map_loc.x, map_loc.y), dir)
         """
         if snipe!=None and gc.can_begin_snipe(unit.id, snipe.location.map_location()) and gc.is_begin_snipe_ready(unit.id):
             gc.begin_snipe(unit.id, snipe.location)
@@ -113,6 +113,18 @@ def timestep(unit):
         #print("Doing tasks:", time.time() - start_time)
     #if variables.print_count<10:
     #    variables.print_count+=1
+
+def add_new_location(unit_id, old_coords, direction):
+    unit_mov = variables.direction_to_coord[direction]
+    new_coords = (old_coords[0]+unit_mov[0], old_coords[1]+unit_mov[1])
+    variables.unit_locations[unit_id] = new_coords
+
+    old_quadrant = (int(old_coords[0] / variables.quadrant_size), int(old_coords[1] / variables.quadrant_size))
+    new_quadrant = (int(new_coords[0] / variables.quadrant_size), int(new_coords[1] / variables.quadrant_size))
+
+    if old_quadrant != new_quadrant: 
+        variables.quadrant_battle_locs[old_quadrant].remove_ally(unit_id)
+        variables.quadrant_battle_locs[new_quadrant].add_ally(unit_id, "ranger")
 
 def get_attack(gc, unit, location, targeting_units):
     enemy_team = variables.enemy_team
@@ -142,6 +154,7 @@ def check_radius_squares_factories(gc, location):
             return True
     return False
 
+"""
 def add_healer_target(gc, ranger_loc): 
     healer_target_locs = variables.healer_target_locs
     valid = True
@@ -157,6 +170,9 @@ def add_healer_target(gc, ranger_loc):
 
 
 def go_to_mars_sense(gc, unit, battle_locs, location, enemies, direction_to_coord, bfs_dict, targeting_units, bfs_fineness, rocket_locs):
+"""
+def go_to_mars_sense(gc, unit, battle_locs, location, enemies, direction_to_coord, precomputed_bfs, targeting_units, bfs_fineness, rocket_locs):
+    #print('GOING TO MARS')
     signals = {}
     dir = None
     attack = None
