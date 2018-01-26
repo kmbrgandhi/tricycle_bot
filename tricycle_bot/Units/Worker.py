@@ -536,6 +536,9 @@ def board(gc,my_unit,my_location,current_roles):
 def get_worker_cap(gc,karbonite_locations, info, num_enemies):
 	#print("KARBONITE INFO LENGTH: ",len(karbonite_locations))
 	#print(len(karbonite_locations))
+	print(min(3 + float(len(karbonite_locations)/2),20))
+	return 3 + float(500+gc.round())/7000 * len(karbonite_locations)/2
+	"""
 	if num_enemies > 2*sum(info[1:4])/3:
 		#print('replication cap yes')
 		return 6
@@ -543,6 +546,7 @@ def get_worker_cap(gc,karbonite_locations, info, num_enemies):
 		return min(3 + float(500+gc.round())/7000 * len(karbonite_locations)/2,10)
 	else:
 		return 4
+	"""
 
 def replicate(gc,unit,direction=None):
 	replicated = False
