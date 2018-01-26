@@ -436,7 +436,7 @@ def get_workers_per_building(gc,start_map,building_location):
 	adjacent = adjacent_locations(building_location)
 	self_coord = (building_location.x,building_location.y)
 
-	print("checking workers per building")
+	#print("checking workers per building")
 	for location in adjacent:
 		location_coord = (location.x,location.y)
 		if location_coord not in passable_locations or location_coord == self_coord: continue
@@ -961,7 +961,7 @@ def get_optimal_building_location(gc, start_map, center, building_type, karbonit
 			# print("optimal building location time",time.time() - start_time)
 			adjacent_spaces = get_workers_per_building(gc,start_map,location)
 
-			print("location",location,"adjacent spaces",adjacent_spaces)
+			#print("location",location,"adjacent spaces",adjacent_spaces)
 			if adjacent_spaces < 3: continue
 
 			for adjacent_location in explore.coord_neighbors(location_coords):

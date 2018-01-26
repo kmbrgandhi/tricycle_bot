@@ -5,6 +5,15 @@ import traceback
 import Units.explore as explore
 import Units.variables as variable
 
+
+def update_rockets():
+    to_delete = []
+    for rocket_id in variable.rocket_locs:
+        if rocket_id not in variable.my_unit_ids:
+            to_delete.append(rocket_id)
+    for rocket_id in to_delete:
+        del variable.rocket_locs[rocket_id]
+
 def timestep(unit):
     
     # last check to make sure the right unit type is running this
@@ -22,8 +31,7 @@ def timestep(unit):
             time = compute_optimal_launch_time(curr_round)[0]
             variable.rocket_launch_times[unit.id] = time
             if unit.id not in variable.rocket_landing_sites:
-                lst_of_passable = [loc for loc in variable.passable_locations_mars if variable.passable_locations_mars[loc]]
-                variable.rocket_landing_sites[unit.id] = explore.get_maploc(bc.Planet.Mars, random.choice(lst_of_passable))
+                variable.rocket_landing_sites[unit.id] = explore.get_maploc(bc.Planet.Mars, random.choice(variable.lst_of_passable_mars))
                 #rocket_launch_site[unit.id] = compute_optimal_landing_site(gc, curr_round, time, rocket_launch_site)
 
         elif ((len(garrison)>6 and gc.round()<400) or (len(garrison)>4 and gc.round()>400) or (gc.round()>745)) and variable.gc.round() == variable.rocket_launch_times[unit.id] and variable.gc.can_launch_rocket(unit.id, variable.rocket_landing_sites[unit.id]):

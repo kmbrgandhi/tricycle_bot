@@ -87,6 +87,7 @@ for x in range(earth_start_map.width):
 			invalid_building_locations[(x,y)] = False
 		invalid_building_locations[(x,y)] = True
 
+
 """
 area = earth_start_map.width * earth_start_map.height
 
@@ -184,10 +185,12 @@ for x in range(-1, mars_width + 1):
         coords = (x, y)
         if x == -1 or y == -1 or x == mars_map.width or y == mars_map.height:
             passable_locations_mars[coords] = False
-        elif mars_map.is_passable_terrain_at(bc.MapLocation(earth, x, y)):
+        elif mars_map.is_passable_terrain_at(bc.MapLocation(mars, x, y)):
             passable_locations_mars[coords] = True
         else:
             passable_locations_mars[coords] = False
+
+lst_of_passable_mars = [loc for loc in passable_locations_mars if passable_locations_mars[loc]]
 
 num_passable_locations_mars = len(passable_locations_mars)
 
