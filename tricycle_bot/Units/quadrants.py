@@ -21,7 +21,7 @@ class QuadrantInfo():
 
         self.num_died = 0
 
-        self.occupied_locs = {}
+        self.enemy_locs = {}
         
         self.quadrant_locs = set([])
         for i in range(variables.quadrant_size):
@@ -31,18 +31,17 @@ class QuadrantInfo():
                 self.quadrant_locs.add((x,y))
 
     def all_allies(self): 
-        return self.knights.union(self.rangers, self.healers, self.mages, self.workers) 
+        return self.knights | self.rangers | self.healers | self.mages | self.workers
 
     def reset_num_died(self):
         self.num_died = 0
 
-    def add_enemy(self, enemy_id): 
+    def add_enemy(self, enemy, enemy_id, enemy_loc): 
         self.enemies.add(enemy_id)
+        self.enemy_locs[enemy_loc] = enemy
 
     def update_enemies(self, gc): 
         ## Reset
-        old_occupied_locs = self.occupied_locs
-        self.occupied_locs = {}
         self.enemies = set()
 
         ## Find enemies in quadrant
@@ -51,25 +50,31 @@ class QuadrantInfo():
             map_loc = bc.MapLocation(variables.curr_planet, loc[0], loc[1])
             if gc.can_sense_location(map_loc): 
                 if gc.has_unit_at_location(map_loc):
-                    enemy = gc.sense_unit_at_location(map_loc)
-                    self.occupied_locs[loc] = enemy
-                    self.enemies.add(enemy.id)
-            elif loc in old_occupied_locs: 
-                self.occupied_locs[loc] = old_occupied_locs[loc]
-                self.enemies.add(old_occupied_locs[loc].id)
+                    unit = gc.sense_unit_at_location(map_loc)
+                    if unit.team == variables.enemy_team: 
+                        self.enemy_locs[loc] = unit
+                        self.enemies.add(unit.id)
+                elif loc in self.enemy_locs: 
+                    del self.enemy_locs[loc]
+            elif loc in self.enemy_locs: 
+                self.enemies.add(self.enemy_locs[loc].id)
 
     def remove_ally(self, ally_id): 
         if ally_id in self.knights: 
             self.knights.remove(ally_id)
+            self.num_died += 1
         elif ally_id in self.rangers: 
             self.rangers.remove(ally_id)
+            self.num_died += 1
         elif ally_id in self.healers: 
             self.healers.remove(ally_id)
+            self.num_died += 1
         elif ally_id in self.mages: 
             self.mages.remove(ally_id)
+            self.num_died += 1
         elif ally_id in self.workers: 
             self.workers.remove(ally_id)
-        self.num_died += 1
+            self.num_died += 1
 
     def add_ally(self, ally_id, robot_type): 
         if robot_type == "knight": 
@@ -89,9 +94,9 @@ class QuadrantInfo():
         3. Number of enemies in the quadrant
         """
         if not healer: 
-            return self.num_died/25 + len(self.enemies)/25
+            return self.num_died/(variables.quadrant_size**2) + len(self.enemies)/(variables.quadrant_size**2)
         else: 
-            return 3*(self.num_died/25) + len(self.enemies)/25
+            return 3*(self.num_died/(variables.quadrant_size**2)) + len(self.enemies)/(variables.quadrant_size**2)
 
     def __str__(self):
         return "bottom left: " + str(self.bottom_left) + "\nallies: " + str(self.all_allies()) + "\nenemies: " + str(self.enemies) + "\ncoefficient: " + str(self.urgency_coeff()) 

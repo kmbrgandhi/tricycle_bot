@@ -25,6 +25,8 @@ def timestep(unit):
     assigned_overcharge = variables.assigned_overcharge
     overcharge_targets = variables.overcharge_targets
 
+    quadrant_battles = variables.quadrant_battle_locs
+
     unit_locations = variables.unit_locations
 
     best_dir = None
@@ -39,6 +41,8 @@ def timestep(unit):
         if unit.id not in unit_locations:
             loc = unit.location.map_location()
             unit_locations[unit.id] = (loc.x,loc.y)
+            f_f_quad = (int(loc.x / variables.quadrant_size), int(loc.y / variables.quadrant_size))
+            quadrant_battles[f_f_quad].add_ally(unit.id, "healer")
 
         unit_loc = unit_locations[unit.id]
 

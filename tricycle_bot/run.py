@@ -47,10 +47,12 @@ for x in x_coords:
         variables.quadrant_battle_locs[(int(x/variables.quadrant_size),int(y/variables.quadrant_size))] = quadrants.QuadrantInfo((x,y))
 
 for unit in variables.earth_start_map.initial_units: 
+    loc = unit.location.map_location() 
+    quadrant = (int(loc.x/variables.quadrant_size),int(loc.y/variables.quadrant_size))
     if unit.team == variables.enemy_team: 
-        loc = unit.location.map_location() 
-        quadrant = (int(loc.x/variables.quadrant_size),int(loc.y/variables.quadrant_size))
-        variables.quadrant_battle_locs[quadrant].add_enemy(unit.id)
+        variables.quadrant_battle_locs[quadrant].add_enemy(unit, unit.id, (loc.x,loc.y))
+    else:
+        variables.quadrant_battle_locs[quadrant].add_ally(unit.id, "worker")
 
 # GENERAL
 # print('NEXT TO TERRAIN',locs_next_to_terrain)
@@ -68,6 +70,7 @@ while True:
     info = variables.info
 
     print("PYROUND:",gc.round())
+
     try:
         for unit in variables.my_units:
             # respective unit types execute their own AI
@@ -115,6 +118,11 @@ while True:
                 #start_time = time.time()
                 rocket.timestep(unit)
                 #time_knights+=(time.time()-start_time)
+
+        # if gc.planet() == bc.Planet.Earth: 
+        #     print("QUADRANTS: ", variables.quadrant_battle_locs)
+        #     print("allied units: ", gc.my_units())
+        #     print("unit locations: ", variables.unit_locations)
 
     except Exception as e:
         print('Error:', e)

@@ -27,6 +27,7 @@ def timestep(unit):
 	unit_types = variables.unit_types
 
 	next_turn_battle_locs = variables.next_turn_battle_locs
+	quadrant_battles = variables.quadrant_battle_locs
 
 	if unit.unit_type != unit_types["worker"]:
 		# prob should return some kind of error
@@ -40,6 +41,8 @@ def timestep(unit):
 	if unit.id not in variables.unit_locations:
 		loc = unit.location.map_location()
 		variables.unit_locations[unit.id] = (loc.x,loc.y)
+		f_f_quad = (int(loc.x / variables.quadrant_size), int(loc.y / variables.quadrant_size))
+		quadrant_battles[f_f_quad].add_ally(unit.id, "worker")
 
 	my_location = unit.location.map_location()
 
@@ -119,8 +122,8 @@ def timestep(unit):
 		if unit.id in current_roles[role]:
 			my_role = role
 	
-	print()
-	print("on unit #",unit.id, "position: ",my_location, "role: ",my_role)
+	# print()
+	# print("on unit #",unit.id, "position: ",my_location, "role: ",my_role)
 	#print("KARBONITE: ",gc.karbonite()
 	
 	current_num_workers = info[0]
@@ -281,8 +284,8 @@ def designate_roles():
 		#print("closest workers to blueprint",closest_workers_to_blueprint)
 		#print("workers in recruitment range",workers_in_recruitment_range)
 
-		print("blueprinting_assignment",blueprinting_assignment)
-		print("building_assignment",building_assignment)
+		# print("blueprinting_assignment",blueprinting_assignment)
+		# print("building_assignment",building_assignment)
 		#print("blueprinting_queue",blueprinting_queue)
 
 
@@ -1044,16 +1047,16 @@ def blueprint(gc,my_unit,my_location,building_assignment,blueprinting_assignment
 			try_move_smartly(my_unit,my_location,assigned_site.map_location)
 
 def add_new_location(unit_id, old_coords, direction):
-    unit_mov = variables.direction_to_coord[direction]
-    new_coords = (old_coords[0]+unit_mov[0], old_coords[1]+unit_mov[1])
-    variables.unit_locations[unit_id] = new_coords
+	unit_mov = variables.direction_to_coord[direction]
+	new_coords = (old_coords[0]+unit_mov[0], old_coords[1]+unit_mov[1])
+	variables.unit_locations[unit_id] = new_coords
 
-    old_quadrant = (int(old_coords[0] / variables.quadrant_size), int(old_coords[1] / variables.quadrant_size))
-    new_quadrant = (int(new_coords[0] / variables.quadrant_size), int(new_coords[1] / variables.quadrant_size))
+	old_quadrant = (int(old_coords[0] / variables.quadrant_size), int(old_coords[1] / variables.quadrant_size))
+	new_quadrant = (int(new_coords[0] / variables.quadrant_size), int(new_coords[1] / variables.quadrant_size))
 
-    if old_quadrant != new_quadrant: 
-        variables.quadrant_battle_locs[old_quadrant].remove_ally(unit_id)
-        variables.quadrant_battle_locs[new_quadrant].add_ally(unit_id, "knight")
+	if old_quadrant != new_quadrant: 
+		variables.quadrant_battle_locs[old_quadrant].remove_ally(unit_id)
+		variables.quadrant_battle_locs[new_quadrant].add_ally(unit_id, "worker")
 
 class BuildSite:
 	def __init__(self,map_location,building_type):
