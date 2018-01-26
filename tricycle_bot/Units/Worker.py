@@ -157,7 +157,7 @@ def timestep(unit):
 		away_from_units = sense_util.best_available_direction(gc,unit,nearby)	
 		#print(unit.id, "at", unit.location.map_location(), "is trying to move to", away_from_units)
 
-		movement.try_move(gc,unit,away_from_units)
+		movement.try_move(gc,unit,(my_location.x,my_location.y),away_from_units)
 
 def check_if_saviour_died():
 	for my_unit in variables.my_units:
@@ -632,7 +632,7 @@ def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, bui
 
 		if len(dangerous_enemies) > 0:
 			dir = sense_util.best_available_direction(gc, my_unit, dangerous_enemies)
-			movement.try_move(gc, my_unit, dir)
+			movement.try_move(gc, my_unit, (my_location.x,my_location.y), dir)
 		
 		elif my_location.is_adjacent_to(closest_deposit) or my_location == closest_deposit:
 			info = variables.info
@@ -704,7 +704,7 @@ def mine_mars(gc,unit,my_location):
 
 		away_from_units = sense_util.best_available_direction(gc,unit,nearby)	
 		#print(unit.id, "at", unit.location.map_location(), "is trying to move to", away_from_units)
-		movement.try_move(gc,unit,away_from_units)
+		movement.try_move(gc,unit,(my_location.x,my_location.y),away_from_units)
 
 # updates building assignments in case buildings are destroyed before they are built
 def update_building_assignment(gc,building_assignment,blueprinting_assignment):
@@ -1039,7 +1039,7 @@ def blueprint(gc,my_unit,my_location,building_assignment,blueprinting_assignment
 		elif my_location == assigned_site.map_location:
 			# when unit is currently on top of the queued building site
 			d = random.choice(variables.directions)
-			movement.try_move(gc,my_unit,d)
+			movement.try_move(gc,my_unit,(my_location.x,my_location.y),d)
 		else:
 			# move toward queued building site
 			#next_direction = my_location.direction_to(assigned_site.map_location)

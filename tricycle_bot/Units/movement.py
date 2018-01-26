@@ -4,10 +4,11 @@ import sys
 import traceback
 
 import Units.sense_util as sense_util
+import Units.variables as variables
 
 
 #placeholder function for pathfinding algorithm
-def try_move(gc,unit,direction):
+def try_move(gc,unit,coords,direction):
 	if gc.is_move_ready(unit.id):
 		current_direction = direction
 		can_move = True
@@ -19,6 +20,19 @@ def try_move(gc,unit,direction):
 				break
 		if can_move:	
 			gc.move_robot(unit.id, current_direction)
+			add_new_location(unit.id, coords, current_direction)
+
+def add_new_location(unit_id, old_coords, direction):
+	unit_mov = variables.direction_to_coord[direction]
+	new_coords = (old_coords[0]+unit_mov[0], old_coords[1]+unit_mov[1])
+	variables.unit_locations[unit_id] = new_coords
+
+	old_quadrant = (int(old_coords[0] / variables.quadrant_size), int(old_coords[1] / variables.quadrant_size))
+	new_quadrant = (int(new_coords[0] / variables.quadrant_size), int(new_coords[1] / variables.quadrant_size))
+
+	if old_quadrant != new_quadrant: 
+		variables.quadrant_battle_locs[old_quadrant].remove_ally(unit_id)
+		variables.quadrant_battle_locs[new_quadrant].add_ally(unit_id, "worker")
 
 def optimal_direction_towards(gc, unit, location, target, directions):
     # return the optimal direction towards a target that is achievable; not A*, but faster.
