@@ -279,10 +279,6 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
             #if variables.print_count < 10:
             #    print("Getting direction:", time.time() - start_time)
     else:
-        if variables.info[1]<8:
-            if check_radius_squares_factories(gc, location):
-                dir = run_towards_init_loc_new(gc, unit, location, direction_to_coord, bfs_fineness)
-            dir = None
 
         # if there are no enemies in sight, check if there is an ongoing battle.  If so, go there.
         if len(rocket_locs)>0 and gc.round()>660 and variables.curr_planet == bc.Planet.Earth:

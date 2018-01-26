@@ -139,6 +139,10 @@ current_worker_roles = {"miner":[],"builder":[],"blueprinter":[],"boarder":[], "
 ## KNIGHT VARIABLES ##
 assigned_knights = {}       ## knight_id: (x, y)
 init_enemy_locs = []
+for unit in earth_start_map.initial_units:
+    if unit.team == enemy_team:
+        loc = unit.location.map_location()
+        init_enemy_locs.append(loc)
 
 ## HEALER VARIABLES ##
 healer_radius = 9
