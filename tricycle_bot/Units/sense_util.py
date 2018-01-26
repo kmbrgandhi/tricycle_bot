@@ -19,6 +19,7 @@ def distance_squared_between_coord_maploc(coords1, maploc2):
     return (coords1[0]-maploc2.x)**2 + (coords1[1] - maploc2.y)**2
 
 
+
 def distance_squared_between_coords(coords1, coords2):
     return (coords1[0]-coords2[0])**2 + (coords1[1] - coords2[1])**2
 

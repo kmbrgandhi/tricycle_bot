@@ -67,6 +67,7 @@ while True:
     unit_types = variables.unit_types
     info = variables.info
 
+    print("PYROUND:",gc.round())
     try:
         for unit in variables.my_units:
             # respective unit types execute their own AI
