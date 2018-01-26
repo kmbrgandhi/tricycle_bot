@@ -16,6 +16,9 @@ my_team = gc.team()
 enemy_team = sense_util.enemy_team(gc)
 
 directions = list(bc.Direction)
+all_but_center_dir = directions[:-1]
+
+
 earth = bc.Planet.Earth
 mars = bc.Planet.Mars
 
@@ -237,33 +240,32 @@ if curr_planet == bc.Planet.Earth:
     print(time.time()-start_time)
 
 else:
-	bfs_fineness = 2 #max(int(((mars_width * mars_height) ** 0.5) / 10), 2) + 1
-	wavepoints = {}
-	if mars_width % bfs_fineness == 0:
-		upper_width = int(mars_width / bfs_fineness)
-	else:
-		upper_width = int(mars_width / bfs_fineness) + 1
+    bfs_fineness = 2 #max(int(((mars_width * mars_height) ** 0.5) / 10), 2) + 1
+    wavepoints = {}
+    if mars_width % bfs_fineness == 0:
+        upper_width = int(mars_width / bfs_fineness)
+    else:
+        upper_width = int(mars_width / bfs_fineness) + 1
 
-	if mars_height % 3 == 0:
-		upper_height = int(mars_height / bfs_fineness)
-	else:
-		upper_height = int(mars_height / bfs_fineness) + 1
+    if mars_height % 3 == 0:
+        upper_height = int(mars_height / bfs_fineness)
+    else:
+        upper_height = int(mars_height / bfs_fineness) + 1
 
-	for x_th in range(0, upper_width):
-		for y_th in range(0, upper_height):
-			lower_limit_x = x_th * bfs_fineness
-			lower_limit_y = y_th * bfs_fineness
-			possibs = [(lower_limit_x + i, lower_limit_y + j) for i in range(0, bfs_fineness) for j in
-					   range(0, bfs_fineness)]
-			actual = None
-			for possib in possibs:
-				if possib in passable_locations_mars and passable_locations_mars[possib]:
-					actual = possib
-					break
-			if actual is not None:
-				wavepoints[(x_th, y_th)] = actual
-
-	precomputed_bfs = explore.precompute_mars(passable_locations_mars, coord_to_direction, wavepoints)
+    for x_th in range(0, upper_width):
+        for y_th in range(0, upper_height):
+            lower_limit_x = x_th * bfs_fineness
+            lower_limit_y = y_th * bfs_fineness
+            possibs = [(lower_limit_x + i, lower_limit_y + j) for i in range(0, bfs_fineness) for j in range(0, bfs_fineness)]
+            actual = None
+            for possib in possibs:
+                if possib in passable_locations_mars and passable_locations_mars[possib]:
+                    actual = possib
+                    break
+            if actual is not None:
+                wavepoints[(x_th, y_th)] = actual
+    precomputed_bfs = explore.precompute_mars(passable_locations_mars, coord_to_direction, wavepoints)
+    precomputed_bfs_dist = precomputed_bfs
 
 attacker = set([bc.UnitType.Ranger, bc.UnitType.Knight, bc.UnitType.Mage, bc.UnitType.Healer])
 stockpile_until_75 = False

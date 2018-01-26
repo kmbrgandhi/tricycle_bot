@@ -52,7 +52,7 @@ def timestep(unit):
 				return
 		mine_mars(gc,unit,my_location)
 		return
-	if gc.round() > 225 and not variables.saviour_worker and near_factory(my_location):
+	if gc.round() > 300 and not variables.saviour_worker and near_factory(my_location):
 		variables.saviour_worker = True
 		variables.saviour_worker_id = unit.id
 		if variables.saviour_blueprinted:
