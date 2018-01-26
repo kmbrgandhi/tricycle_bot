@@ -22,7 +22,8 @@ def timestep(unit):
             time = compute_optimal_launch_time(curr_round)[0]
             variable.rocket_launch_times[unit.id] = time
             if unit.id not in variable.rocket_landing_sites:
-                variable.rocket_landing_sites[unit.id] = explore.get_maploc(bc.Planet.Mars, random.choice(list(variable.passable_locations_mars.keys())))
+                lst_of_passable = [loc for loc in variable.passable_locations_mars if variable.passable_locations_mars[loc]]
+                variable.rocket_landing_sites[unit.id] = explore.get_maploc(bc.Planet.Mars, random.choice(lst_of_passable))
                 #rocket_launch_site[unit.id] = compute_optimal_landing_site(gc, curr_round, time, rocket_launch_site)
 
         elif ((len(garrison)>6 and gc.round()<400) or (len(garrison)>4 and gc.round()>400) or (gc.round()>745)) and variable.gc.round() == variable.rocket_launch_times[unit.id] and variable.gc.can_launch_rocket(unit.id, variable.rocket_landing_sites[unit.id]):

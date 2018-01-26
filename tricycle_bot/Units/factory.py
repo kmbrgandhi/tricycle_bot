@@ -43,8 +43,8 @@ def timestep(unit):
 		elif total_units[0]<2:
 			if gc.can_produce_robot(unit.id, bc.UnitType.Worker):
 				gc.produce_robot(unit.id, bc.UnitType.Worker)
-		elif total_units[1]<5 and gc.round() < 70 and (variables.earth_start_map.height * variables.earth_start_map.width)>1000:
-			gc.produce_robot(unit.id, bc.UnitType.Knight)
+		#elif total_units[1]<5 and gc.round() < 70:
+		#	gc.produce_robot(unit.id, bc.UnitType.Knight)
 		elif total_units[2] < 0.9 * num_non_workers or total_units[2]<4:
 			gc.produce_robot(unit.id, bc.UnitType.Ranger)
 		else:

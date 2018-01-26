@@ -103,6 +103,15 @@ def precompute_earth_dist(passable_locations_earth, direction_coords, wavepoints
             store_dict[(dest_coords, coordinates_fineness)] = parent[dest_coords]
     return store_dict
 
+def add_bfs(bfs_dict, dest_coords, passable_locations_earth):
+    if dest_coords in passable_locations_earth and passable_locations_earth[dest_coords]:
+        if (dest_coords, dest_coords) in bfs_dict:
+            return
+        else:
+            value_dict = bfs_distance(dest_coords, passable_locations_earth)
+            for coords in value_dict:
+                bfs_dict[(coords, dest_coords)] = value_dict[coords]
+
 def bfs_distance(init_coords, passable_locations_earth):
     init = init_coords
     q = collections.deque([init])
@@ -114,7 +123,6 @@ def bfs_distance(init_coords, passable_locations_earth):
             if node not in value and passable_locations_earth[node]:
                 q.append(node)
                 value[node] = value[curr]+1
-    del value[init]
     return value
 
 def bfs_with_destination(init_coords, final_coords, gc, planet, passable_locations_earth, direction_coords):

@@ -7,7 +7,10 @@ import Units.explore as explore
 import Units.variables as variables
 import time
 
-
+if variables.curr_planet==bc.Planet.Earth:
+    passable_locations = variables.passable_locations_earth
+else:
+    passable_locations = variables.passable_locations_mars
 order = [bc.UnitType.Worker, bc.UnitType.Knight, bc.UnitType.Ranger, bc.UnitType.Mage,
          bc.UnitType.Healer, bc.UnitType.Factory, bc.UnitType.Rocket]  # storing order of units
 ranger_unit_priority = [0.7, 1, 2, 1, 3, 5, 3]
@@ -55,8 +58,7 @@ def timestep(unit):
         #if variables.print_count < 10:
         #    print("Preprocessing inside:", time.time() - start_time)
         #start_time = time.time()
-        dir, attack_target, snipe, move_then_attack, visible_enemies, closest_enemy, signals = ranger_sense(gc, unit, variables.last_turn_battle_locs,
-                                                                                                            ranger_roles, map_loc, variables.direction_to_coord, variables.precomputed_bfs, targeting_units, variables.bfs_fineness, variables.rocket_locs)
+        dir, attack_target, snipe, move_then_attack, visible_enemies, closest_enemy, signals = ranger_sense(gc, unit, variables.last_turn_battle_locs, ranger_roles, map_loc, variables.direction_to_coord, variables.bfs_dict, targeting_units, variables.bfs_fineness, variables.rocket_locs)
         #print("middlepart",time.time() - start_coord)
         #if variables.print_count < 10:
         #    print("Sensing:", time.time() - start_time)
@@ -117,10 +119,9 @@ def get_attack(gc, unit, location, targeting_units):
             return enemy
     return max(vuln_enemies, key=lambda x: coefficient_computation(gc, unit, x, x.location.map_location(), location))
 
-def exists_bad_enemy(enemies):
-    for enemy in enemies:
-        if attack_range_non_robots(enemy)>0:
-            return True
+def exists_bad_enemy(enemy):
+    if attack_range_non_robots(enemy)>0:
+        return True
     #random_num = random.random()
     #if random_num>0.5:
     #    return True
@@ -149,7 +150,7 @@ def add_healer_target(gc, ranger_loc):
         healer_target_locs.add((ranger_loc.x, ranger_loc.y))
 
 
-def go_to_mars_sense(gc, unit, battle_locs, location, enemies, direction_to_coord, precomputed_bfs, targeting_units, bfs_fineness, rocket_locs):
+def go_to_mars_sense(gc, unit, battle_locs, location, enemies, direction_to_coord, bfs_dict, targeting_units, bfs_fineness, rocket_locs):
     #print('GOING TO MARS')
     signals = {}
     dir = None
@@ -181,60 +182,30 @@ def go_to_mars_sense(gc, unit, battle_locs, location, enemies, direction_to_coor
         rocket = gc.sense_unit_at_location(target_loc)
         if gc.can_load(rocket.id, unit.id):
             gc.load(rocket.id, unit.id)
-    elif sense_util.distance_squared_between_maplocs(location, target_loc) < 17:
-        #print('REALLY CLOSE')
-        poss_dir = location.direction_to(target_loc)
-        shape = variables.direction_to_coord[poss_dir]
-        options = sense_util.get_best_option(shape)
-        for option in options:
-            if gc.can_move(unit.id, option):
-                # print(time.time() - start_time)
-                dir = option
-                break
-        if dir is None:
-            dir = directions[8]
-        """
-        result = explore.bfs_with_destination((target_loc.x, target_loc.y), start_coords, variables.gc, variables.curr_planet, variables.passable_locations_earth, variables.coord_to_direction)
-        if result is None:
-            variables.ranger_roles["go_to_mars"].remove(unit.id)
-            dir = None
-        else:
-            dir = result
-        """
     else:
-        start_coords = (location.x, location.y)
-        target_coords_thirds = (int(target_loc.x / bfs_fineness), int(target_loc.y / bfs_fineness))
-        if (start_coords, target_coords_thirds) not in precomputed_bfs:
-            poss_dir = location.direction_to(target_loc)
-            shape = variables.direction_to_coord[poss_dir]
+        target_coords = (target_loc.x, target_loc.y)
+        explore.add_bfs(bfs_dict, target_coords, passable_locations)
+        # target_coords_thirds = (int(target_loc.x / bfs_fineness), int(target_loc.y / bfs_fineness))
+
+        if (start_coords, target_coords) in bfs_dict:
+            best_dirs = use_dist_bfs(start_coords, target_coords, bfs_dict)
+            choice_of_dir = random.choice(best_dirs)
+            shape = direction_to_coord[choice_of_dir]
             options = sense_util.get_best_option(shape)
             for option in options:
                 if gc.can_move(unit.id, option):
-                    # print(time.time() - start_time)
                     dir = option
                     break
-            if dir is None:
-                dir = directions[8]
-        else:
-            shape = direction_to_coord[precomputed_bfs[(start_coords, target_coords_thirds)]]
-            options = sense_util.get_best_option(shape)
-            for option in options:
-                if gc.can_move(unit.id, option):
-                    # print(time.time() - start_time)
-                    dir = option
-                    break
-            if dir is None:
-                dir = directions[8]
         #print(dir)
 
     return dir, attack, snipe, move_then_attack, visible_enemies, closest_enemy, signals
 
-def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coord, precomputed_bfs, targeting_units, bfs_fineness, rocket_locs):
+def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coord, bfs_dict, targeting_units, bfs_fineness, rocket_locs):
     enemies = gc.sense_nearby_units_by_team(location, unit.vision_range, variables.enemy_team)
     if unit.id in ranger_roles["sniper"]:
-        return snipe_sense(gc, unit, battle_locs, location, enemies, direction_to_coord, precomputed_bfs, targeting_units, bfs_fineness)
+        return snipe_sense(gc, unit, battle_locs, location, enemies, direction_to_coord, bfs_dict, targeting_units, bfs_fineness)
     elif unit.id in ranger_roles["go_to_mars"]:
-        return go_to_mars_sense(gc, unit, battle_locs, location, enemies, direction_to_coord, precomputed_bfs, targeting_units, bfs_fineness, rocket_locs)
+        return go_to_mars_sense(gc, unit, battle_locs, location, enemies, direction_to_coord, bfs_dict, targeting_units, bfs_fineness, rocket_locs)
     signals = {}
     dir = None
     attack = None
@@ -270,7 +241,7 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
                 start_time = time.time()
                 if check_radius_squares_factories(gc, location):
                     dir = optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location())
-                elif (exists_bad_enemy(enemies)) or not gc.can_attack(unit.id, closest_enemy.id):
+                elif (exists_bad_enemy(closest_enemy)) or not gc.can_attack(unit.id, closest_enemy.id):
                     #if variables.print_count < 10:
                     #    print("Checking if condition:", time.time() - start_time)
                     start_time = time.time()
@@ -293,18 +264,17 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
                         move_then_attack = True
                 elif len(battle_locs) > 0:
                     # print('IS GOING TO BATTLE')
-                    dir = go_to_battle(gc, unit, battle_locs, location, direction_to_coord, precomputed_bfs,
-                                       bfs_fineness)
+                    dir = go_to_battle_new(gc, unit, battle_locs, location, direction_to_coord, bfs_fineness)
                 else:
-                    dir = run_towards_init_loc(gc, unit, location, direction_to_coord, precomputed_bfs, bfs_fineness)
+                    dir = run_towards_init_loc_new(gc, unit, location, direction_to_coord, bfs_fineness)
             #if variables.print_count < 10:
             #    print("Getting direction:", time.time() - start_time)
     else:
         # if there are no enemies in sight, check if there is an ongoing battle.  If so, go there.
         if len(rocket_locs)>0 and gc.round()>660 and variables.curr_planet == bc.Planet.Earth:
-            dir = move_to_rocket(gc, unit, location, direction_to_coord, precomputed_bfs, bfs_fineness)
+            dir = move_to_rocket(gc, unit, location, direction_to_coord, bfs_dict, bfs_fineness)
             if dir is None:
-                dir = run_towards_init_loc(gc, unit, location, direction_to_coord, precomputed_bfs, bfs_fineness)
+                dir = run_towards_init_loc_new(gc, unit, location, direction_to_coord, bfs_fineness)
 
         elif len(battle_locs)>0:
             #print('IS GOING TO BATTLE')
@@ -334,14 +304,15 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
 
     return dir, attack, snipe, move_then_attack, visible_enemies, closest_enemy, signals
 
-def move_to_rocket(gc, unit, location, direction_to_coord, precomputed_bfs, bfs_fineness):
+def move_to_rocket(gc, unit, location, direction_to_coord, bfs_dict, bfs_fineness):
     dir = None
     location_coords = (location.x, location.y)
     if unit.id not in variables.which_rocket or variables.which_rocket[unit.id][1] not in variables.rocket_locs:
         for rocket in variables.rocket_locs:
             target_loc = variables.rocket_locs[rocket]
-            target_coords_thirds = (int(target_loc.x / bfs_fineness), int(target_loc.y / bfs_fineness))
-            if (location_coords, target_coords_thirds) in precomputed_bfs:
+            target_coords = (target_loc.x, target_loc.y)
+            explore.add_bfs(bfs_dict, target_coords, passable_locations)
+            if (location_coords, target_coords) in bfs_dict:
                 variables.which_rocket[unit.id] = (target_loc, rocket)
                 break
 
@@ -361,6 +332,20 @@ def move_to_rocket(gc, unit, location, direction_to_coord, precomputed_bfs, bfs_
         rocket = gc.sense_unit_at_location(target_loc)
         if gc.can_load(rocket.id, unit.id):
             gc.load(rocket.id, unit.id)
+    else:
+        target_coords = (target_loc.x, target_loc.y)
+        explore.add_bfs(bfs_dict, target_coords, passable_locations)
+        #target_coords_thirds = (int(target_loc.x / bfs_fineness), int(target_loc.y / bfs_fineness))
+        if (location_coords, target_coords) in bfs_dict:
+            best_dirs = use_dist_bfs(location_coords, target_coords, bfs_dict)
+            choice_of_dir = random.choice(best_dirs)
+            shape = direction_to_coord[choice_of_dir]
+            options = sense_util.get_best_option(shape)
+            for option in options:
+                if gc.can_move(unit.id, option):
+                    return option
+        return variables.directions[8]
+""""
     elif sense_util.distance_squared_between_maplocs(location, target_loc) < 17:
         #print('REALLY CLOSE')
         poss_dir = location.direction_to(target_loc)
@@ -373,38 +358,13 @@ def move_to_rocket(gc, unit, location, direction_to_coord, precomputed_bfs, bfs_
                 break
         if dir is None:
             dir = directions[8]
-        """
         result = explore.bfs_with_destination((target_loc.x, target_loc.y), start_coords, variables.gc, variables.curr_planet, variables.passable_locations_earth, variables.coord_to_direction)
         if result is None:
             variables.ranger_roles["go_to_mars"].remove(unit.id)
             dir = None
         else:
             dir = result
-        """
-    else:
-        target_coords_thirds = (int(target_loc.x / bfs_fineness), int(target_loc.y / bfs_fineness))
-        if (location_coords, target_coords_thirds) not in precomputed_bfs:
-            poss_dir = location.direction_to(target_loc)
-            shape = variables.direction_to_coord[poss_dir]
-            options = sense_util.get_best_option(shape)
-            for option in options:
-                if gc.can_move(unit.id, option):
-                    # print(time.time() - start_time)
-                    dir = option
-                    break
-            if dir is None:
-                dir = directions[8]
-        else:
-            shape = direction_to_coord[precomputed_bfs[(location_coords, target_coords_thirds)]]
-            options = sense_util.get_best_option(shape)
-            for option in options:
-                if gc.can_move(unit.id, option):
-                    # print(time.time() - start_time)
-                    dir = option
-                    break
-            if dir is None:
-                dir = directions[8]
-
+    """
 snipe_priority = {"Rocket": 5, "Factory": 4, "Ranger": 3, "Healer": 2, "Knight": 1, "Worker": 0, "Mage": -1}
 def snipe_priority(unit):
     if unit.unit_type == bc.UnitType.bc.UnitType.Rocket:
@@ -422,7 +382,7 @@ def snipe_priority(unit):
     else:
         return -1
 
-def snipe_sense(gc, unit, battle_locs, location, enemies, direction_to_coord, precomputed_bfs, targeting_units, bfs_fineness):
+def snipe_sense(gc, unit, battle_locs, location, enemies, direction_to_coord, bfs_dict, targeting_units, bfs_fineness):
     signals = {}
     dir = None
     attack = None
@@ -477,21 +437,37 @@ def how_many_adjacent(gc, unit):
             total+=1
     return total
 
+def pick_from_battle_locs(bfs_dict, init_loc, battle_locs):
+    choices = []
+    location_coords = (init_loc.x, init_loc.y)
+    for pair in battle_locs:
+        choice = battle_locs[pair][0]
+        choice_coords = (choice.x, choice.y)
+        explore.add_bfs(bfs_dict, choice_coords, passable_locations)
+        if (location_coords, choice_coords) in bfs_dict:
+            choices.append(choice_coords)
+    if len(choices) == 0:
+        return None
+    return choices
+
+
 def go_to_battle_new(gc, unit, battle_locs, location, direction_to_coord, bfs_fineness):
-    precomputed_bfs_dist = variables.precomputed_bfs_dist
-    weakest = random.choice(list(battle_locs.keys()))
-    target = battle_locs[weakest][0]
+    bfs_dict = variables.bfs_dict
+    target_options = pick_from_battle_locs(bfs_dict, location, battle_locs)
+    #weakest = random.choice(list(battle_locs.keys()))
+    #target = battle_locs[weakest][0]
     start_coords = (location.x, location.y)
-    target_coords_thirds = (int(target.x/bfs_fineness), int(target.y/bfs_fineness))
-    if (start_coords, target_coords_thirds) not in precomputed_bfs_dist:
+    #target_coords_thirds = (int(target.x/bfs_fineness), int(target.y/bfs_fineness))
+    if target_options is None:
         poss_target_coords = pick_from_init_enemy_locs(start_coords)
         if poss_target_coords is None:
             return None
         else:
             target_coords = random.choice(poss_target_coords)
-            target_coords_thirds = (int(target_coords.x / bfs_fineness), int(target_coords.y / bfs_fineness))
+    else:
+        target_coords = random.choice(target_options)
 
-    best_dirs = use_dist_bfs(start_coords, target_coords_thirds, precomputed_bfs_dist)
+    best_dirs = use_dist_bfs(start_coords, target_coords, bfs_dict)
     choice_of_dir = random.choice(best_dirs)
     shape = direction_to_coord[choice_of_dir]
     options = sense_util.get_best_option(shape)
@@ -500,8 +476,8 @@ def go_to_battle_new(gc, unit, battle_locs, location, direction_to_coord, bfs_fi
             return option
     return directions[8]
 
-def use_dist_bfs(start_coords, target_coords_thirds, bfs_dict):
-    dist = bfs_dict[(start_coords, target_coords_thirds)]
+def use_dist_bfs(start_coords, target_coords, bfs_dict):
+    dist = bfs_dict[(start_coords, target_coords)]
 
     best_dirs = []
     min_dist = float('inf')
@@ -511,8 +487,8 @@ def use_dist_bfs(start_coords, target_coords_thirds, bfs_dict):
     for direction in all_but_center_dir:
         coord_version = variables.direction_to_coord[direction]
         new_coords = (start_coords[0] + coord_version[0], start_coords[1] + coord_version[1])
-        if (new_coords, target_coords_thirds) in bfs_dict:
-            new_dist = bfs_dict[(new_coords, target_coords_thirds)]
+        if (new_coords, target_coords) in bfs_dict:
+            new_dist = bfs_dict[(new_coords, target_coords)]
             if new_dist<min_dist:
                 min_dist = new_dist
 
@@ -520,8 +496,8 @@ def use_dist_bfs(start_coords, target_coords_thirds, bfs_dict):
         coord_version = variables.direction_to_coord[direction]
         new_coords = (start_coords[0] + coord_version[0], start_coords[1] + coord_version[1])
         #print('option:', new_coords)
-        if (new_coords, target_coords_thirds) in bfs_dict:
-            new_dist = bfs_dict[(new_coords, target_coords_thirds)]
+        if (new_coords, target_coords) in bfs_dict:
+            new_dist = bfs_dict[(new_coords, target_coords)]
             if new_dist <= min_dist:
                 best_dirs.append(direction)
             #elif new_dist == (min_dist + 1) and not are_too_similar(direction, best_dirs):
@@ -536,6 +512,7 @@ def are_too_similar(direction1, list_of_directions):
             return True
     return False
 
+"""
 def go_to_battle(gc, unit, battle_locs, location, direction_to_coord, precomputed_bfs, bfs_fineness):
     #start_time = time.time()
     # send a unit to battle
@@ -558,7 +535,7 @@ def go_to_battle(gc, unit, battle_locs, location, direction_to_coord, precompute
             return option
     return directions[8]
     #return optimal_direction_towards(gc, unit, unit.location.map_location(), target, directions), target
-
+"""
 def optimal_direction_towards(gc, unit, location, target):
 
     # return the optimal direction towards a target that is achievable; not A*, but faster.
@@ -615,8 +592,10 @@ def attack_range_non_robots(unit):
 def pick_from_init_enemy_locs(init_loc):
     choices = []
     for choice in variables.init_enemy_locs:
-        coords_loc_thirds = (int(choice.x /variables.bfs_fineness), int(choice.y/variables.bfs_fineness))
-        if (init_loc, coords_loc_thirds) in variables.precomputed_bfs:
+        choice_coords = (choice.x, choice.y)
+        explore.add_bfs(variables.bfs_dict, choice_coords, passable_locations)
+        #coords_loc_thirds = (int(choice.x /variables.bfs_fineness), int(choice.y/variables.bfs_fineness))
+        if (init_loc, choice_coords) in variables.bfs_dict:
             choices.append(choice)
     if len(choices)==0:
         return None
@@ -625,14 +604,14 @@ def pick_from_init_enemy_locs(init_loc):
 
 def run_towards_init_loc_new(gc, unit, location,  direction_to_coord, bfs_fineness):
     #start_time = time.time()
-    precomputed_bfs_dist = variables.precomputed_bfs_dist
+    bfs_dict = variables.bfs_dict
     coords_init_location = (location.x, location.y)
     poss_coords_loc = pick_from_init_enemy_locs(coords_init_location)
     if poss_coords_loc is None:
         return None
     coords_loc = random.choice(poss_coords_loc)
-    coords_loc_thirds = (int(coords_loc.x/bfs_fineness), int(coords_loc.y/bfs_fineness))
-    best_dirs = use_dist_bfs(coords_init_location, coords_loc_thirds, precomputed_bfs_dist)
+    coords_loc_thirds = (coords_loc.x, coords_loc.y)
+    best_dirs = use_dist_bfs(coords_init_location, coords_loc_thirds, bfs_dict)
     choice_of_dir = random.choice(best_dirs)
     shape = direction_to_coord[choice_of_dir]
     options = sense_util.get_best_option(shape)
@@ -640,7 +619,7 @@ def run_towards_init_loc_new(gc, unit, location,  direction_to_coord, bfs_finene
         if gc.can_move(unit.id, option):
             return option
     return directions[8]
-
+"""
 def run_towards_init_loc(gc, unit, location,  direction_to_coord, precomputed_bfs, bfs_fineness):
     #start_time = time.time()
     curr_planet_map = gc.starting_map(variables.curr_planet)
@@ -659,7 +638,7 @@ def run_towards_init_loc(gc, unit, location,  direction_to_coord, precomputed_bf
             return option
 
     return directions[8]
-
+"""
 
 def get_explore_dir(gc, unit, location):
     # function to get a direction to explore by picking locations that are within some distance that are

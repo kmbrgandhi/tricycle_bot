@@ -5,8 +5,15 @@ import traceback
 import Units.sense_util as sense_util
 import Units.variables as variables
 import Units.clusters as clusters
+import Units.explore as explore
+import Units.Ranger as Ranger
 
 import numpy as np
+
+if variables.curr_planet==bc.Planet.Earth:
+    passable_locations = variables.passable_locations_earth
+else:
+    passable_locations = variables.passable_locations_mars
 
 battle_radius = 9
 
@@ -27,7 +34,7 @@ def timestep(unit):
 
     composition = variables.info
     direction_to_coord = variables.direction_to_coord
-    precomputed_bfs = variables.precomputed_bfs
+    bfs_dict = variables.bfs_dict
     bfs_fineness = variables.bfs_fineness
     enemy_team = variables.enemy_team
     my_team = variables.my_team
@@ -123,7 +130,7 @@ def timestep(unit):
         elif best_loc is not None and gc.is_move_ready(unit.id):
             #print('GETTING BEST DIRECTION')
             #print(best_loc)
-            best_dir = get_best_direction(gc, unit.id, unit_loc, best_loc, direction_to_coord, precomputed_bfs, bfs_fineness)
+            best_dir = get_best_direction(gc, unit.id, unit_loc, best_loc, direction_to_coord, bfs_dict, bfs_fineness)
             if best_dir is not None: 
                 gc.move_robot(unit.id, best_dir)
                 ## CHANGE LOC IN NEW DATA STRUCTURE
@@ -206,15 +213,20 @@ def check_radius_squares_factories(gc, unit, radius=1):
             return True
     return False
 
-def get_best_direction(gc, unit_id, unit_loc, target_loc, direction_to_coord, precomputed_bfs, bfs_fineness):
+def get_best_direction(gc, unit_id, unit_loc, target_loc, direction_to_coord, bfs_dict, bfs_fineness):
     start_coords = (unit_loc.x, unit_loc.y)
-    target_coords_thirds = (int(target_loc.x/bfs_fineness), int(target_loc.y/bfs_fineness))
-    if (start_coords, target_coords_thirds) in precomputed_bfs:
-        shape = direction_to_coord[precomputed_bfs[(start_coords, target_coords_thirds)]]
+    target_coords = (target_loc.x, target_loc.y)
+    explore.add_bfs(bfs_dict, target_coords, passable_locations)
+    #target_coords_thirds = (int(target_loc.x/bfs_fineness), int(target_loc.y/bfs_fineness))
+    if (start_coords, target_coords) in bfs_dict:
+        best_dirs = Ranger.use_dist_bfs(start_coords, target_coords, bfs_dict)
+        choice_of_dir = random.choice(best_dirs)
+        shape = direction_to_coord[choice_of_dir]
         options = sense_util.get_best_option(shape)
-        for option in options: 
+        for option in options:
             if gc.can_move(unit_id, option):
-                return option 
+                return option
+        return variables.directions[8]
     return None
 
 

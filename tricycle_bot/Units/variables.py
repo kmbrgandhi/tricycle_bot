@@ -179,11 +179,15 @@ mars_map = gc.starting_map(mars)
 mars_width = mars_map.width
 mars_height = mars_map.height
 
-for x in range(mars_width):
-	for y in range(mars_height):
-		coords = (x, y)
-		if mars_map.is_passable_terrain_at(bc.MapLocation(mars, x, y)):
-			passable_locations_mars[coords] = True
+for x in range(-1, mars_width + 1):
+    for y in range(-1, mars_height + 1):
+        coords = (x, y)
+        if x == -1 or y == -1 or x == mars_map.width or y == mars_map.height:
+            passable_locations_mars[coords] = False
+        elif mars_map.is_passable_terrain_at(bc.MapLocation(earth, x, y)):
+            passable_locations_mars[coords] = True
+        else:
+            passable_locations_mars[coords] = False
 
 num_passable_locations_mars = len(passable_locations_mars)
 
@@ -234,10 +238,12 @@ if curr_planet == bc.Planet.Earth:
                         amount_of_karbonite = karbonite_locations[possib]
             if actual is not None:
                 wavepoints[(x_th, y_th)] = actual
-    precomputed_bfs = explore.precompute_earth(passable_locations_earth, coord_to_direction, wavepoints)
-    start_time = time.time()
-    precomputed_bfs_dist = explore.precompute_earth_dist(passable_locations_earth, coord_to_direction, wavepoints)
-    print(time.time()-start_time)
+    which_bfs = {} # stores which points have had a BFS done out of them
+    bfs_dict = {} # stores the distances found by BFS so far
+    #precomputed_bfs = explore.precompute_earth(passable_locations_earth, coord_to_direction, wavepoints)
+    #start_time = time.time()
+    #precomputed_bfs_dist = explore.precompute_earth_dist(passable_locations_earth, coord_to_direction, wavepoints)
+    #print(time.time()-start_time)
 
 else:
     bfs_fineness = 2 #max(int(((mars_width * mars_height) ** 0.5) / 10), 2) + 1
@@ -264,8 +270,7 @@ else:
                     break
             if actual is not None:
                 wavepoints[(x_th, y_th)] = actual
-    precomputed_bfs = explore.precompute_mars(passable_locations_mars, coord_to_direction, wavepoints)
-    precomputed_bfs_dist = precomputed_bfs
+    bfs_dict = {}
 
 attacker = set([bc.UnitType.Ranger, bc.UnitType.Knight, bc.UnitType.Mage, bc.UnitType.Healer])
 stockpile_until_75 = False
