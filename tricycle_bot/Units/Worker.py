@@ -487,10 +487,10 @@ def repair(gc, unit, my_location, current_roles):
 
 def try_move_smartly(unit, map_loc1, map_loc2):
 	if variables.gc.is_move_ready(unit.id):
+		our_coords = (map_loc1.x, map_loc1.y)
 		if int(map_loc1.x / variables.bfs_fineness) == int(map_loc2.x / variables.bfs_fineness) and int(map_loc1.y/ variables.bfs_fineness)== int(map_loc2.y / variables.bfs_fineness):#sense_util.distance_squared_between_maplocs(map_loc1, map_loc2) < (2 * variables.bfs_fineness ** 2)+1:
 			dir = map_loc1.direction_to(map_loc2)
 		else:
-			our_coords = (map_loc1.x, map_loc1.y)
 			target_coords_thirds = (
 			int(map_loc2.x / variables.bfs_fineness), int(map_loc2.y / variables.bfs_fineness))
 			if (our_coords, target_coords_thirds) in variables.precomputed_bfs:
@@ -503,8 +503,7 @@ def try_move_smartly(unit, map_loc1, map_loc2):
 			if variables.gc.can_move(unit.id, option):
 				variables.gc.move_robot(unit.id, option)
 				## CHANGE LOC IN NEW DATA STRUCTURE
-				new_loc = map_loc1.add(option)
-				variables.unit_locations[unit.id] = (new_loc.x, new_loc.y)
+				add_new_location(unit.id, our_coords, option)
 				break
 
 def board(gc,my_unit,my_location,current_roles):
@@ -865,8 +864,7 @@ def build(gc,my_unit,my_location,start_map,building_assignment,current_roles):
 					if gc.is_move_ready(my_unit.id) and gc.can_move(my_unit.id,direction_to_move):
 						gc.move_robot(my_unit.id,direction_to_move)
 						## CHANGE LOC IN NEW DATA STRUCTURE
-						new_loc = my_location.add(direction_to_move)
-						variables.unit_locations[my_unit.id] = (new_loc.x, new_loc.y)
+						add_new_location(my_unit.id, (my_location.x, my_location.y), direction_to_move)
 
 		if gc.can_build(my_unit.id,assigned_building.id):
 			#print(my_unit.id, "is building at ",assigned_location)
@@ -1049,6 +1047,17 @@ def blueprint(gc,my_unit,my_location,building_assignment,blueprinting_assignment
 			#movement.try_move(gc,my_unit,next_direction)
 			try_move_smartly(my_unit,my_location,assigned_site.map_location)
 
+def add_new_location(unit_id, old_coords, direction):
+    unit_mov = variables.direction_to_coord[direction]
+    new_coords = (old_coords[0]+unit_mov[0], old_coords[1]+unit_mov[1])
+    variables.unit_locations[unit_id] = new_coords
+
+    old_quadrant = (int(old_coords[0] / variables.quadrant_size), int(old_coords[1] / variables.quadrant_size))
+    new_quadrant = (int(new_coords[0] / variables.quadrant_size), int(new_coords[1] / variables.quadrant_size))
+
+    if old_quadrant != new_quadrant: 
+        variables.quadrant_battle_locs[old_quadrant].remove_ally(unit_id)
+        variables.quadrant_battle_locs[new_quadrant].add_ally(unit_id, "knight")
 
 class BuildSite:
 	def __init__(self,map_location,building_type):
