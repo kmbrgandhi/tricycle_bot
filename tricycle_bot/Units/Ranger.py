@@ -46,6 +46,11 @@ def timestep(unit):
     my_team = variables.my_team
     targeting_units = variables.targeting_units
     if location.is_on_map():
+        ## Add new ones to unit_locations, else just get the location
+        if unit.id not in variables.unit_locations:
+            loc = unit.location.map_location()
+            variables.unit_locations[unit.id] = (loc.x,loc.y)
+
         #start_time = time.time()
         map_loc = location.map_location()
         if variables.curr_planet == bc.Planet.Earth and len(ranger_roles["go_to_mars"])<14 and unit.id not in ranger_roles["go_to_mars"] and unit.id in ranger_roles["fighter"]:

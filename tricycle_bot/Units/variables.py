@@ -59,11 +59,17 @@ curr_round = gc.round()
 
 print_count = 0
 
+## MAP ##
+quadrant_size = 5
+quadrant_battle_locs = {}
+
 ## ALL UNITS ##
 my_unit_ids = set([unit.id for unit in my_units])
 unit_locations = {} ## unit id: (x, y)
 for unit in my_units:
     unit_locations[unit.id] = (unit.location.map_location().x, unit.location.map_location().y)
+
+death_allies_per_quadrant = {}      ## (quad x, quad y): ((x,y), num_dead)
 
 ## WORKER VARIABLES ##
 
@@ -131,15 +137,13 @@ for i,j in karbonite_locations:
 current_worker_roles = {"miner":[],"builder":[],"blueprinter":[],"boarder":[], "repairer":[]}
 
 ## KNIGHT VARIABLES ##
-earth_battles = {}
-mars_battles = {}
-assigned_knights = {}
+assigned_knights = {}       ## knight_id: (x, y)
 init_enemy_locs = []
 
 ## HEALER VARIABLES ##
 healer_radius = 9
 healer_target_locs = set()
-overcharge_targets = set() ## stored as IDs
+overcharge_targets = set()  ## stored as IDs
 assigned_healers = {}
 assigned_overcharge = {}
 
@@ -150,11 +154,8 @@ rocket_locs = {}
 
 # RANGER
 ranger_roles = {"fighter":[],"sniper":[], "go_to_mars":[]}
-ranger_to_cluster = {}
-ranger_clusters = set()
-targeting_units = {}
-which_rocket = {}
-ranger_locs = {}
+targeting_units = {}    ## enemy_id: num of allied units attacking it
+which_rocket = {}       ## rocket_id: unit_id
 
 #FIGHTERS
 producing = [0, 0, 0, 0, 0]
