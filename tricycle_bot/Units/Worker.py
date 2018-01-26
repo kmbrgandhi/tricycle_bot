@@ -7,7 +7,6 @@ import Units.movement as movement
 import Units.explore as explore
 import Units.Ranger as Ranger
 import Units.variables as variables
-import Units.clusters as clusters
 import time
 
 battle_radius = 10
@@ -24,16 +23,10 @@ def timestep(unit):
 	current_roles = variables.current_worker_roles
 	num_enemies = variables.num_enemies
 
-	planet = gc.planet()
-	if planet == bc.Planet.Earth: 
-		battle_locs = variables.earth_battles
-		diagonal = variables.earth_diagonal
-	else: 
-		battle_locs = variables.mars_battles
-		diagonal = variables.mars_diagonal
-
 	earth_start_map = variables.earth_start_map
 	unit_types = variables.unit_types
+
+	next_turn_battle_locs = variables.next_turn_battle_locs
 
 	if unit.unit_type != unit_types["worker"]:
 		# prob should return some kind of error
@@ -42,6 +35,11 @@ def timestep(unit):
 	# make sure unit can actually perform actions ie. not in garrison
 	if not unit.location.is_on_map():
 		return
+
+	## Add new ones to unit_locations, else just get the location
+	if unit.id not in variables.unit_locations:
+		loc = unit.location.map_location()
+		variables.unit_locations[unit.id] = (loc.x,loc.y)
 
 	my_location = unit.location.map_location()
 
@@ -132,7 +130,7 @@ def timestep(unit):
 	# runs this block every turn if unit is miner
 	if my_role == "miner":
 		# start_time = time.time()
-		mine(gc,unit,my_location,earth_start_map,karbonite_locations,current_roles, building_assignment, battle_locs)
+		mine(gc,unit,my_location,earth_start_map,karbonite_locations,current_roles, building_assignment, next_turn_battle_locs)
 		#print("mining time: ",time.time() - start_time)
 	# if unit is builder
 	elif my_role == "builder":
@@ -483,10 +481,10 @@ def repair(gc, unit, my_location, current_roles):
 
 def try_move_smartly(unit, map_loc1, map_loc2):
 	if variables.gc.is_move_ready(unit.id):
+		our_coords = (map_loc1.x, map_loc1.y)
 		if int(map_loc1.x / variables.bfs_fineness) == int(map_loc2.x / variables.bfs_fineness) and int(map_loc1.y/ variables.bfs_fineness)== int(map_loc2.y / variables.bfs_fineness):#sense_util.distance_squared_between_maplocs(map_loc1, map_loc2) < (2 * variables.bfs_fineness ** 2)+1:
 			dir = map_loc1.direction_to(map_loc2)
 		else:
-			our_coords = (map_loc1.x, map_loc1.y)
 			target_coords_thirds = (
 			int(map_loc2.x / variables.bfs_fineness), int(map_loc2.y / variables.bfs_fineness))
 			if (our_coords, target_coords_thirds) in variables.precomputed_bfs:
@@ -499,8 +497,7 @@ def try_move_smartly(unit, map_loc1, map_loc2):
 			if variables.gc.can_move(unit.id, option):
 				variables.gc.move_robot(unit.id, option)
 				## CHANGE LOC IN NEW DATA STRUCTURE
-				new_loc = map_loc1.add(option)
-				variables.unit_locations[unit.id] = (new_loc.x, new_loc.y)
+				add_new_location(unit.id, our_coords, option)
 				break
 
 def board(gc,my_unit,my_location,current_roles):
@@ -627,10 +624,6 @@ def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, bui
 
 		# only adds enemy units that can attack
 		for unit in enemy_units:
-			enemy_loc = unit.location.map_location()
-			add_loc = evaluate_battle_location(gc, enemy_loc, battle_locs)
-			if add_loc:
-				battle_locs[(enemy_loc.x, enemy_loc.y)] = clusters.Cluster(allies=set(),enemies=set([unit.id]))
 			if unit.unit_type in dangerous_types:
 				dangerous_enemies.append(unit)
 
@@ -659,20 +652,6 @@ def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, bui
 	else:
 		current_roles["miner"].remove(my_unit.id)
 		#print(unit.id," no deposits around")
-
-def evaluate_battle_location(gc, loc, battle_locs):
-	"""
-	Chooses whether or not to add this enemy's location as a new battle location.
-	"""
-	# units_near = gc.sense_nearby_units_by_team(loc, battle_radius, constants.enemy_team)
-	valid = True
-	loc_coords = (loc.x, loc.y)
-	locs_near = explore.coord_neighbors(loc_coords, include_self = True, diff = explore.diffs_10)#gc.all_locations_within(loc, battle_radius)
-	for near_coords in locs_near:
-		if near_coords in battle_locs:
-			valid = False
-	
-	return valid
 
 """
 def pick_closest_building_assignment(gc, unit, building_assignment):
@@ -879,8 +858,7 @@ def build(gc,my_unit,my_location,start_map,building_assignment,current_roles):
 					if gc.is_move_ready(my_unit.id) and gc.can_move(my_unit.id,direction_to_move):
 						gc.move_robot(my_unit.id,direction_to_move)
 						## CHANGE LOC IN NEW DATA STRUCTURE
-						new_loc = my_location.add(direction_to_move)
-						variables.unit_locations[my_unit.id] = (new_loc.x, new_loc.y)
+						add_new_location(my_unit.id, (my_location.x, my_location.y), direction_to_move)
 
 		if gc.can_build(my_unit.id,assigned_building.id):
 			#print(my_unit.id, "is building at ",assigned_location)
@@ -1065,6 +1043,17 @@ def blueprint(gc,my_unit,my_location,building_assignment,blueprinting_assignment
 			#movement.try_move(gc,my_unit,next_direction)
 			try_move_smartly(my_unit,my_location,assigned_site.map_location)
 
+def add_new_location(unit_id, old_coords, direction):
+    unit_mov = variables.direction_to_coord[direction]
+    new_coords = (old_coords[0]+unit_mov[0], old_coords[1]+unit_mov[1])
+    variables.unit_locations[unit_id] = new_coords
+
+    old_quadrant = (int(old_coords[0] / variables.quadrant_size), int(old_coords[1] / variables.quadrant_size))
+    new_quadrant = (int(new_coords[0] / variables.quadrant_size), int(new_coords[1] / variables.quadrant_size))
+
+    if old_quadrant != new_quadrant: 
+        variables.quadrant_battle_locs[old_quadrant].remove_ally(unit_id)
+        variables.quadrant_battle_locs[new_quadrant].add_ally(unit_id, "knight")
 
 class BuildSite:
 	def __init__(self,map_location,building_type):
