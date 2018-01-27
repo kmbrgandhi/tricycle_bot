@@ -105,15 +105,15 @@ def timestep(unit):
                 best_loc = ally.location.map_location()
             elif unit.id in assigned_healers: 
                 best_loc = assigned_healers[unit.id]
-                # print('already had a loc: ', best_loc)
-            else:
-                print('UH OH')
+            #     print('already had a loc: ', best_loc)
+            # else:
+            #     print('UH OH')
 
 
-        # Special movement if already within healing range of the best location
-        if best_loc is not None and sense_util.distance_squared_between_coords(unit_loc, best_loc) < unit.attack_range()/2:
-            best_loc = None ## Change this
-            # print('oopz too close')
+        # # Special movement if already within healing range of the best location
+        # if best_loc is not None and sense_util.distance_squared_between_coords(unit_loc, best_loc) < unit.attack_range()/2:
+        #     best_loc = None ## Change this
+        #     print('oopz too close')
 
         ## Do shit
         if best_target is not None:
@@ -121,7 +121,7 @@ def timestep(unit):
                 gc.overcharge(unit.id, best_target.id)
             if heal and gc.is_heal_ready(unit.id):
                 gc.heal(unit.id, best_target.id)
-        if best_dir is not None and gc.is_move_ready(unit.id): 
+        if best_dir is not None and gc.is_move_ready(unit.id) and gc.can_move(unit.id,best_dir): 
             gc.move_robot(unit.id, best_dir)
             add_new_location(unit.id, unit_loc, best_dir)
         elif best_loc is not None and gc.is_move_ready(unit.id) and unit_loc != best_loc:
@@ -146,7 +146,7 @@ def assign_to_quadrant(gc, unit, unit_loc):
             best_coeff = coeff
 
     if best_coeff > 0: 
-        assigned_healers[unit.id] = quadrant_battles[best_quadrant].bottom_left
+        assigned_healers[unit.id] = quadrant_battles[best_quadrant].middle
         return True, assigned_healers[unit.id]
     return False, None
 

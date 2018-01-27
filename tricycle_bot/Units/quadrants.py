@@ -11,6 +11,7 @@ class QuadrantInfo():
     '''
     def __init__(self, bottom_left): 
         self.bottom_left = bottom_left ## (x,y)
+        self.middle = (bottom_left[0]+int(variables.quadrant_size/2), bottom_left[1]+int(variables.quadrant_size/2))
         self.enemies = set()
 
         self.knights = set()
