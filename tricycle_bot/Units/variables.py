@@ -217,36 +217,6 @@ if curr_planet == bc.Planet.Earth:
             else:
                 passable_locations_earth[coords]= False
 
-    bfs_fineness = max(int(((earth_width * earth_height)**0.5)/10)-1, 1)
-    wavepoints = {}
-    if earth_width%bfs_fineness==0:
-        upper_width = int(earth_width/bfs_fineness)
-    else:
-        upper_width = int(earth_width/bfs_fineness)+1
-
-    if earth_height%3==0:
-        upper_height = int(earth_height/bfs_fineness)
-    else:
-        upper_height = int(earth_height/bfs_fineness)+1
-
-    start_time = time.time()
-    for x_th in range(0, upper_width):
-        for y_th in range(0, upper_height):
-            lower_limit_x = x_th*bfs_fineness
-            lower_limit_y = y_th*bfs_fineness
-            possibs = [(lower_limit_x+i, lower_limit_y+j) for i in range(0, bfs_fineness) for j in range(0, bfs_fineness)]
-            actual = None
-            amount_of_karbonite = 0
-            for possib in possibs:
-                if possib in passable_locations_earth and passable_locations_earth[possib]:
-                    if actual is None:
-                        actual = possib
-                    elif possib in karbonite_locations and karbonite_locations[possib]>amount_of_karbonite:
-                        actual = possib
-                        amount_of_karbonite = karbonite_locations[possib]
-            if actual is not None:
-                wavepoints[(x_th, y_th)] = actual
-    which_bfs = {} # stores which points have had a BFS done out of them
     bfs_dict = {} # stores the distances found by BFS so far
     #precomputed_bfs = explore.precompute_earth(passable_locations_earth, coord_to_direction, wavepoints)
     #start_time = time.time()
@@ -254,30 +224,6 @@ if curr_planet == bc.Planet.Earth:
     #print(time.time()-start_time)
 
 else:
-    bfs_fineness = 2 #max(int(((mars_width * mars_height) ** 0.5) / 10), 2) + 1
-    wavepoints = {}
-    if mars_width % bfs_fineness == 0:
-        upper_width = int(mars_width / bfs_fineness)
-    else:
-        upper_width = int(mars_width / bfs_fineness) + 1
-
-    if mars_height % 3 == 0:
-        upper_height = int(mars_height / bfs_fineness)
-    else:
-        upper_height = int(mars_height / bfs_fineness) + 1
-
-    for x_th in range(0, upper_width):
-        for y_th in range(0, upper_height):
-            lower_limit_x = x_th * bfs_fineness
-            lower_limit_y = y_th * bfs_fineness
-            possibs = [(lower_limit_x + i, lower_limit_y + j) for i in range(0, bfs_fineness) for j in range(0, bfs_fineness)]
-            actual = None
-            for possib in possibs:
-                if possib in passable_locations_mars and passable_locations_mars[possib]:
-                    actual = possib
-                    break
-            if actual is not None:
-                wavepoints[(x_th, y_th)] = actual
     bfs_dict = {}
 
 attacker = set([bc.UnitType.Ranger, bc.UnitType.Knight, bc.UnitType.Mage, bc.UnitType.Healer])

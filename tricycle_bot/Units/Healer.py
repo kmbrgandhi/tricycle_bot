@@ -28,7 +28,6 @@ def timestep(unit):
     composition = variables.info
     direction_to_coord = variables.direction_to_coord
     bfs_dict = variables.bfs_dict
-    bfs_fineness = variables.bfs_fineness
     enemy_team = variables.enemy_team
     my_team = variables.my_team
 
@@ -251,7 +250,7 @@ def check_radius_squares_factories(gc, unit, radius=1):
             return True
     return False
 
-def get_best_direction(gc, unit_id, unit_loc, target_loc, direction_to_coord, bfs_dict, bfs_fineness):
+def get_best_direction(gc, unit_id, unit_loc, target_loc, direction_to_coord, bfs_dict):
     start_coords = (unit_loc.x, unit_loc.y)
     target_coords = (target_loc.x, target_loc.y)
     explore.add_bfs(bfs_dict, target_coords, passable_locations)

@@ -120,7 +120,7 @@ while True:
                 #time_knights+=(time.time()-start_time)
 
         if gc.planet() == bc.Planet.Earth: 
-            print("QUADRANTS: ", variables.quadrant_battle_locs)
+            #print("QUADRANTS: ", variables.quadrant_battle_locs)
             locs_correct = True
             for unit in gc.my_units(): 
                 if unit.id in variables.unit_locations: 
