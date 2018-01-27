@@ -36,6 +36,10 @@ def timestep(unit):
     overcharge_targets = variables.overcharge_targets
 
     quadrant_battles = variables.quadrant_battle_locs
+    if variables.curr_planet == bc.Planet.Earth: 
+        quadrant_size = variables.earth_quadrant_size
+    else:
+        quadrant_size = variables.mars_quadrant_size
 
     unit_locations = variables.unit_locations
 
@@ -51,7 +55,7 @@ def timestep(unit):
         if unit.id not in unit_locations:
             loc = unit.location.map_location()
             unit_locations[unit.id] = (loc.x,loc.y)
-            f_f_quad = (int(loc.x / variables.quadrant_size), int(loc.y / variables.quadrant_size))
+            f_f_quad = (int(loc.x / quadrant_size), int(loc.y / quadrant_size))
             quadrant_battles[f_f_quad].add_ally(unit.id, "healer")
 
         unit_loc = unit_locations[unit.id]
@@ -141,12 +145,12 @@ def assign_to_quadrant(gc, unit, unit_loc):
         q_info = quadrant_battles[quadrant]
         coeff = q_info.urgency_coeff(healer=True)
         # distance =  ADD DISTANCE COEFF TOO
-        if coeff > best_coeff: 
+        if coeff > best_coeff and q_info.target_loc is not None: 
             best_quadrant = quadrant 
             best_coeff = coeff
 
     if best_coeff > 0: 
-        assigned_healers[unit.id] = quadrant_battles[best_quadrant].middle
+        assigned_healers[unit.id] = quadrant_battles[best_quadrant].target_loc
         return True, assigned_healers[unit.id]
     return False, None
 
@@ -170,12 +174,17 @@ def try_move_smartly(unit, map_loc1, map_loc2):
                     break
 
 def add_new_location(unit_id, old_coords, direction):
+    if variables.curr_planet == bc.Planet.Earth: 
+        quadrant_size = variables.earth_quadrant_size
+    else:
+        quadrant_size = variables.mars_quadrant_size
+
     unit_mov = variables.direction_to_coord[direction]
     new_coords = (old_coords[0]+unit_mov[0], old_coords[1]+unit_mov[1])
     variables.unit_locations[unit_id] = new_coords
 
-    old_quadrant = (int(old_coords[0] / variables.quadrant_size), int(old_coords[1] / variables.quadrant_size))
-    new_quadrant = (int(new_coords[0] / variables.quadrant_size), int(new_coords[1] / variables.quadrant_size))
+    old_quadrant = (int(old_coords[0] / quadrant_size), int(old_coords[1] / quadrant_size))
+    new_quadrant = (int(new_coords[0] / quadrant_size), int(new_coords[1] / quadrant_size))
 
     if old_quadrant != new_quadrant: 
         variables.quadrant_battle_locs[old_quadrant].remove_ally(unit_id)
@@ -227,6 +236,11 @@ def update_healers():
     overcharge_targets = variables.overcharge_targets
     quadrant_battles = variables.quadrant_battle_locs
 
+    if variables.curr_planet == bc.Planet.Earth: 
+        quadrant_size = variables.earth_quadrant_size
+    else:
+        quadrant_size = variables.mars_quadrant_size
+
     ## Remove dead healers from assigned healers OR healers with expired locations
     remove = set()
     for healer_id in assigned_healers:
@@ -234,7 +248,7 @@ def update_healers():
             remove.add(healer_id)
         else: 
             loc = assigned_healers[healer_id]
-            f_f_quad = (int(loc[0] / variables.quadrant_size), int(loc[1] / variables.quadrant_size))
+            f_f_quad = (int(loc[0] / quadrant_size), int(loc[1] / quadrant_size))
             healer_coeff = quadrant_battles[f_f_quad].urgency_coeff(healer=True)
             if healer_coeff == 0: 
                 remove.add(healer_id)
