@@ -42,12 +42,12 @@ def timestep(unit):
         quadrant_size = variables.mars_quadrant_size
 
     if location.is_on_map(): 
-        # unit_loc = location.map_location()
         if unit.id not in unit_locations:
             loc = unit.location.map_location()
             unit_locations[unit.id] = (loc.x,loc.y)
             f_f_quad = (int(loc.x / quadrant_size), int(loc.y / quadrant_size))
             quadrant_battles[f_f_quad].add_ally(unit.id, "knight")
+            variables.knight_attacks[unit.id] = 0
         
         unit_loc = unit_locations[unit.id]
 
@@ -68,6 +68,7 @@ def timestep(unit):
         # Attack
         if best_target is not None and gc.can_attack(unit.id, best_target.id):  # checked if ready to attack in get best target 
             gc.attack(unit.id, best_target.id)
+            variables.knight_attacks[unit.id] += 1
                 
         # Move
         if best_loc is not None and gc.is_move_ready(unit.id) and unit_loc != best_loc: 
@@ -162,6 +163,7 @@ def update_battles():
     """
     assigned_knights = variables.assigned_knights
     quadrant_battles = variables.quadrant_battle_locs
+    knight_attacks = variables.knight_attacks
 
     if variables.curr_planet == bc.Planet.Earth: 
         quadrant_size = variables.earth_quadrant_size
@@ -169,20 +171,35 @@ def update_battles():
         quadrant_size = variables.mars_quadrant_size
     
     ## Units
+    remove_assigned = set()
     remove = set()
-    for knight_id in assigned_knights:
-        if knight_id not in variables.my_unit_ids:
-            remove.add(knight_id)
+    for knight_id in knight_attacks:
+        if knight_id in assigned_knights and knight_id not in variables.my_unit_ids:
+            remove_assigned.add(knight_id)
         else: 
             loc = assigned_knights[knight_id]
             f_f_quad = (int(loc[0] / quadrant_size), int(loc[1] / quadrant_size))
             knight_coeff = quadrant_battles[f_f_quad].urgency_coeff("knight")
             if knight_coeff == 0: 
-                remove.add(knight_id)
+                remove_assigned.add(knight_id)
 
-    for knight_id in remove:
+        if knight_id in knight_attacks and knight_id not in variables.my_unit_ids: 
+            remove.add(knight_id)
+
+    for knight_id in remove_assigned: 
         del assigned_knights[knight_id]
 
+    knights_no_attack = 0
+    total_knights = len(knight_attacks)
+    for knight_id in remove:
+        num_times_attacked = knight_attacks[knight_id]
+        if num_times_attacked == 0: 
+            knights_no_attack += 1
+        del knight_attacks[knight_id]
 
+    if total_knights == 0: 
+        variables.died_without_attacking = 0
+    else: 
+        variables.died_without_attacking = knights_no_attack / total_knights
 
 
