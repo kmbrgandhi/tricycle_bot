@@ -120,13 +120,13 @@ class QuadrantInfo():
             self.num_died += 1
         elif ally_id in self.healers: 
             self.healers.remove(ally_id)
-            self.num_died += 1
+            # self.num_died += 1
         elif ally_id in self.mages: 
             self.mages.remove(ally_id)
-            self.num_died += 1
+            # self.num_died += 1
         elif ally_id in self.workers: 
             self.workers.remove(ally_id)
-            self.num_died += 1
+            # self.num_died += 1
 
     def add_ally(self, ally_id, robot_type): 
         if robot_type == "knight": 
@@ -140,18 +140,23 @@ class QuadrantInfo():
         elif robot_type == "worker":
             self.workers.add(ally_id) 
 
-    def urgency_coeff(self, healer=False): 
+    def urgency_coeff(self, robot_type): 
         """
         1. Number of allied units who died in this quadrant
         3. Number of enemies in the quadrant
         """
-        if not healer: 
-            return self.num_died/(self.quadrant_size**2) + len(self.enemies)/(self.quadrant_size**2)
-        else: 
+        if robot_type == "ranger": 
+            if self.health_coeff is not None: 
+                return self.num_died/(self.quadrant_size**2) + self.health_coeff
+            else:
+                return self.num_died/(self.quadrant_size**2)
+        elif robot_type == "healer":
             if self.health_coeff is not None: 
                 return (self.num_died/(self.quadrant_size**2)) + self.health_coeff
             else: 
                 return (self.num_died/(self.quadrant_size**2))
+        elif robot_type == "knight": 
+            return self.num_died/(self.quadrant_size**2) + 3*len(self.enemies)/(self.quadrant_size**2)
 
     def __str__(self):
         return "bottom left: " + str(self.bottom_left) + "\nallies: " + str(self.all_allies()) + "\nenemies: " + str(self.enemies) + "\ndied: " + str(self.num_died) + "\nhealth coeff: " + str(self.health_coeff) + "\n"
