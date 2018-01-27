@@ -169,11 +169,14 @@ current_worker_roles = {"miner":[],"builder":[],"blueprinter":[],"boarder":[], "
 
 ## KNIGHT VARIABLES ##
 assigned_knights = {}       ## knight_id: (x, y)
+our_init_locs = []
 init_enemy_locs = []
 for unit in earth_start_map.initial_units:
+    loc = unit.location.map_location()
     if unit.team == enemy_team:
-        loc = unit.location.map_location()
         init_enemy_locs.append(loc)
+    else:
+        our_init_locs.append(loc)
 
 ## HEALER VARIABLES ##
 healer_radius = 9
@@ -211,8 +214,6 @@ num_unsuccessful_savior = 0
 saviour_time_between = 0
 cost_of_rocket = 150
 
-
-
 mars = bc.Planet.Mars
 mars_map = gc.starting_map(mars)
 mars_width = mars_map.width
@@ -231,6 +232,8 @@ for x in range(-1, mars_width + 1):
 lst_of_passable_mars = [loc for loc in passable_locations_mars if passable_locations_mars[loc]]
 
 num_passable_locations_mars = len(passable_locations_mars)
+knight_rush = False
+switch_to_rangers = False
 
 if curr_planet == bc.Planet.Earth:
     passable_locations_earth = {}
@@ -271,6 +274,20 @@ if curr_planet == bc.Planet.Earth:
     #start_time = time.time()
     #precomputed_bfs_dist = explore.precompute_earth_dist(passable_locations_earth, coord_to_direction, wavepoints)
     #print(time.time()-start_time)
+    dist_to_enemies = []
+    dists = []
+    for our_init_loc in our_init_locs:
+        for their_init_loc in init_enemy_locs:
+            our_coords = (our_init_loc.x, our_init_loc.y)
+            their_coords = (their_init_loc.x, their_init_loc.y)
+            our_coords_val = our_coords[1]*my_width + our_coords[0]
+            their_coords_val = their_coords[1] * my_width + their_coords[0]
+            dist = bfs_array[our_coords_val, their_coords_val]
+            if dist!=float('inf'):
+                dists.append(dist)
+
+    if min(dists) < 20 and max(dists) < 48:
+        knight_rush = True
 
 else:
     my_width = mars_width

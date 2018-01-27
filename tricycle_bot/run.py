@@ -1,7 +1,9 @@
-import battlecode as bc
+import gc as gcollector
 import random
 import sys
+import time
 import traceback
+
 import Units.Healer as healer
 import Units.Knight as knight
 import Units.Mage as mage
@@ -9,15 +11,9 @@ import Units.Ranger as ranger
 import Units.Worker as worker
 import Units.factory as factory
 import Units.rocket as rocket
-import Units.sense_util as sense_util
-import Units.explore as explore
 import Units.variables as variables
-import Units.update_functions as update
 import research
-import time
-import cProfile
-import gc as gcollector
-
+import update_functions as update
 
 print("pystarting")
 

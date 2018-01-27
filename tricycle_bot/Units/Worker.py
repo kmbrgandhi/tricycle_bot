@@ -1075,7 +1075,7 @@ def get_factory_limit():
 	"""
 
 def get_rocket_limit():
-	return 3
+	return 4
 
 def get_closest_site(my_unit,my_location,blueprinting_queue):
 	
