@@ -61,6 +61,8 @@ while True:
     print("PYROUND:",gc.round())
     try:
         for unit in variables.my_units:
+            if gc.get_time_left_ms()<250:
+                break
             # respective unit types execute their own AI
             if unit.unit_type == unit_types["worker"]:
                 try:

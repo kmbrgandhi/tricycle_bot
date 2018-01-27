@@ -44,7 +44,7 @@ def timestep(unit):
 				gc.produce_robot(unit.id, bc.UnitType.Worker)
 		#elif total_units[1]<5 and gc.round() < 70:
 		#	gc.produce_robot(unit.id, bc.UnitType.Knight)
-		elif total_units[2] < 0.9 * num_non_workers or total_units[2]<1:
+		elif total_units[2] < 0.8 * num_non_workers or total_units[2]<1:
 			gc.produce_robot(unit.id, bc.UnitType.Ranger)
 		else:
 			gc.produce_robot(unit.id, bc.UnitType.Healer)
