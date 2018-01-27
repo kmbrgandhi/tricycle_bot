@@ -10,10 +10,15 @@ import Units.variables as variables
 import time
 
 battle_radius = 10
+if variables.curr_planet==bc.Planet.Earth:
+    passable_locations = variables.passable_locations_earth
+else:
+    passable_locations = variables.passable_locations_mars
 
 def timestep(unit):
 	#print(building_assignment)
 	# last check to make sure the right unit type is running this
+	start_time = time.time()
 	gc = variables.gc
 	info = variables.info
 	karbonite_locations = variables.karbonite_locations
@@ -47,7 +52,7 @@ def timestep(unit):
 	my_location = unit.location.map_location()
 
 	if my_location.planet is variables.mars:
-		if gc.round()>700:
+		if gc.round()>720:
 			try_replicate = replicate(gc, unit)
 			if try_replicate:
 				return
@@ -84,7 +89,7 @@ def timestep(unit):
 			for dir in variables.directions:
 				map_loc = my_location.add(dir)
 				map_loc_coords = (map_loc.x, map_loc.y)
-				if map_loc_coords in variables.passable_locations_earth and variables.passable_locations_earth[map_loc_coords]:
+				if map_loc_coords in passable_locations and passable_locations[map_loc_coords]:
 					if gc.can_blueprint(unit.id, variables.unit_types["rocket"], dir):
 						gc.blueprint(unit.id, variables.unit_types["rocket"], dir)
 						variables.saviour_blueprinted = True
@@ -100,7 +105,7 @@ def timestep(unit):
 						variables.saviour_blueprinted_id = None
 						variables.num_unsuccessful_savior = 0
 						variables.saviour_time_between = 0
-						if gc.has_unit_at_location(map_loc) and gc.karbonite()>75:
+						if gc.has_unit_at_location(map_loc) and gc.karbonite()>150:
 							in_the_way_unit = gc.sense_unit_at_location(map_loc)
 							gc.disintegrate_unit(in_the_way_unit.id)
 							if gc.can_blueprint(unit.id, variables.unit_types["rocket"], dir):
@@ -112,7 +117,7 @@ def timestep(unit):
 								blueprinted = True
 								break
 
-			if not blueprinted and gc.karbonite() > 75:
+			if not blueprinted and gc.karbonite() > 150:
 				variables.num_unsuccessful_savior+=1
 		else:
 			variables.saviour_time_between+=1
@@ -128,6 +133,7 @@ def timestep(unit):
 	
 	current_num_workers = info[0]
 	max_num_workers = get_worker_cap(gc,karbonite_locations, info, num_enemies)
+	print("max num workers",max_num_workers)
 	worker_spacing = 8
 
 	# runs this block every turn if unit is miner
@@ -158,7 +164,8 @@ def timestep(unit):
 		#print(unit.id, "at", unit.location.map_location(), "is trying to move to", away_from_units)
 
 		movement.try_move(gc,unit,(my_location.x,my_location.y),away_from_units)
-
+	if time.time()-start_time > 0.3:
+		print("TIME FOR WORKER:", time.time()-start_time)
 def check_if_saviour_died():
 	for my_unit in variables.my_units:
 		if variables.saviour_worker_id ==my_unit.id:
@@ -167,7 +174,7 @@ def check_if_saviour_died():
 def near_factory(my_location):
 	my_location_coords = (my_location.x, my_location.y)
 	for coords in explore.coord_neighbors(my_location_coords, diff = explore.diffs_20):
-		if coords in variables.passable_locations_earth and variables.passable_locations_earth[coords]:
+		if coords in passable_locations and passable_locations[coords]:
 			map_loc = bc.MapLocation(bc.Planet.Earth, coords[0], coords[1])
 			if variables.gc.can_sense_location(map_loc) and variables.gc.has_unit_at_location(map_loc):
 				unit = variables.gc.sense_unit_at_location(map_loc)
@@ -400,7 +407,7 @@ def designate_roles():
 
 							for site in nearby_sites:
 								site_coord = (site.x,site.y)
-								if site_coord not in variables.passable_locations_earth or not variables.passable_locations_earth[site_coord]: continue
+								if site_coord not in passable_locations or not passable_locations[site_coord]: continue
 								if invalid_building_locations[site_coord]:
 									invalid_building_locations[site_coord] = False
 
@@ -426,7 +433,7 @@ def designate_roles():
 
 							for site in nearby_sites:
 								site_coord = (site.x,site.y)
-								if site_coord not in variables.passable_locations_earth or not variables.passable_locations_earth[site_coord]: continue
+								if site_coord not in passable_locations or not passable_locations[site_coord]: continue
 								if invalid_building_locations[site_coord]:
 									invalid_building_locations[site_coord] = False
 
@@ -476,8 +483,8 @@ def get_workers_per_building(gc,start_map,building_location):
 	#print("checking workers per building")
 	for location in adjacent:
 		location_coord = (location.x,location.y)
-		if location_coord not in variables.passable_locations_earth or location_coord == self_coord: continue
-		if variables.passable_locations_earth[location_coord]:
+		if location_coord not in passable_locations or location_coord == self_coord: continue
+		if passable_locations[location_coord]:
 			num_adjacent_spaces += 1
 
 	return min(num_adjacent_spaces,max_workers_per_building)
@@ -531,23 +538,25 @@ def repair(gc, unit, my_location, current_roles):
 def try_move_smartly(unit, map_loc1, map_loc2):
 	if variables.gc.is_move_ready(unit.id):
 		our_coords = (map_loc1.x, map_loc1.y)
-		if int(map_loc1.x / variables.bfs_fineness) == int(map_loc2.x / variables.bfs_fineness) and int(map_loc1.y/ variables.bfs_fineness)== int(map_loc2.y / variables.bfs_fineness):#sense_util.distance_squared_between_maplocs(map_loc1, map_loc2) < (2 * variables.bfs_fineness ** 2)+1:
-			dir = map_loc1.direction_to(map_loc2)
-		else:
-			target_coords_thirds = (
-			int(map_loc2.x / variables.bfs_fineness), int(map_loc2.y / variables.bfs_fineness))
-			if (our_coords, target_coords_thirds) in variables.precomputed_bfs:
-				dir = variables.precomputed_bfs[(our_coords, target_coords_thirds)]
-			else:
-				dir = map_loc1.direction_to(map_loc2)
-		shape = variables.direction_to_coord[dir]
-		options = sense_util.get_best_option(shape)
-		for option in options:
-			if variables.gc.can_move(unit.id, option):
-				variables.gc.move_robot(unit.id, option)
-				## CHANGE LOC IN NEW DATA STRUCTURE
-				add_new_location(unit.id, our_coords, option)
-				break
+		target_coords = (map_loc2.x, map_loc2.y)
+		print(target_coords)
+		our_coords_val = Ranger.get_coord_value(our_coords)
+		print(our_coords_val)
+		target_coords_val = Ranger.get_coord_value(target_coords)
+		print(target_coords_val)
+		bfs_array = variables.bfs_array
+		if bfs_array[our_coords_val, target_coords_val] != float('inf'):
+			best_dirs = Ranger.use_dist_bfs(our_coords, target_coords, bfs_array)
+			choice_of_dir = random.choice(best_dirs)
+			shape = variables.direction_to_coord[choice_of_dir]
+			options = sense_util.get_best_option(shape)
+			for option in options:
+				if variables.gc.can_move(unit.id, option):
+					variables.gc.move_robot(unit.id, option)
+					## CHANGE LOC IN NEW DATA STRUCTURE
+					add_new_location(unit.id, our_coords, option)
+					break
+
 
 def board(gc,my_unit,my_location,current_roles):
 	finished_rockets = []
@@ -582,13 +591,12 @@ def board(gc,my_unit,my_location,current_roles):
 def get_worker_cap(gc,karbonite_locations, info, num_enemies):
 	#print("KARBONITE INFO LENGTH: ",len(karbonite_locations))
 	#print(len(karbonite_locations))
-	print(min(3 + float(len(karbonite_locations)/2),20))
 
 	if num_enemies > 2*sum(info[1:4])/3:
 		#print('replication cap yes')
 		return 6
 	elif info[5] >= 1:
-		return min(3 + float(len(karbonite_locations)/3),20)
+		return min(3 + float(len(karbonite_locations)/30),20)
 	else:
 		return min(3 + float(len(karbonite_locations)/3),6)
 
@@ -600,11 +608,13 @@ def replicate(gc,unit,direction=None):
 		if gc.can_replicate(unit.id,direction):
 			replicated = True
 			gc.replicate(unit.id,direction)
+			variables.info[0] += 1
 	elif variables.my_karbonite >= variables.unit_types["worker"].replicate_cost():
 		for direction in variables.directions:
 			if gc.can_replicate(unit.id,direction):
 				replicated = True
 				gc.replicate(unit.id,direction)
+				variables.info[0] += 1
 	return replicated
 
 # FOR EARTH ONLY
@@ -634,25 +644,31 @@ def get_closest_deposit(gc,unit,position,karbonite_locations,in_vision_range=Fal
 	is_deposit_in_vision_range = False
 
 	for location_coord in explore.coord_neighbors(position_coord, diff=explore.diffs_50, include_self=True):
-		location_coord_thirds = (int(location_coord[0]/variables.bfs_fineness), int(location_coord[1]/variables.bfs_fineness))
-		if location_coord in karbonite_locations and (position_coord, location_coord_thirds) in variables.precomputed_bfs:
-			is_deposit_in_vision_range = True
-			
-			karbonite_location = bc.MapLocation(planet,location_coord[0],location_coord[1])
-			distance_to_deposit = sense_util.distance_squared_between_coords(position_coord,location_coord)
-			if distance_to_deposit < current_distance:
-				current_distance = distance_to_deposit 
-				closest_deposit = karbonite_location
+		#location_coord_thirds = (int(location_coord[0]/variables.bfs_fineness), int(location_coord[1]/variables.bfs_fineness))
+
+		if location_coord in karbonite_locations:
+			our_coords_val = Ranger.get_coord_value(position_coord)
+			target_coords_val = Ranger.get_coord_value(location_coord)
+			if variables.bfs_array[our_coords_val, target_coords_val] != float('inf'):
+				is_deposit_in_vision_range = True
+
+				karbonite_location = bc.MapLocation(planet,location_coord[0],location_coord[1])
+				distance_to_deposit = sense_util.distance_squared_between_coords(position_coord,location_coord)
+
+				if distance_to_deposit < current_distance:
+					current_distance = distance_to_deposit
+					closest_deposit = karbonite_location
 
 	if not is_deposit_in_vision_range:
 		for x,y in karbonite_locations.keys():
 			karbonite_location = bc.MapLocation(planet,x,y)
 			karbonite_coord = (x,y)
-			karbonite_coord_thirds = (int(karbonite_coord[0] / variables.bfs_fineness), int(karbonite_coord[1] / variables.bfs_fineness))
-
+			#karbonite_coord_thirds = (int(karbonite_coord[0] / variables.bfs_fineness), int(karbonite_coord[1] / variables.bfs_fineness))
 			distance_to_deposit = sense_util.distance_squared_between_coords(position_coord,karbonite_coord)
 			#keep updating current closest deposit to unit
-			if distance_to_deposit < current_distance and (position_coord, karbonite_coord_thirds) in variables.precomputed_bfs:
+			our_coords_val = Ranger.get_coord_value(position_coord)
+			target_coords_val = Ranger.get_coord_value(karbonite_coord)
+			if distance_to_deposit < current_distance and variables.bfs_array[our_coords_val, target_coords_val] != float('inf'):
 				current_distance = distance_to_deposit 
 				closest_deposit = karbonite_location
 
@@ -731,7 +747,8 @@ def mine_mars(gc,unit,my_location):
 	current_distance = float('inf')
 	closest_deposit = bc.MapLocation(planet,-1,-1)
 	for deposit_location in all_locations:
-		if gc.karbonite_at(deposit_location) == 0:
+		deposit_location_coords = (deposit_location.x, deposit_location.y)
+		if gc.karbonite_at(deposit_location) == 0 or not passable_locations[deposit_location_coords]:
 			continue
 		distance_to_deposit = sense_util.distance_squared_between_maplocs(my_location, deposit_location)
 		#keep updating current closest deposit to unit	
@@ -783,7 +800,7 @@ def update_building_assignment(gc,building_assignment,blueprinting_assignment):
 			for site in reevaluated_sites:
 				site_coords = (site.x,site.y)
 
-				if site_coords not in variables.passable_locations_earth or not variables.passable_locations_earth[site_coords]: continue
+				if site_coords not in passable_locations or not passable_locations[site_coords]: continue
 				if invalid_building_locations[site_coords]: continue
 
 				nearby = gc.sense_nearby_units(site,variables.factory_spacing)
@@ -841,6 +858,7 @@ def build(gc,my_unit,my_location,start_map,building_assignment,current_roles):
 	#print("building_assignment",building_assignment)
 	my_nearby_units = variables.my_units
 	unit_was_not_assigned = True
+	info = variables.info
 
 	assigned_building = None
 
@@ -878,7 +896,7 @@ def build(gc,my_unit,my_location,start_map,building_assignment,current_roles):
 	adjacent_locs_to_blueprint = adjacent_locations(assigned_location)
 
 	if my_location.is_adjacent_to(assigned_location):
-		if len(building_assignment[assigned_building.id]) < variables.min_workers_per_building:
+		if len(building_assignment[assigned_building.id]) < variables.min_workers_per_building and info[0] < get_worker_cap(gc,variables.karbonite_locations,info,variables.num_enemies):
 			#print("going to try to replicate")
 			if variables.my_karbonite >= variables.unit_types["worker"].replicate_cost():
 				adjacent_to_my_location = adjacent_locations(my_location)
@@ -894,6 +912,7 @@ def build(gc,my_unit,my_location,start_map,building_assignment,current_roles):
 						if gc.can_replicate(my_unit.id,direction):
 							#print("right before replication")
 							gc.replicate(my_unit.id,direction)
+							info[0] += 1
 							new_unit = gc.sense_unit_at_location(adjacent_location)
 
 							#print("new replicated unit",new_unit.id)
@@ -906,7 +925,7 @@ def build(gc,my_unit,my_location,start_map,building_assignment,current_roles):
 		open_spaces = explore.coord_neighbors((assigned_location.x,assigned_location.y), diff = explore.diff_neighbors, include_self = False)
 		self_adjacent = explore.coord_neighbors((my_location.x,my_location.y), diff = explore.diff_neighbors, include_self = False)
 		for x,y in open_spaces:
-			if (x,y) in variables.passable_locations_earth and variables.passable_locations_earth[(x,y)] and (x,y) in open_spaces:
+			if (x,y) in passable_locations and passable_locations[(x,y)] and (x,y) in open_spaces:
 				map_loc = bc.MapLocation(variables.earth,x,y)
 				if not gc.has_unit_at_location(map_loc):
 					#print("i am at",my_location)
@@ -945,8 +964,8 @@ def adjacent_locations(location):
 	y = location.y
 	output = []
 	for dx,dy in d:
-		if (x+dx,y+dy) in variables.passable_locations_earth:
-			if variables.passable_locations_earth[(x+dx,y+dy)]:
+		if (x+dx,y+dy) in passable_locations:
+			if passable_locations[(x+dx,y+dy)]:
 				output.append(bc.MapLocation(planet,x+dx,y+dy))
 	return output
 
@@ -958,8 +977,8 @@ def factory_spacing_locations(location):
 	y = location.y
 	output = []
 	for dx,dy in d:
-		if (x+dx,y+dy) in variables.passable_locations_earth:
-			if variables.passable_locations_earth[(x+dx,y+dy)]:
+		if (x+dx,y+dy) in passable_locations:
+			if passable_locations[(x+dx,y+dy)]:
 				output.append(bc.MapLocation(planet,x+dx,y+dy))
 	return output
 
@@ -976,13 +995,13 @@ def get_optimal_building_location(gc, start_map, center, building_type, karbonit
 		for default_location_coords in adjacent_locations:
 			default_location = bc.MapLocation(variables.curr_planet, default_location_coords[0],
 											  default_location_coords[1])
-			if default_location_coords in variables.passable_locations_earth and variables.passable_locations_earth[default_location_coords] and variables.invalid_building_locations[default_location_coords]:
+			if default_location_coords in passable_locations and passable_locations[default_location_coords] and variables.invalid_building_locations[default_location_coords]:
 				return default_location_coords
 
 	for location_coords in explore.coord_neighbors(center_coords, diff=explore.diffs_20, include_self=True):
 		location = bc.MapLocation(variables.curr_planet, location_coords[0], location_coords[1])
 		#print("can we build here?",variables.invalid_building_locations[location_coords],location)
-		if location_coords in variables.passable_locations_earth and variables.passable_locations_earth[location_coords] and variables.invalid_building_locations[location_coords]:
+		if location_coords in passable_locations and passable_locations[location_coords] and variables.invalid_building_locations[location_coords]:
 			# print("optimal building location time",time.time() - start_time)
 			adjacent_spaces = get_workers_per_building(gc,start_map,location)
 
@@ -1005,7 +1024,6 @@ def get_optimal_building_location(gc, start_map, center, building_type, karbonit
 				# print("par t2 location time",time.time() - start_time)
 				if karbonite_adjacent_locations[location_coords] > 0:
 					deposits_located = True
-
 			else:
 				continue
 

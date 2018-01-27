@@ -4,8 +4,16 @@ import sys
 import traceback
 import Units.sense_util as sense_util
 import Units.variables as variables
+import Units.explore as explore
+import Units.Ranger as Ranger
+
 
 import numpy as np
+
+if variables.curr_planet==bc.Planet.Earth:
+    passable_locations = variables.passable_locations_earth
+else:
+    passable_locations = variables.passable_locations_mars
 
 battle_radius = 9
 
@@ -14,10 +22,12 @@ def timestep(unit):
     # last check to make sure the right unit type is running this
     if unit.unit_type != bc.UnitType.Healer:
         return
-
+    # print('HEALER ID: ', unit.id)
     gc = variables.gc
 
     composition = variables.info
+    direction_to_coord = variables.direction_to_coord
+    bfs_array = variables.bfs_array
     enemy_team = variables.enemy_team
     my_team = variables.my_team
 
@@ -61,6 +71,8 @@ def timestep(unit):
                 if best_target is not None:
                     heal = True
                 assigned, best_loc = assign_to_quadrant(gc, unit, unit_loc)
+                # print('assigned? ', assigned)
+                # print('assigned loc: ', best_loc)
                 if not assigned: 
                     nearby = gc.sense_nearby_units_by_team(bc.MapLocation(variables.curr_planet, unit_loc[0], unit_loc[1]), 8, variables.my_team)
                     best_dir = sense_util.best_available_direction(gc,unit,nearby)  
@@ -81,6 +93,7 @@ def timestep(unit):
         loc = bc.MapLocation(variables.curr_planet, unit_loc[0], unit_loc[1])
         enemies = gc.sense_nearby_units_by_team(loc, unit.vision_range, enemy_team)
         if len(enemies) > 0: 
+            # print('I SEE ENEMIES')
             enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(loc))
             enemy_loc = enemies[0].location.map_location()
             best_dir = dir_away_from_enemy(gc, unit, loc, enemy_loc)
@@ -92,12 +105,15 @@ def timestep(unit):
                 best_loc = ally.location.map_location()
             elif unit.id in assigned_healers: 
                 best_loc = assigned_healers[unit.id]
-            else: 
-                best_dir = get_explore_dir(gc, unit, loc, directions)
+            #     print('already had a loc: ', best_loc)
+            # else:
+            #     print('UH OH')
 
-        # Special movement if already within healing range of the best location
-        if best_loc is not None and sense_util.distance_squared_between_coords(unit_loc, best_loc) < unit.attack_range():
-            best_loc = None ## Change this
+
+        # # Special movement if already within healing range of the best location
+        # if best_loc is not None and sense_util.distance_squared_between_coords(unit_loc, best_loc) < unit.attack_range()/2:
+        #     best_loc = None ## Change this
+        #     print('oopz too close')
 
         ## Do shit
         if best_target is not None:
@@ -105,7 +121,7 @@ def timestep(unit):
                 gc.overcharge(unit.id, best_target.id)
             if heal and gc.is_heal_ready(unit.id):
                 gc.heal(unit.id, best_target.id)
-        if best_dir is not None and gc.is_move_ready(unit.id): 
+        if best_dir is not None and gc.is_move_ready(unit.id) and gc.can_move(unit.id,best_dir): 
             gc.move_robot(unit.id, best_dir)
             add_new_location(unit.id, unit_loc, best_dir)
         elif best_loc is not None and gc.is_move_ready(unit.id) and unit_loc != best_loc:
@@ -130,32 +146,28 @@ def assign_to_quadrant(gc, unit, unit_loc):
             best_coeff = coeff
 
     if best_coeff > 0: 
-        assigned_healers[unit.id] = quadrant_battles[best_quadrant].bottom_left
-        return True, best_quadrant
+        assigned_healers[unit.id] = quadrant_battles[best_quadrant].middle
+        return True, assigned_healers[unit.id]
     return False, None
 
-def try_move_smartly(unit, coords1, coords2):
+def try_move_smartly(unit, map_loc1, map_loc2):
     if variables.gc.is_move_ready(unit.id):
-        if int(coords1[0] / variables.bfs_fineness) == int(coords1[1] / variables.bfs_fineness) and int(coords2[0]/ variables.bfs_fineness)== int(coords2[1] / variables.bfs_fineness):#sense_util.distance_squared_between_maplocs(map_loc1, map_loc2) < (2 * variables.bfs_fineness ** 2)+1:
-            map_loc1 = bc.MapLocation(variables.curr_planet, coords1[0], coords1[1])
-            map_loc2 = bc.MapLocation(variables.curr_planet, coords2[0], coords2[1])
-            d = map_loc1.direction_to(map_loc2)
-        else:
-            target_coords_thirds = (int(coords2[0] / variables.bfs_fineness), int(coords2[1] / variables.bfs_fineness))
-            if (coords1, target_coords_thirds) in variables.precomputed_bfs:
-                d = variables.precomputed_bfs[(coords1, target_coords_thirds)]
-            else:
-                map_loc1 = bc.MapLocation(variables.curr_planet, coords1[0], coords1[1])
-                map_loc2 = bc.MapLocation(variables.curr_planet, coords2[0], coords2[1])
-                d = map_loc1.direction_to(map_loc2)
-        shape = variables.direction_to_coord[d]
-        options = sense_util.get_best_option(shape)
-        for option in options:
-            if variables.gc.can_move(unit.id, option):
-                variables.gc.move_robot(unit.id, option)
-                ## CHANGE LOC IN NEW DATA STRUCTURE
-                add_new_location(unit.id, coords1, option)
-                break
+        our_coords = map_loc1
+        target_coords = map_loc2
+        bfs_array = variables.bfs_array
+        our_coords_val = Ranger.get_coord_value(our_coords)
+        target_coords_val = Ranger.get_coord_value(target_coords)
+        if bfs_array[our_coords_val, target_coords_val]!=float('inf'):
+            best_dirs = Ranger.use_dist_bfs(our_coords, target_coords, bfs_array)
+            choice_of_dir = random.choice(best_dirs)
+            shape = variables.direction_to_coord[choice_of_dir]
+            options = sense_util.get_best_option(shape)
+            for option in options:
+                if variables.gc.can_move(unit.id, option):
+                    variables.gc.move_robot(unit.id, option)
+                    ## CHANGE LOC IN NEW DATA STRUCTURE
+                    add_new_location(unit.id, our_coords, option)
+                    break
 
 def add_new_location(unit_id, old_coords, direction):
     unit_mov = variables.direction_to_coord[direction]
@@ -181,21 +193,6 @@ def dir_away_from_enemy(gc, unit, unit_loc, enemy_loc):
             if gc.can_move(unit.id, d): 
                 return d
     return None
-
-def get_explore_dir(gc, unit, location, directions):
-    # function to get a direction to explore by picking locations that are within some distance that are
-    # not visible to the team yet, and going towards them.
-    dir = None
-    close_locations = [x for x in gc.all_locations_within(location, 150) if
-                       not gc.can_sense_location(x)]
-    if len(close_locations) > 0:
-        dir = sense_util.best_available_direction_visibility(gc, unit, close_locations)
-    else:
-        dir = random.choice(directions)
-    if gc.can_move(unit.id, dir):
-        return dir
-    return None
-
 
 def get_best_target(gc, unit, coords, my_team):
     ## Attempt to heal nearby units
@@ -228,34 +225,41 @@ def update_healers():
     assigned_healers = variables.assigned_healers
     assigned_overcharge = variables.assigned_overcharge
     overcharge_targets = variables.overcharge_targets
+    quadrant_battles = variables.quadrant_battle_locs
 
     ## Remove dead healers from assigned healers OR healers with expired locations
     remove = set()
     for healer_id in assigned_healers:
         if healer_id not in variables.my_unit_ids: 
             remove.add(healer_id)
+        else: 
+            loc = assigned_healers[healer_id]
+            f_f_quad = (int(loc[0] / variables.quadrant_size), int(loc[1] / variables.quadrant_size))
+            healer_coeff = quadrant_battles[f_f_quad].urgency_coeff(healer=True)
+            if healer_coeff == 0: 
+                remove.add(healer_id)
 
     for healer_id in remove: 
         if healer_id in assigned_healers: 
             del assigned_healers[healer_id]
 
-    ## Remove dead healers from assigned overcharge
-    remove = set()
-    for healer_id in assigned_overcharge:
-        if healer_id not in variables.my_unit_ids:
-            remove.add(healer_id)
+    # ## Remove dead healers from assigned overcharge
+    # remove = set()
+    # for healer_id in assigned_overcharge:
+    #     if healer_id not in variables.my_unit_ids:
+    #         remove.add(healer_id)
 
-    for healer_id in remove:
-        del assigned_overcharge[healer_id]
+    # for healer_id in remove:
+    #     del assigned_overcharge[healer_id]
 
-    ## Remove dead overcharge targets 
-    remove = set()
-    for ally_id in overcharge_targets: 
-        if ally_id not in variables.my_unit_ids:
-            remove.add(ally_id)
+    # ## Remove dead overcharge targets 
+    # remove = set()
+    # for ally_id in overcharge_targets: 
+    #     if ally_id not in variables.my_unit_ids:
+    #         remove.add(ally_id)
 
-    for ally_id in remove:
-        overcharge_targets.remove(ally_id)
+    # for ally_id in remove:
+    #     overcharge_targets.remove(ally_id)
 
 
 

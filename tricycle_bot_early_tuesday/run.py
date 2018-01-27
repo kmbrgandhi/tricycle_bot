@@ -15,6 +15,8 @@ import Units.variables as variables
 import research
 import time
 import cProfile
+import gc as gcollector
+
 
 
 print("pystarting")
@@ -56,7 +58,7 @@ while True:
     variables.print_count = 0
 
     print("PYROUND:", variables.curr_round)
-    print("TIME LEFT:", gc.get_time_left_ms())
+    #print("TIME LEFT:", gc.get_time_left_ms())
     for poss_enemy in variables.units:
         if poss_enemy.team != variables.my_team and poss_enemy.unit_type in variables.attacker:
             variables.num_enemies += 1
@@ -186,6 +188,8 @@ while True:
     #    print('TIME SPENT ON HEALERS:', time_healers)
     #print('TIME SPENT ON ROCKETS:', time_knights)
     #print('TOTAL TIME:', time.time()-beginning_start_time)
+    if gc.round()%5==0:
+        gcollector.collect()
     gc.next_turn()
     # these lines are not strictly necessary, but it helps make the logs make more sense.
     # it forces everything we've written this turn to be written to the manager.
