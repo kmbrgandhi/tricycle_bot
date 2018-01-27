@@ -288,7 +288,7 @@ if curr_planet == bc.Planet.Earth:
             if dist!=float('inf'):
                 dists.append(dist)
 
-    if min(dists) < 20 and max(dists) < 48:
+    if min(dists) < 21 and max(dists) < 40:
         knight_rush = True
 
 else:
