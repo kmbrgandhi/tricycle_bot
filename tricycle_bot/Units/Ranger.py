@@ -510,7 +510,8 @@ def go_to_battle_new(gc, unit, battle_locs, location, direction_to_coord):
         if poss_target_coords is None:
             return None
         else:
-            target_coords = random.choice(poss_target_coords)
+            target= random.choice(poss_target_coords)
+            target_coords = (target.x, target.y)
     else:
         target_coords = random.choice(target_options)
 
