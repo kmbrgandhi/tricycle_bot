@@ -249,7 +249,6 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
     # if variables.print_count < 10:
     #    print("Sensing nearby units:", time.time() - start_time)
     if len(enemies) > 0:
-        visible_enemies = True
         start_time = time.time()
         closest_enemy = None
         closest_dist = float('inf')
@@ -269,6 +268,7 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
         # if variables.print_count < 10:
         #    print("Getting attack:", time.time() - start_time)
         if attack is not None:
+            visible_enemies = True
             if closest_enemy is not None:
                 start_time = time.time()
                 if check_radius_squares_factories(gc, location):
