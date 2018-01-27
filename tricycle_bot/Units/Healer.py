@@ -4,8 +4,16 @@ import sys
 import traceback
 import Units.sense_util as sense_util
 import Units.variables as variables
+import Units.explore as explore
+import Units.Ranger as Ranger
+
 
 import numpy as np
+
+if variables.curr_planet==bc.Planet.Earth:
+    passable_locations = variables.passable_locations_earth
+else:
+    passable_locations = variables.passable_locations_mars
 
 battle_radius = 9
 
@@ -18,6 +26,8 @@ def timestep(unit):
     gc = variables.gc
 
     composition = variables.info
+    direction_to_coord = variables.direction_to_coord
+    bfs_dict = variables.bfs_dict
     enemy_team = variables.enemy_team
     my_team = variables.my_team
 
@@ -97,9 +107,8 @@ def timestep(unit):
                 best_loc = assigned_healers[unit.id]
                 # print('already had a loc: ', best_loc)
             else:
-                # print('UH OH')
-            # else: 
-            #     best_dir = get_explore_dir(gc, unit, loc, directions)
+                print('UH OH')
+
 
         # Special movement if already within healing range of the best location
         if best_loc is not None and sense_util.distance_squared_between_coords(unit_loc, best_loc) < unit.attack_range()/2:
@@ -141,28 +150,23 @@ def assign_to_quadrant(gc, unit, unit_loc):
         return True, assigned_healers[unit.id]
     return False, None
 
-def try_move_smartly(unit, coords1, coords2):
-    if variables.gc.is_move_ready(unit.id):
-        if int(coords1[0] / variables.bfs_fineness) == int(coords1[1] / variables.bfs_fineness) and int(coords2[0]/ variables.bfs_fineness)== int(coords2[1] / variables.bfs_fineness):#sense_util.distance_squared_between_maplocs(map_loc1, map_loc2) < (2 * variables.bfs_fineness ** 2)+1:
-            map_loc1 = bc.MapLocation(variables.curr_planet, coords1[0], coords1[1])
-            map_loc2 = bc.MapLocation(variables.curr_planet, coords2[0], coords2[1])
-            d = map_loc1.direction_to(map_loc2)
-        else:
-            target_coords_thirds = (int(coords2[0] / variables.bfs_fineness), int(coords2[1] / variables.bfs_fineness))
-            if (coords1, target_coords_thirds) in variables.precomputed_bfs:
-                d = variables.precomputed_bfs[(coords1, target_coords_thirds)]
-            else:
-                map_loc1 = bc.MapLocation(variables.curr_planet, coords1[0], coords1[1])
-                map_loc2 = bc.MapLocation(variables.curr_planet, coords2[0], coords2[1])
-                d = map_loc1.direction_to(map_loc2)
-        shape = variables.direction_to_coord[d]
-        options = sense_util.get_best_option(shape)
-        for option in options:
-            if variables.gc.can_move(unit.id, option):
-                variables.gc.move_robot(unit.id, option)
-                ## CHANGE LOC IN NEW DATA STRUCTURE
-                add_new_location(unit.id, coords1, option)
-                break
+def try_move_smartly(unit, map_loc1, map_loc2):
+	if variables.gc.is_move_ready(unit.id):
+		our_coords = map_loc1
+		target_coords = map_loc2
+		explore.add_bfs(variables.bfs_dict, target_coords, passable_locations)
+		#target_coords_thirds = (int(map_loc2.x / variables.bfs_fineness), int(map_loc2.y / variables.bfs_fineness))
+		if (our_coords, target_coords) in variables.bfs_dict:
+			best_dirs = Ranger.use_dist_bfs(our_coords, target_coords, variables.bfs_dict)
+			choice_of_dir = random.choice(best_dirs)
+			shape = variables.direction_to_coord[choice_of_dir]
+			options = sense_util.get_best_option(shape)
+			for option in options:
+				if variables.gc.can_move(unit.id, option):
+					variables.gc.move_robot(unit.id, option)
+					## CHANGE LOC IN NEW DATA STRUCTURE
+					add_new_location(unit.id, our_coords, option)
+					break
 
 def add_new_location(unit_id, old_coords, direction):
     unit_mov = variables.direction_to_coord[direction]

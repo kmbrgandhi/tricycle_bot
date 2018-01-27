@@ -11,6 +11,7 @@ import Units.Mage as mage
 import Units.Ranger as ranger
 import Units.Worker as worker
 import Units.factory as factory
+import Units.rocket as rocket
 
 def update_variables():
     gc = variables.gc 
@@ -97,6 +98,9 @@ def update_variables():
 
     ## Healers
     healer.update_healers()
+
+    # Rockets
+    rocket.update_rockets()
 
     ## Mages
 
