@@ -60,7 +60,18 @@ curr_round = gc.round()
 print_count = 0
 
 ## MAP ##
-quadrant_size = 5
+if earth_start_map.height > earth_start_map.width: 
+    longest = earth_start_map.height
+else:
+    longest = earth_start_map.width
+
+if longest > 40: 
+    quadrant_size = 10
+elif longest > 30: 
+    quadrant_size = 8
+else: 
+    quadrant_size = 5
+    
 quadrant_battle_locs = {}
 
 ## ALL UNITS ##

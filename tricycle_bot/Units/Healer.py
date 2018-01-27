@@ -131,7 +131,7 @@ def assign_to_quadrant(gc, unit, unit_loc):
 
     if best_coeff > 0: 
         assigned_healers[unit.id] = quadrant_battles[best_quadrant].bottom_left
-        return True, best_quadrant
+        return True, assigned_healers[unit.id]
     return False, None
 
 def try_move_smartly(unit, coords1, coords2):
@@ -182,21 +182,6 @@ def dir_away_from_enemy(gc, unit, unit_loc, enemy_loc):
                 return d
     return None
 
-def get_explore_dir(gc, unit, location, directions):
-    # function to get a direction to explore by picking locations that are within some distance that are
-    # not visible to the team yet, and going towards them.
-    dir = None
-    close_locations = [x for x in gc.all_locations_within(location, 150) if
-                       not gc.can_sense_location(x)]
-    if len(close_locations) > 0:
-        dir = sense_util.best_available_direction_visibility(gc, unit, close_locations)
-    else:
-        dir = random.choice(directions)
-    if gc.can_move(unit.id, dir):
-        return dir
-    return None
-
-
 def get_best_target(gc, unit, coords, my_team):
     ## Attempt to heal nearby units
     loc = bc.MapLocation(variables.curr_planet, coords[0], coords[1])
@@ -228,34 +213,41 @@ def update_healers():
     assigned_healers = variables.assigned_healers
     assigned_overcharge = variables.assigned_overcharge
     overcharge_targets = variables.overcharge_targets
+    quadrant_battles = variables.quadrant_battle_locs
 
     ## Remove dead healers from assigned healers OR healers with expired locations
     remove = set()
     for healer_id in assigned_healers:
         if healer_id not in variables.my_unit_ids: 
             remove.add(healer_id)
+        else: 
+            loc = assigned_healers[healer_id]
+            f_f_quad = (int(loc[0] / variables.quadrant_size), int(loc[1] / variables.quadrant_size))
+            healer_coeff = quadrant_battles[f_f_quad].urgency_coeff(healer=True)
+            if healer_coeff == 0: 
+                remove.add(healer_id)
 
     for healer_id in remove: 
         if healer_id in assigned_healers: 
             del assigned_healers[healer_id]
 
-    ## Remove dead healers from assigned overcharge
-    remove = set()
-    for healer_id in assigned_overcharge:
-        if healer_id not in variables.my_unit_ids:
-            remove.add(healer_id)
+    # ## Remove dead healers from assigned overcharge
+    # remove = set()
+    # for healer_id in assigned_overcharge:
+    #     if healer_id not in variables.my_unit_ids:
+    #         remove.add(healer_id)
 
-    for healer_id in remove:
-        del assigned_overcharge[healer_id]
+    # for healer_id in remove:
+    #     del assigned_overcharge[healer_id]
 
-    ## Remove dead overcharge targets 
-    remove = set()
-    for ally_id in overcharge_targets: 
-        if ally_id not in variables.my_unit_ids:
-            remove.add(ally_id)
+    # ## Remove dead overcharge targets 
+    # remove = set()
+    # for ally_id in overcharge_targets: 
+    #     if ally_id not in variables.my_unit_ids:
+    #         remove.add(ally_id)
 
-    for ally_id in remove:
-        overcharge_targets.remove(ally_id)
+    # for ally_id in remove:
+    #     overcharge_targets.remove(ally_id)
 
 
 
