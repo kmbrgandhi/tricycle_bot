@@ -168,8 +168,6 @@ def timestep(unit):
 		#print(unit.id, "at", unit.location.map_location(), "is trying to move to", away_from_units)
 
 		movement.try_move(gc,unit,(my_location.x,my_location.y),away_from_units)
-	if time.time()-start_time > 0.3:
-		print("TIME FOR WORKER:", time.time()-start_time)
 def check_if_saviour_died():
 	for my_unit in variables.my_units:
 		if variables.saviour_worker_id ==my_unit.id:
@@ -380,7 +378,6 @@ def designate_roles():
 							my_role = "blueprinter"
 							#blueprinting_queue.append(new_site)
 					elif can_blueprint_factory(gc,factory_count):
-						print("can blueprint factory!",factory_count)
 
 						best_location_tuple = get_optimal_building_location(gc,start_map,worker_location,unit_types["factory"],karbonite_locations,blueprinting_queue,blueprinting_assignment)
 						#print(worker.id,"building in ",best_location_tuple)
@@ -632,9 +629,10 @@ def get_closest_deposit(gc,unit,position,karbonite_locations,in_vision_range=Fal
 def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, building_assignment, battle_locs):
 
 	#start_time = time.time()
-
+	start_time = time.time()
 	closest_deposit = get_closest_deposit(gc,my_unit,my_location,karbonite_locations)
-
+	if time.time()-start_time > 0.3:
+		print(time.time()-start_time)
 	#print("closest deposit time",time.time() - start_time)
 	#check to see if there even are deposits
 	if start_map.on_map(closest_deposit):
@@ -989,7 +987,7 @@ def can_blueprint_factory(gc,factory_count):
 
 def can_blueprint_rocket(gc,rocket_count):
 	if variables.num_passable_locations_mars>0 and variables.research.get_level(variables.unit_types["rocket"]) > 0:
-		if gc.round() > 180:
+		if gc.round() > 250:
 			return True
 
 	return False
@@ -1004,7 +1002,7 @@ def get_factory_limit():
 	"""
 
 def get_rocket_limit():
-	return 3
+	return 2
 
 def get_closest_site(my_unit,my_location,blueprinting_queue):
 	
