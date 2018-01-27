@@ -55,6 +55,11 @@ def update_variables():
         f_f_quad = (int(loc[0] / quadrant_size), int(loc[1] / quadrant_size))
         variables.quadrant_battle_locs[f_f_quad].remove_ally(unit_id)
 
+    # Update % health of fighting allies in quadrant
+    for quadrant in variables.quadrant_battle_locs: 
+        q_info = variables.quadrant_battle_locs[quadrant]
+        q_info.update_ally_health_coefficient(gc)
+
     # Something something enemies
     for poss_enemy in variables.units:
         if poss_enemy.team != variables.my_team and poss_enemy.unit_type in variables.attacker:

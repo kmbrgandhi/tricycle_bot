@@ -30,6 +30,8 @@ class QuadrantInfo():
 
         self.enemy_locs = {}
 
+        self.health_coeff = None
+
     def get_passable_location(self):
         middle = (self.bottom_left[0]+int(self.quadrant_size/2), self.bottom_left[1]+int(self.quadrant_size/2))
         if variables.curr_planet == bc.Planet.Earth: 
@@ -65,6 +67,18 @@ class QuadrantInfo():
     def add_enemy(self, enemy, enemy_id, enemy_loc): 
         self.enemies.add(enemy_id)
         self.enemy_locs[enemy_loc] = enemy
+
+    def update_ally_health_coefficient(self, gc): 
+        health = 0
+        max_health = 0
+        if len(self.fighters()) == 0: 
+            self.health_coeff = None
+        else: 
+            for ally_id in self.fighters(): 
+                ally = gc.unit(ally_id)
+                health += ally.health
+                max_health += ally.max_health
+            self.health_coeff = 1 - (health / max_health)
 
     def update_enemies(self, gc): 
         ## Reset
@@ -134,10 +148,13 @@ class QuadrantInfo():
         if not healer: 
             return self.num_died/(self.quadrant_size**2) + len(self.enemies)/(self.quadrant_size**2)
         else: 
-            return 3*(self.num_died/(self.quadrant_size**2))
+            if self.health_coeff is not None: 
+                return (self.num_died/(self.quadrant_size**2)) + self.health_coeff
+            else: 
+                return (self.num_died/(self.quadrant_size**2))
 
     def __str__(self):
-        return "bottom left: " + str(self.bottom_left) + "\nallies: " + str(self.all_allies()) + "\nenemies: " + str(self.enemies) + "\ndied: " + str(self.num_died) + "\n" 
+        return "bottom left: " + str(self.bottom_left) + "\nallies: " + str(self.all_allies()) + "\nenemies: " + str(self.enemies) + "\ndied: " + str(self.num_died) + "\nhealth coeff: " + str(self.health_coeff) + "\n"
 
     def __repr__(self):
-        return "bottom left: " + str(self.bottom_left) + "\nallies: " + str(self.all_allies()) + "\nenemies: " + str(self.enemies) + "\ndied: " + str(self.num_died) + "\n" 
+        return "bottom left: " + str(self.bottom_left) + "\nallies: " + str(self.all_allies()) + "\nenemies: " + str(self.enemies) + "\ndied: " + str(self.num_died) + "\nhealth coeff: " + str(self.health_coeff) + "\n" 
