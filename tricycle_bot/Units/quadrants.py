@@ -20,6 +20,7 @@ class QuadrantInfo():
 
         self.enemies = set()
         self.enemy_workers = set()
+        self.enemy_factories = set()
 
         self.knights = set()
         self.rangers = set()
@@ -85,6 +86,7 @@ class QuadrantInfo():
         ## Reset
         self.enemies = set()
         self.enemy_workers = set()
+        self.enemy_factories = set()
 
         if variables.curr_planet == bc.Planet.Earth: 
             max_width = variables.earth_start_map.width
@@ -106,10 +108,13 @@ class QuadrantInfo():
                         if gc.has_unit_at_location(map_loc):
                             unit = gc.sense_unit_at_location(map_loc)
                             if unit.team == variables.enemy_team:
-                                if unit.unit_type != bc.UnitType.Worker: 
+                                if unit.unit_type == bc.UnitType.Worker: 
+                                    self.enemy_workers.add(unit.id)
+                                elif unit.unit_type == bc.UnitType.Factory: 
+                                    self.enemy_factories.add(unit.id)
                                     self.enemies.add(unit.id)
                                 else: 
-                                    self.enemy_workers.add(unit.id)
+                                    self.enemies.add(unit.id)                                    
                                 self.enemy_locs[loc] = unit
                         elif loc in self.enemy_locs: 
                             del self.enemy_locs[loc]
@@ -161,10 +166,10 @@ class QuadrantInfo():
             else: 
                 return (self.num_died/(self.quadrant_size**2))
         elif robot_type == "knight": 
-            return 5*len(self.enemies)/(self.quadrant_size**2) + len(self.enemy_workers)/(self.quadrant_size**2)
+            return len(self.enemy_factories)/self.quadrant_size + 2*len(self.enemies)/(self.quadrant_size**2) + len(self.enemy_workers)/(self.quadrant_size**2)
 
     def __str__(self):
-        return "bottom left: " + str(self.bottom_left) + "\nallies: " + str(self.all_allies()) + "\nenemies: " + str(self.enemies) + "\ndied: " + str(self.num_died) + "\nhealth coeff: " + str(self.health_coeff) + "\n"
+        return "bottom left: " + str(self.bottom_left) + "\nallies: " + str(self.all_allies()) + "\nenemies: " + str(self.enemies) + "\ndied: " + str(self.num_died) + "\ncoeff: " + str(self.urgency_coeff("knight")) + "\n"
 
     def __repr__(self):
-        return "bottom left: " + str(self.bottom_left) + "\nallies: " + str(self.all_allies()) + "\nenemies: " + str(self.enemies) + "\ndied: " + str(self.num_died) + "\nhealth coeff: " + str(self.health_coeff) + "\n" 
+        return "bottom left: " + str(self.bottom_left) + "\nallies: " + str(self.all_allies()) + "\nenemies: " + str(self.enemies) + "\ndied: " + str(self.num_died) + "\ncoeff: " + str(self.urgency_coeff("knight")) + "\n" 

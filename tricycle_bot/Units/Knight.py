@@ -51,9 +51,6 @@ def timestep(unit):
         
         unit_loc = unit_locations[unit.id]
 
-        ## Attack
-        best_target = get_best_target(gc, unit, unit_loc, knight_unit_priority)
-
         ## Movement 
         # If new knight assign to location 
         if unit.id not in assigned_knights:
@@ -63,6 +60,18 @@ def timestep(unit):
                 best_dir = sense_util.best_available_direction(gc,unit,nearby)  
         else: 
             best_loc = assigned_knights[unit.id]
+
+        ## Attack based on if in quadrant 
+        if best_loc is not None: 
+            curr_quadrant = (int(unit_loc[0] / quadrant_size), int(unit_loc[1] / quadrant_size))
+            best_loc_quadrant = (int(best_loc[0] / quadrant_size), int(best_loc[1] / quadrant_size))
+
+            ## If in best quadrant already, then get best_loc towards the target
+            if curr_quadrant == best_loc_quadrant: 
+                best_target, best_loc = get_best_target_in_quadrant(gc, unit, unit_loc, knight_unit_priority)
+
+            else:
+                best_target = get_best_target(gc, unit, unit_loc, knight_unit_priority)
 
         ## Do shit
         # Attack
@@ -101,7 +110,7 @@ def assign_to_quadrant(gc, unit, unit_loc):
             target_coords_val = Ranger.get_coord_value(q_info.target_loc)
             if bfs_array[our_coords_val, target_coords_val]!=float('inf'):
                 distance = bfs_array[our_coords_val, target_coords_val]
-                coeff += (1 - distance/diagonal)
+                coeff += 3*(1 - distance/diagonal)
             if coeff > best_coeff and q_info.target_loc is not None: 
                 best_quadrant = quadrant 
                 best_coeff = coeff
@@ -156,6 +165,30 @@ def get_best_target(gc, unit, loc_coords, priority_order, javelin=False):
         return None
     best_target = max(vuln_enemies, key=lambda x: attack.coefficient_computation(gc, unit, x, location, priority_order))
     return best_target
+
+def get_best_target_in_quadrant(gc, unit, loc_coords, priority_order): 
+    """
+    Returns best_target, best_loc to move towards. 
+    """
+    enemy_team = variables.enemy_team
+    location = bc.MapLocation(variables.curr_planet,loc_coords[0],loc_coords[1])
+    vuln_enemies = gc.sense_nearby_units_by_team(location, unit.attack_range(), enemy_team)
+    # If there is a vuln enemy but can't attack then don't move
+    if len(vuln_enemies) > 0:
+        if not gc.is_attack_ready(unit.id):
+            return (None, None)
+        else: 
+            best_target = max(vuln_enemies, key=lambda x: attack.coefficient_computation(gc, unit, x, location, priority_order))
+            return (best_target, None)
+    # If there are no vuln enemies then look at vision range and choose to move towards nearby enemies
+    else: 
+        vuln_enemies = gc.sense_nearby_units_by_team(location, unit.vision_range, enemy_team)
+        if len(vuln_enemies) > 0: 
+            best_target = max(vuln_enemies, key=lambda x: attack.coefficient_computation(gc, unit, x, location, priority_order, far=True))
+            best_loc = (best_target.location.map_location().x, best_target.location.map_location().y)
+            return (None, best_loc)
+        return (None, None)
+
 
 def update_battles():
     """
