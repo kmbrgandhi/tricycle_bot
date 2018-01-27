@@ -13,7 +13,6 @@ import Units.sense_util as sense_util
 import Units.explore as explore
 import Units.variables as variables
 import Units.update_functions as update
-import Units.quadrants as quadrants
 import research
 import time
 import cProfile
@@ -40,20 +39,7 @@ random.seed(6137)
 research.research_step(gc)
 
 ## MAKE QUADRANTS
-x_coords = set([x for x in range(0,variables.earth_start_map.width,variables.quadrant_size)])
-y_coords = set([x for x in range(0,variables.earth_start_map.height,variables.quadrant_size)])
-
-for x in x_coords: 
-    for y in y_coords: 
-        variables.quadrant_battle_locs[(int(x/variables.quadrant_size),int(y/variables.quadrant_size))] = quadrants.QuadrantInfo((x,y))
-
-for unit in variables.earth_start_map.initial_units: 
-    loc = unit.location.map_location() 
-    quadrant = (int(loc.x/variables.quadrant_size),int(loc.y/variables.quadrant_size))
-    if unit.team == variables.enemy_team: 
-        variables.quadrant_battle_locs[quadrant].add_enemy(unit, unit.id, (loc.x,loc.y))
-    else:
-        variables.quadrant_battle_locs[quadrant].add_ally(unit.id, "worker")
+update.initiate_quadrants()
 
 # GENERAL
 # print('NEXT TO TERRAIN',locs_next_to_terrain)

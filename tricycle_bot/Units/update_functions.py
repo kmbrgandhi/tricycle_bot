@@ -4,6 +4,7 @@ import sys
 import traceback
 
 import Units.variables as variables
+import Units.quadrants as quadrants
 
 import Units.Healer as healer
 import Units.Knight as knight
@@ -38,6 +39,11 @@ def update_variables():
     # Update which ally unit id's are still alive & deaths per quadrant
     update_quadrants() # Updates enemies in quadrant & resets num dead allies
 
+    if variables.curr_planet == bc.Planet.Earth: 
+        quadrant_size = variables.earth_quadrant_size
+    else:
+        quadrant_size = variables.mars_quadrant_size
+
     remove = set()
     for unit_id in variables.unit_locations: 
         if unit_id not in variables.my_unit_ids: 
@@ -46,7 +52,7 @@ def update_variables():
         loc = variables.unit_locations[unit_id]
         del variables.unit_locations[unit_id]
 
-        f_f_quad = (int(loc[0] / variables.quadrant_size), int(loc[1] / variables.quadrant_size))
+        f_f_quad = (int(loc[0] / quadrant_size), int(loc[1] / quadrant_size))
         variables.quadrant_battle_locs[f_f_quad].remove_ally(unit_id)
 
     # Something something enemies
@@ -117,4 +123,31 @@ def update_quadrants():
         q_info = battle_quadrants[quadrant]
         q_info.reset_num_died()
         q_info.update_enemies(gc)
+
+def initiate_quadrants(): 
+    ## MAKE QUADRANTS
+    if variables.curr_planet == bc.Planet.Earth: 
+        width = variables.earth_start_map.width
+        height = variables.earth_start_map.height
+        quadrant_size = variables.earth_quadrant_size
+    else: 
+        width = variables.mars_start_map.width
+        height = variables.mars_start_map.height
+        quadrant_size = variables.mars_quadrant_size
+
+    x_coords = set([x for x in range(0,width,quadrant_size)])
+    y_coords = set([x for x in range(0,height,quadrant_size)])
+
+    for x in x_coords: 
+        for y in y_coords: 
+            variables.quadrant_battle_locs[(int(x/quadrant_size),int(y/quadrant_size))] = quadrants.QuadrantInfo((x,y))
+
+    if variables.curr_planet == bc.Planet.Earth: 
+        for unit in variables.earth_start_map.initial_units: 
+            loc = unit.location.map_location() 
+            quadrant = (int(loc.x/quadrant_size),int(loc.y/quadrant_size))
+            if unit.team == variables.enemy_team: 
+                variables.quadrant_battle_locs[quadrant].add_enemy(unit, unit.id, (loc.x,loc.y))
+            else:
+                variables.quadrant_battle_locs[quadrant].add_ally(unit.id, "worker")
 
