@@ -19,6 +19,7 @@ class QuadrantInfo():
         self.target_loc = self.get_passable_location()
 
         self.enemies = set()
+        self.enemy_workers = set()
 
         self.knights = set()
         self.rangers = set()
@@ -83,6 +84,7 @@ class QuadrantInfo():
     def update_enemies(self, gc): 
         ## Reset
         self.enemies = set()
+        self.enemy_workers = set()
 
         if variables.curr_planet == bc.Planet.Earth: 
             max_width = variables.earth_start_map.width
@@ -103,9 +105,12 @@ class QuadrantInfo():
                     if gc.can_sense_location(map_loc): 
                         if gc.has_unit_at_location(map_loc):
                             unit = gc.sense_unit_at_location(map_loc)
-                            if unit.team == variables.enemy_team and unit.unit_type != bc.UnitType.Worker: 
+                            if unit.team == variables.enemy_team:
+                                if unit.unit_type != bc.UnitType.Worker: 
+                                    self.enemies.add(unit.id)
+                                else: 
+                                    self.enemy_workers.add(unit.id)
                                 self.enemy_locs[loc] = unit
-                                self.enemies.add(unit.id)
                         elif loc in self.enemy_locs: 
                             del self.enemy_locs[loc]
                     elif loc in self.enemy_locs: 
@@ -156,7 +161,7 @@ class QuadrantInfo():
             else: 
                 return (self.num_died/(self.quadrant_size**2))
         elif robot_type == "knight": 
-            return self.num_died/(self.quadrant_size**2) + 3*len(self.enemies)/(self.quadrant_size**2)
+            return 5*len(self.enemies)/(self.quadrant_size**2) + len(self.enemy_workers)/(self.quadrant_size**2)
 
     def __str__(self):
         return "bottom left: " + str(self.bottom_left) + "\nallies: " + str(self.all_allies()) + "\nenemies: " + str(self.enemies) + "\ndied: " + str(self.num_died) + "\nhealth coeff: " + str(self.health_coeff) + "\n"
