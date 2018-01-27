@@ -119,18 +119,18 @@ while True:
                 rocket.timestep(unit)
                 #time_knights+=(time.time()-start_time)
 
-        if gc.planet() == bc.Planet.Earth: 
-            #print("QUADRANTS: ", variables.quadrant_battle_locs)
-            locs_correct = True
-            for unit in gc.my_units(): 
-                if unit.id in variables.unit_locations: 
-                    loc_coords = (unit.location.map_location().x, unit.location.map_location().y)
-                    recorded = variables.unit_locations[unit.id]
-                    if loc_coords != recorded: 
-                        locs_correct = False
-                        print('unit: ', unit)
-                        print('coords recorded: ', recorded)
-            print('are locs correct for all units: ', locs_correct)
+        # if gc.planet() == bc.Planet.Earth: 
+        #     print("QUADRANTS: ", variables.quadrant_battle_locs)
+        #     locs_correct = True
+        #     for unit in gc.my_units(): 
+        #         if unit.id in variables.unit_locations: 
+        #             loc_coords = (unit.location.map_location().x, unit.location.map_location().y)
+        #             recorded = variables.unit_locations[unit.id]
+        #             if loc_coords != recorded: 
+        #                 locs_correct = False
+        #                 print('unit: ', unit)
+        #                 print('coords recorded: ', recorded)
+        #     print('are locs correct for all units: ', locs_correct)
 
     except Exception as e:
         print('Error:', e)
