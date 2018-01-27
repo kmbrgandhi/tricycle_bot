@@ -52,7 +52,7 @@ def timestep(unit):
             loc = unit.location.map_location()
             variables.unit_locations[unit.id] = (loc.x, loc.y)
             f_f_quad = (int(loc.x / quadrant_size), int(loc.y / quadrant_size))
-            quadrant_battles[f_f_quad].add_ally(unit.id, "ranger")
+            quadrant_battles[f_f_quad].add_ally(unit.id, "mage")
 
         # start_time = time.time()
         map_loc = location.map_location()

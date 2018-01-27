@@ -44,7 +44,7 @@ def timestep(unit):
 				gc.produce_robot(unit.id, bc.UnitType.Worker)
 		#elif total_units[1]<5 and gc.round() < 70:
 		#	gc.produce_robot(unit.id, bc.UnitType.Knight)
-		elif total_units[2] < 0.9 * num_non_workers or total_units[2]<1:
+		elif total_units[2] < 0.85 * num_non_workers or total_units[2]<1:
 			gc.produce_robot(unit.id, bc.UnitType.Ranger)
 		else:
 			gc.produce_robot(unit.id, bc.UnitType.Healer)
@@ -58,7 +58,7 @@ def evaluate_stockpile():
 	total_units = [composition[0] + producing[0], composition[1] + producing[1], composition[2] + producing[2],
 				   composition[3] + producing[3], composition[4] + producing[4]]
 	num_attacking_units = sum(total_units[1:4])
-	if (variables.gc.round()>300 and num_attacking_units > 0.5*variables.num_enemies) or variables.gc.round()>500:
+	if (variables.gc.round()>250 and num_attacking_units > 0.5*variables.num_enemies) or variables.gc.round()>500:
 		if not variables.stockpile_until_75:
 			if variables.between_stockpiles > 15 and variables.gc.karbonite()<cost * 1.25:
 				variables.stockpile_until_75 = True
