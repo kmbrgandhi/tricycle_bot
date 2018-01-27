@@ -246,6 +246,92 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
     move_then_attack = False
     visible_enemies = False
     start_time = time.time()
+    # if variables.print_count < 10:
+    #    print("Sensing nearby units:", time.time() - start_time)
+    if len(enemies) > 0:
+        visible_enemies = True
+        start_time = time.time()
+        closest_enemy = None
+        closest_dist = float('inf')
+        for enemy in enemies:
+            loc = enemy.location
+            if loc.is_on_map():
+                dist = sense_util.distance_squared_between_maplocs(loc.map_location(), location)
+                if dist < closest_dist:
+                    closest_dist = dist
+                    closest_enemy = enemy
+        # if variables.print_count < 10:
+        #    print("Getting closest enemy:", time.time() - start_time)
+        # sorted_enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(location))
+        # closest_enemy = closest_among_ungarrisoned(sorted_enemies)
+        start_time = time.time()
+        attack = get_attack(gc, unit, location, targeting_units)
+        # if variables.print_count < 10:
+        #    print("Getting attack:", time.time() - start_time)
+        if attack is not None:
+            if closest_enemy is not None:
+                start_time = time.time()
+                if check_radius_squares_factories(gc, location):
+                    dir = optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location())
+                elif (exists_bad_enemy(closest_enemy)) or not gc.can_attack(unit.id, closest_enemy.id):
+                    # if variables.print_count < 10:
+                    #    print("Checking if condition:", time.time() - start_time)
+                    start_time = time.time()
+                    dir = sense_util.best_available_direction(gc, unit, [closest_enemy])
+                    # if variables.print_count < 10:
+                    #    print("Getting best available direction:", time.time() - start_time)
+
+                    # and (closest_enemy.location.map_location().distance_squared_to(location)) ** (
+                    # 0.5) + 2 < unit.attack_range() ** (0.5)) or not gc.can_attack(unit.id, attack.id):
+        else:
+            if gc.is_move_ready(unit.id):
+
+                if closest_enemy is not None:
+                    dir = optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location())
+
+                    next_turn_loc = location.add(dir)
+                    attack = get_attack(gc, unit, next_turn_loc, targeting_units)
+                    if attack is not None:
+                        move_then_attack = True
+                else:
+                    dir = run_towards_init_loc_new(gc, unit, location, direction_to_coord)
+                    # if variables.print_count < 10:
+                    #    print("Getting direction:", time.time() - start_time)
+    else:
+        # if there are no enemies in sight, check if there is an ongoing battle.  If so, go there.
+        if len(battle_locs) > 0:
+            # print('IS GOING TO BATTLE')
+            dir = go_to_battle_new(gc, unit, battle_locs, location, direction_to_coord)
+            # queued_paths[unit.id] = target
+        else:
+            # dir = move_away(gc, unit, battle_locs)
+            if variables.curr_planet == bc.Planet.Earth:
+                # print('IS RUNNING TOWARDS INIT LOC')
+                dir = run_towards_init_loc_new(gc, unit, location, direction_to_coord)
+            else:
+                # print('EXPLORING')
+                dir = get_explore_dir(gc, unit, location)
+        """
+        elif unit.id in queued_paths:
+            if location!=queued_paths[unit.id]:
+                dir = optimal_direction_towards(gc, unit, location, queued_paths[unit.id])
+                return dir, attack, snipe, move_then_attack, visible_enemies, signals
+            else:
+                del queued_paths[unit.id]
+        """
+        # if variables.print_count < 10:
+        #    print("regular movement:", time.time() - start_time)
+
+    return dir, attack, snipe, move_then_attack, visible_enemies, closest_enemy, signals
+    """
+    signals = {}
+    dir = None
+    attack = None
+    snipe = None
+    closest_enemy = None
+    move_then_attack = False
+    visible_enemies = False
+    start_time = time.time()
     #if variables.print_count < 10:
     #    print("Sensing nearby units:", time.time() - start_time)
     if len(enemies) > 0:
@@ -326,19 +412,12 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
             else:
                 #print('EXPLORING')
                 dir = get_explore_dir(gc, unit, location)
-        """
-        elif unit.id in queued_paths:
-            if location!=queued_paths[unit.id]:
-                dir = optimal_direction_towards(gc, unit, location, queued_paths[unit.id])
-                return dir, attack, snipe, move_then_attack, visible_enemies, signals
-            else:
-                del queued_paths[unit.id]
-        """
         #if variables.print_count < 10:
         #    print("regular movement:", time.time() - start_time)
 
 
     return dir, attack, snipe, move_then_attack, visible_enemies, closest_enemy, signals
+    """
 
 def get_coord_value(coords):
     return coords[1]*variables.my_width + coords[0]
@@ -642,7 +721,6 @@ def coefficient_computation(gc, our_unit, their_unit, their_loc, location):
 
 def attack_coefficient(gc, our_unit, our_loc, their_unit, their_loc):
     # generic: how appealing is their_unit to attack
-    distance = sense_util.distance_squared_between_maplocs(our_loc, their_loc)
     coeff = ranger_unit_priority[their_unit.unit_type]
     # if distance < attack_range_non_robots(their_unit):
     #     coeff = coeff * sense_util.can_attack_multiplier(their_unit)
