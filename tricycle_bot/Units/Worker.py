@@ -1041,6 +1041,7 @@ def get_optimal_building_location(gc, start_map, center, building_type, karbonit
 				# print("par t2 location time",time.time() - start_time)
 				if karbonite_adjacent_locations[location_coords] > 0:
 					deposits_located = True
+					
 			else:
 				continue
 
