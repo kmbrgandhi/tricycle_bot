@@ -68,7 +68,7 @@ def timestep(unit):
         #if variables.print_count < 10:
         #    print("Preprocessing inside:", time.time() - start_time)
         #start_time = time.time()
-        dir, attack_target, snipe, move_then_attack, visible_enemies, closest_enemy, signals = ranger_sense(gc, unit, variables.last_turn_battle_locs, ranger_roles, map_loc, variables.direction_to_coord, variables.bfs_dict, targeting_units, variables.rocket_locs)
+        dir, attack_target, snipe, move_then_attack, visible_enemies, closest_enemy, signals = ranger_sense(gc, unit, variables.last_turn_battle_locs, ranger_roles, map_loc, variables.direction_to_coord, variables.bfs_array, targeting_units, variables.rocket_locs)
         #print("middlepart",time.time() - start_coord)
         #if variables.print_count < 10:
         #    print("Sensing:", time.time() - start_time)
@@ -171,7 +171,7 @@ def add_healer_target(gc, ranger_loc):
 
 def go_to_mars_sense(gc, unit, battle_locs, location, enemies, direction_to_coord, bfs_dict, targeting_units, bfs_fineness, rocket_locs):
 """
-def go_to_mars_sense(gc, unit, battle_locs, location, enemies, direction_to_coord, bfs_dict, targeting_units, rocket_locs):
+def go_to_mars_sense(gc, unit, battle_locs, location, enemies, direction_to_coord, bfs_array, targeting_units, rocket_locs):
     #print('GOING TO MARS')
     signals = {}
     dir = None
@@ -205,11 +205,12 @@ def go_to_mars_sense(gc, unit, battle_locs, location, enemies, direction_to_coor
             gc.load(rocket.id, unit.id)
     else:
         target_coords = (target_loc.x, target_loc.y)
-        explore.add_bfs(bfs_dict, target_coords, passable_locations)
+        start_coords_val = get_coord_value(start_coords)
+        target_coords_val = get_coord_value(target_coords)
         # target_coords_thirds = (int(target_loc.x / bfs_fineness), int(target_loc.y / bfs_fineness))
 
-        if start_coords in bfs_dict[target_coords]:
-            best_dirs = use_dist_bfs(start_coords, target_coords, bfs_dict)
+        if bfs_array[start_coords_val, target_coords_val]!=float('inf'):
+            best_dirs = use_dist_bfs(start_coords, target_coords, bfs_array)
             choice_of_dir = random.choice(best_dirs)
             shape = direction_to_coord[choice_of_dir]
             options = sense_util.get_best_option(shape)
@@ -221,12 +222,12 @@ def go_to_mars_sense(gc, unit, battle_locs, location, enemies, direction_to_coor
 
     return dir, attack, snipe, move_then_attack, visible_enemies, closest_enemy, signals
 
-def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coord, bfs_dict, targeting_units, rocket_locs):
+def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coord, bfs_array, targeting_units, rocket_locs):
     enemies = gc.sense_nearby_units_by_team(location, unit.vision_range, variables.enemy_team)
     if unit.id in ranger_roles["sniper"]:
-        return snipe_sense(gc, unit, battle_locs, location, enemies, direction_to_coord, bfs_dict, targeting_units)
+        return snipe_sense(gc, unit, battle_locs, location, enemies, direction_to_coord, bfs_array, targeting_units)
     elif unit.id in ranger_roles["go_to_mars"]:
-        return go_to_mars_sense(gc, unit, battle_locs, location, enemies, direction_to_coord, bfs_dict, targeting_units, rocket_locs)
+        return go_to_mars_sense(gc, unit, battle_locs, location, enemies, direction_to_coord, bfs_array, targeting_units, rocket_locs)
     signals = {}
     dir = None
     attack = None
@@ -299,7 +300,7 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
 
         # if there are no enemies in sight, check if there is an ongoing battle.  If so, go there.
         if len(rocket_locs)>0 and gc.round()>660 and variables.curr_planet == bc.Planet.Earth:
-            dir = move_to_rocket(gc, unit, location, direction_to_coord, bfs_dict)
+            dir = move_to_rocket(gc, unit, location, direction_to_coord, bfs_array)
             if dir is None:
                 dir = run_towards_init_loc_new(gc, unit, location, direction_to_coord)
 
@@ -329,14 +330,18 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
 
     return dir, attack, snipe, move_then_attack, visible_enemies, closest_enemy, signals
 
+def get_coord_value(coords):
+    return coords[1]*variables.my_width + coords[0]
+
 def go_to_loc(unit, start_loc, target_loc):
-    bfs_dict = variables.bfs_dict
+    bfs_array = variables.bfs_array
     start_coords = (start_loc.x, start_loc.y)
     target_coords = (target_loc.x, target_loc.y)
-    explore.add_bfs(variables.bfs_dict, target_coords, passable_locations)
+    start_coords_val = get_coord_value(start_coords)
+    target_coords_val = get_coord_value(target_coords)
     # target_coords_thirds = (int(target_loc.x / bfs_fineness), int(target_loc.y / bfs_fineness))
-    if start_coords in bfs_dict[target_coords]:
-        best_dirs = use_dist_bfs(start_coords, target_coords, bfs_dict)
+    if bfs_array[start_coords_val, target_coords_val]!=float('inf'):
+        best_dirs = use_dist_bfs(start_coords, target_coords, bfs_array)
         choice_of_dir = random.choice(best_dirs)
         shape = variables.direction_to_coord[choice_of_dir]
         options = sense_util.get_best_option(shape)
@@ -344,15 +349,16 @@ def go_to_loc(unit, start_loc, target_loc):
             if variables.gc.can_move(unit.id, option):
                 return option
     return variables.directions[8]
-def move_to_rocket(gc, unit, location, direction_to_coord, bfs_dict):
+def move_to_rocket(gc, unit, location, direction_to_coord, bfs_array):
     dir = None
     location_coords = (location.x, location.y)
     if unit.id not in variables.which_rocket or variables.which_rocket[unit.id][1] not in variables.rocket_locs:
         for rocket in variables.rocket_locs:
             target_loc = variables.rocket_locs[rocket]
             target_coords = (target_loc.x, target_loc.y)
-            explore.add_bfs(bfs_dict, target_coords, passable_locations)
-            if location_coords in bfs_dict[target_coords]:
+            start_coords_val = get_coord_value(location_coords)
+            target_coords_val = get_coord_value(target_coords)
+            if bfs_array[start_coords_val, target_coords_val]!=float('inf'):
                 variables.which_rocket[unit.id] = (target_loc, rocket)
                 break
 
@@ -374,10 +380,11 @@ def move_to_rocket(gc, unit, location, direction_to_coord, bfs_dict):
             gc.load(rocket.id, unit.id)
     else:
         target_coords = (target_loc.x, target_loc.y)
-        explore.add_bfs(bfs_dict, target_coords, passable_locations)
+        start_coords_val = get_coord_value(location_coords)
+        target_coords_val = get_coord_value(target_coords)
         #target_coords_thirds = (int(target_loc.x / bfs_fineness), int(target_loc.y / bfs_fineness))
-        if location_coords in bfs_dict[target_coords]:
-            best_dirs = use_dist_bfs(location_coords, target_coords, bfs_dict)
+        if bfs_array[start_coords_val, target_coords_val]!=float('inf'):
+            best_dirs = use_dist_bfs(location_coords, target_coords, bfs_array)
             choice_of_dir = random.choice(best_dirs)
             shape = direction_to_coord[choice_of_dir]
             options = sense_util.get_best_option(shape)
@@ -422,7 +429,7 @@ def snipe_priority(unit):
     else:
         return -1
 
-def snipe_sense(gc, unit, battle_locs, location, enemies, direction_to_coord, bfs_dict, targeting_units):
+def snipe_sense(gc, unit, battle_locs, location, enemies, direction_to_coord, bfs_array, targeting_units):
     signals = {}
     dir = None
     attack = None
@@ -476,14 +483,15 @@ def how_many_adjacent(gc, unit):
         if gc.has_unit_at_location(nearby_loc):
             total+=1
 
-def pick_from_battle_locs(bfs_dict, init_loc, battle_locs):
+def pick_from_battle_locs(bfs_array, init_loc, battle_locs):
     choices = []
     location_coords = (init_loc.x, init_loc.y)
     for pair in battle_locs:
         choice = battle_locs[pair][0]
         choice_coords = (choice.x, choice.y)
-        explore.add_bfs(bfs_dict, choice_coords, passable_locations)
-        if location_coords in bfs_dict[choice_coords]:
+        our_coords_val = get_coord_value(location_coords)
+        target_coords_val = get_coord_value(choice_coords)
+        if bfs_array[our_coords_val, target_coords_val] != float('inf'):
             choices.append(choice_coords)
     if len(choices) == 0:
         return None
@@ -491,8 +499,8 @@ def pick_from_battle_locs(bfs_dict, init_loc, battle_locs):
 
 
 def go_to_battle_new(gc, unit, battle_locs, location, direction_to_coord):
-    bfs_dict = variables.bfs_dict
-    target_options = pick_from_battle_locs(bfs_dict, location, battle_locs)
+    bfs_array = variables.bfs_array
+    target_options = pick_from_battle_locs(bfs_array, location, battle_locs)
     #weakest = random.choice(list(battle_locs.keys()))
     #target = battle_locs[weakest][0]
     start_coords = (location.x, location.y)
@@ -506,7 +514,7 @@ def go_to_battle_new(gc, unit, battle_locs, location, direction_to_coord):
     else:
         target_coords = random.choice(target_options)
 
-    best_dirs = use_dist_bfs(start_coords, target_coords, bfs_dict)
+    best_dirs = use_dist_bfs(start_coords, target_coords, bfs_array)
     choice_of_dir = random.choice(best_dirs)
     shape = direction_to_coord[choice_of_dir]
     options = sense_util.get_best_option(shape)
@@ -515,8 +523,10 @@ def go_to_battle_new(gc, unit, battle_locs, location, direction_to_coord):
             return option
     return directions[8]
 
-def use_dist_bfs(start_coords, target_coords, bfs_dict):
-    dist = bfs_dict[target_coords][start_coords]
+def use_dist_bfs(start_coords, target_coords, bfs_array):
+    our_coords_val = get_coord_value(start_coords)
+    target_coords_val = get_coord_value(target_coords)
+    dist = bfs_array[our_coords_val, target_coords_val]
 
     best_dirs = []
     min_dir = None
@@ -527,11 +537,13 @@ def use_dist_bfs(start_coords, target_coords, bfs_dict):
     for direction in all_but_center_dir:
         coord_version = variables.direction_to_coord[direction]
         new_coords = (start_coords[0] + coord_version[0], start_coords[1] + coord_version[1])
-        if new_coords in bfs_dict[target_coords]:
-            new_dist = bfs_dict[target_coords][new_coords]
-            if new_dist<min_dist:
-                min_dir = direction
-                min_dist = new_dist
+        if 0<=new_coords[0]<variables.my_width and 0<=new_coords[1]<variables.my_height:
+            new_coords_val = get_coord_value(new_coords)
+            if bfs_array[new_coords_val, target_coords_val] != float('inf'):
+                new_dist = bfs_array[new_coords_val, target_coords_val]
+                if new_dist<min_dist:
+                    min_dir = direction
+                    min_dist = new_dist
 
     return [min_dir]
     """
@@ -637,9 +649,9 @@ def pick_from_init_enemy_locs(init_loc):
     choices = []
     for choice in variables.init_enemy_locs:
         choice_coords = (choice.x, choice.y)
-        explore.add_bfs(variables.bfs_dict, choice_coords, passable_locations)
-        #coords_loc_thirds = (int(choice.x /variables.bfs_fineness), int(choice.y/variables.bfs_fineness))
-        if init_loc in variables.bfs_dict[choice_coords]:
+        our_coords_val = get_coord_value(init_loc)
+        target_coords_val = get_coord_value(choice_coords)
+        if variables.bfs_array[our_coords_val, target_coords_val] != float('inf'):
             choices.append(choice)
     if len(choices)==0:
         return None
@@ -648,14 +660,14 @@ def pick_from_init_enemy_locs(init_loc):
 
 def run_towards_init_loc_new(gc, unit, location,  direction_to_coord):
     #start_time = time.time()
-    bfs_dict = variables.bfs_dict
+    bfs_array = variables.bfs_array
     coords_init_location = (location.x, location.y)
     poss_coords_loc = pick_from_init_enemy_locs(coords_init_location)
     if poss_coords_loc is None:
         return None
     coords_loc = random.choice(poss_coords_loc)
     coords_loc_thirds = (coords_loc.x, coords_loc.y)
-    best_dirs = use_dist_bfs(coords_init_location, coords_loc_thirds, bfs_dict)
+    best_dirs = use_dist_bfs(coords_init_location, coords_loc_thirds, bfs_array)
     choice_of_dir = random.choice(best_dirs)
     shape = direction_to_coord[choice_of_dir]
     options = sense_util.get_best_option(shape)

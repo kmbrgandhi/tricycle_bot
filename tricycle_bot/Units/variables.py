@@ -6,8 +6,13 @@ import Units.map_info as map_info
 import Units.sense_util as sense_util
 import Units.explore as explore
 import time
+import numpy as np
+from scipy.sparse import dok_matrix
+from scipy.sparse import csgraph
+
 
 gc = bc.GameController()
+
 
 
 ## CONSTANTS ##
@@ -41,6 +46,8 @@ curr_planet = gc.planet()
 curr_map = gc.starting_map(curr_planet)
 earth_start_map = gc.starting_map(bc.Planet.Earth)
 mars_start_map = gc.starting_map(bc.Planet.Mars)
+
+
 
 earth_diagonal = (earth_start_map.height**2 + earth_start_map.width**2)
 mars_diagonal = (mars_start_map.height**2 + mars_start_map.width**2)
@@ -191,6 +198,8 @@ num_unsuccessful_savior = 0
 saviour_time_between = 0
 cost_of_rocket = 75
 
+
+
 mars = bc.Planet.Mars
 mars_map = gc.starting_map(mars)
 mars_width = mars_map.width
@@ -217,6 +226,8 @@ if curr_planet == bc.Planet.Earth:
     earth_map = gc.starting_map(earth)
     earth_width = earth_map.width
     earth_height = earth_map.height
+    my_width = earth_width
+    my_height = earth_height
 
     for x in range(-1, earth_width+1):
         for y in range(-1, earth_height+1):
@@ -227,14 +238,46 @@ if curr_planet == bc.Planet.Earth:
                 passable_locations_earth[coords] = True
             else:
                 passable_locations_earth[coords]= False
-    bfs_dict = {} # stores the distances found by BFS so far
+
+    number_of_cells = earth_width * earth_height
+    start_time = time.time()
+    S = dok_matrix((number_of_cells, number_of_cells), dtype=int)
+    for x in range(earth_width):
+        for y in range(earth_height):
+            curr = (x, y)
+            if passable_locations_earth[curr]:
+                val = y*earth_width + x
+                for coord in explore.coord_neighbors(curr):
+                    if passable_locations_earth[coord]:
+                        val2 = coord[1]*earth_width + coord[0]
+                        S[val, val2] = 1
+                        S[val2, val] = 1
+
+    bfs_array = csgraph.shortest_path(S, method = 'D', unweighted = True)
+    print(time.time()-start_time)
+    #bfs_dict = {} # stores the distances found by BFS so far
     #precomputed_bfs = explore.precompute_earth(passable_locations_earth, coord_to_direction, wavepoints)
     #start_time = time.time()
     #precomputed_bfs_dist = explore.precompute_earth_dist(passable_locations_earth, coord_to_direction, wavepoints)
     #print(time.time()-start_time)
 
 else:
-    bfs_dict = {}
+    my_width = mars_width
+    my_height = mars_height
+    number_of_cells = mars_width * mars_height
+    start_time = time.time()
+    S = dok_matrix((number_of_cells, number_of_cells), dtype=int)
+    for x in range(mars_width):
+        for y in range(mars_height):
+            curr = (x, y)
+            if passable_locations_mars[curr]:
+                val = y * mars_width + x
+                for coord in explore.coord_neighbors(curr):
+                    if passable_locations_mars[coord]:
+                        val2 = coord[1] * mars_width + coord[0]
+                        S[val, val2] = 1
+
+    bfs_array = csgraph.shortest_path(S, method='D', unweighted=True)
 
 attacker = set([bc.UnitType.Ranger, bc.UnitType.Knight, bc.UnitType.Mage, bc.UnitType.Healer])
 stockpile_until_75 = False

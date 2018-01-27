@@ -27,7 +27,7 @@ def timestep(unit):
 
     composition = variables.info
     direction_to_coord = variables.direction_to_coord
-    bfs_dict = variables.bfs_dict
+    bfs_array = variables.bfs_array
     enemy_team = variables.enemy_team
     my_team = variables.my_team
 
@@ -151,22 +151,23 @@ def assign_to_quadrant(gc, unit, unit_loc):
     return False, None
 
 def try_move_smartly(unit, map_loc1, map_loc2):
-	if variables.gc.is_move_ready(unit.id):
-		our_coords = map_loc1
-		target_coords = map_loc2
-		explore.add_bfs(variables.bfs_dict, target_coords, passable_locations)
-		#target_coords_thirds = (int(map_loc2.x / variables.bfs_fineness), int(map_loc2.y / variables.bfs_fineness))
-		if our_coords in variables.bfs_dict[target_coords]:
-			best_dirs = Ranger.use_dist_bfs(our_coords, target_coords, variables.bfs_dict)
-			choice_of_dir = random.choice(best_dirs)
-			shape = variables.direction_to_coord[choice_of_dir]
-			options = sense_util.get_best_option(shape)
-			for option in options:
-				if variables.gc.can_move(unit.id, option):
-					variables.gc.move_robot(unit.id, option)
-					## CHANGE LOC IN NEW DATA STRUCTURE
-					add_new_location(unit.id, our_coords, option)
-					break
+    if variables.gc.is_move_ready(unit.id):
+        our_coords = map_loc1
+        target_coords = map_loc2
+        bfs_array = variables.bfs_array
+        our_coords_val = Ranger.get_coord_value(our_coords)
+        target_coords_val = Ranger.get_coord_value(target_coords)
+        if bfs_array[our_coords_val, target_coords_val]!=float('inf'):
+            best_dirs = Ranger.use_dist_bfs(our_coords, target_coords, bfs_array)
+            choice_of_dir = random.choice(best_dirs)
+            shape = variables.direction_to_coord[choice_of_dir]
+            options = sense_util.get_best_option(shape)
+            for option in options:
+                if variables.gc.can_move(unit.id, option):
+                    variables.gc.move_robot(unit.id, option)
+                    ## CHANGE LOC IN NEW DATA STRUCTURE
+                    add_new_location(unit.id, our_coords, option)
+                    break
 
 def add_new_location(unit_id, old_coords, direction):
     unit_mov = variables.direction_to_coord[direction]

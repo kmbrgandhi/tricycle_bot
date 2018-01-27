@@ -4,6 +4,7 @@ import sys
 import traceback
 import time
 import collections
+import numpy as np
 
 directions = bc.Direction
 
@@ -57,6 +58,10 @@ diffs_50 = [(0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6), (0, 7), (1, 0), (1, 
             (-3, -1), (-3, -2), (-3, -3), (-3, -4), (-3, -5), (-3, -6), (-4, -1), (-4, -2), (-4, -3), (-4, -4), (-4, -5), (-5, -1), (-5, -2), (-5, -3),
             (-5, -4), (-5, -5), (-6, -1), (-6, -2), (-6, -3), (-7, -1)]
 
+def get_maploc(planet, coords):
+    map_loc = bc.MapLocation(planet, coords[0], coords[1])
+    return map_loc
+
 def coord_neighbors(coords, diff = diff_neighbors, include_self = False):
     res = [(coords[0]+i, coords[1]+j) for (i, j) in diff]
     if include_self:
@@ -67,7 +72,7 @@ def coord_neighbors(coords, diff = diff_neighbors, include_self = False):
             (coords[0] + 1, coords[1] + 1), (coords[0] + 1, coords[1]), (coords[0], coords[1]+1),
             (coords[0] - 1, coords[1] + 1), (coords[0]+1, coords[1]-1)]
     """
-
+"""
 def heuristic(maploc1, maploc2):
     return abs(maploc1.x - maploc2.x) + abs(maploc1.y - maploc2.y)
 
@@ -103,28 +108,37 @@ def precompute_earth_dist(passable_locations_earth, direction_coords, wavepoints
             store_dict[(dest_coords, coordinates_fineness)] = parent[dest_coords]
     return store_dict
 
-def add_bfs(bfs_dict, dest_coords, passable_locations_earth):
+def add_bfs(bfs_dict, dest_coords, passable_locations_earth, width = 50, height = 50):
     if dest_coords in passable_locations_earth and passable_locations_earth[dest_coords]:
         if dest_coords in bfs_dict:
             return
         else:
+            start_time = time.time()
             bfs_dict[dest_coords] = {}
-            value_dict = bfs_distance(dest_coords, passable_locations_earth)
+            value_dict = bfs_distance(dest_coords, passable_locations_earth, width, height)
+            print(time.time() - start_time)
+            start_time = time.time()
             for coords in value_dict:
                 bfs_dict[dest_coords][coords] = value_dict[coords]
+            print(time.time() - start_time)
 
-def bfs_distance(init_coords, passable_locations_earth):
+def bfs_distance(init_coords, passable_locations_earth, width=50, height=50):
     init = init_coords
     q = collections.deque([init])
-    value = {}
-    value[init] = 0
+    #value = {}
+    #value[init] = 0
+    new_array = np.empty([width, height], dtype = int)
+    new_array.fill(-1)
+    new_array[init[0]][init[1]] = 0
     while q:
         curr = q.popleft()
+        curr_val = new_array[curr[0]][curr[1]]
         for node in coord_neighbors(curr):
-            if node not in value and passable_locations_earth[node]:
+            if new_array[node[0]][node[1]] == -1 and passable_locations_earth[node]:
                 q.append(node)
-                value[node] = value[curr]+1
-    return value
+                new_array[node[0]][node[1]] = curr_val + 1
+                #value[node] = value[curr]+1
+    return new_array#value
 
 def bfs_with_destination(init_coords, final_coords, gc, planet, passable_locations_earth, direction_coords):
     init = init_coords
@@ -166,11 +180,9 @@ def bfs_mars(init_coords, passable_locations_mars):
                 parent[node] = curr
     return parent
 
-def get_maploc(planet, coords):
-    map_loc = bc.MapLocation(planet, coords[0], coords[1])
-    return map_loc
 
-"""
+
+
 def exists_movement_path_locs(gc, init_loc, maplocation, planet_map):
     init = init_loc
     planet_map = gc.starting_map(init.planet)
