@@ -154,7 +154,7 @@ def timestep(unit):
 	# if unit is blueprinter
 	elif my_role == "blueprinter":
 		# start_time = time.time()
-		blueprint(gc,unit,my_location,building_assignment,blueprinting_assignment,current_roles)
+		blueprint(gc,unit,my_location,karbonite_locations,building_assignment,blueprinting_assignment,current_roles)
 		#print("blueprinting time: ",time.time() - start_time)
 	# if unit is boarder
 	elif my_role == "boarder": 
@@ -1005,10 +1005,20 @@ def get_optimal_building_location(gc, start_map, center, building_type, karbonit
 		#print("can we build here?",variables.invalid_building_locations[location_coords],location)
 		if location_coords in passable_locations and passable_locations[location_coords] and variables.invalid_building_locations[location_coords]:
 			# print("optimal building location time",time.time() - start_time)
+			
+			if variables.curr_planet == bc.Planet.Earth: 
+				quadrant_size = variables.earth_quadrant_size
+			else:
+				quadrant_size = variables.mars_quadrant_size
+
+			quadrant = (int(location_coords[0] / quadrant_size), int(location_coords[1] / quadrant_size))
+			q_info = variables.quadrant_battle_locs[quadrant]
+			enemies_in_quadrant = len(q_info.enemies)
+
 			adjacent_spaces = get_workers_per_building(gc,start_map,location)
 
 			#print("location",location,"adjacent spaces",adjacent_spaces)
-			if adjacent_spaces >= 3:
+			if adjacent_spaces >= 3 and enemies_in_quadrant == 0:
 
 				if location_coords in adjacent_locations:
 					potential_adjacent_locations.append(location_coords)
@@ -1039,12 +1049,12 @@ def get_optimal_building_location(gc, start_map, center, building_type, karbonit
 
 # function to flexibly determine when a good time to expand factories
 def can_blueprint_factory(gc,factory_count):
-	if (gc.round()>250 and variables.num_enemies<5) or variables.my_karbonite < variables.unit_types["factory"].blueprint_cost():
+	if (gc.round() > 250 and variables.num_enemies < 5) or gc.round() > 400:
 		return False
 	return factory_count < get_factory_limit()
 
 def can_blueprint_rocket(gc,rocket_count):
-	if variables.num_passable_locations_mars>0 and variables.research.get_level(variables.unit_types["rocket"]) > 0 and variables.my_karbonite < variables.unit_types["rocket"].blueprint_cost():
+	if variables.num_passable_locations_mars > 0 and variables.research.get_level(variables.unit_types["rocket"]) > 0:
 		if gc.round() > 250:
 			return True
 
@@ -1078,7 +1088,7 @@ def building_in_progress_cap(gc):
 	return max(1,variables.my_karbonite/150)
 
 
-def blueprint(gc,my_unit,my_location,building_assignment,blueprinting_assignment,current_roles):
+def blueprint(gc,my_unit,my_location,karbonite_locations,building_assignment,blueprinting_assignment,current_roles):
 	directions = variables.directions
 	#print('BLUEPRINTING')
 
@@ -1090,37 +1100,68 @@ def blueprint(gc,my_unit,my_location,building_assignment,blueprinting_assignment
 	# build blueprint in assigned square
 	if my_unit.id in blueprinting_assignment:
 		assigned_site = blueprinting_assignment[my_unit.id]
-
+		assigned_location = assigned_site.map_location
 		# if my_unit.id in blueprinting_assignment:
 		#print("unit",my_unit.id,"blueprinting at",blueprinting_assignment[my_unit.id])
 		#print(unit.id, "is assigned to building in", assigned_site.map_location)
 		direction_to_site = my_location.direction_to(assigned_site.map_location)
+		if variables.my_karbonite >= variables.unit_types["factory"].blueprint_cost():
+			if my_location.is_adjacent_to(assigned_site.map_location):
+				if gc.can_blueprint(my_unit.id, assigned_site.building_type, direction_to_site):
+					gc.blueprint(my_unit.id, assigned_site.building_type, direction_to_site)
+					new_blueprint = gc.sense_unit_at_location(assigned_site.map_location)
 
-		if my_location.is_adjacent_to(assigned_site.map_location):
-			if gc.can_blueprint(my_unit.id, assigned_site.building_type, direction_to_site):
-				gc.blueprint(my_unit.id, assigned_site.building_type, direction_to_site)
-				new_blueprint = gc.sense_unit_at_location(assigned_site.map_location)
+					variables.all_building_locations[new_blueprint.id] = assigned_site.map_location
+					# update shared data structures
 
-				variables.all_building_locations[new_blueprint.id] = assigned_site.map_location
-				# update shared data structures
+					building_assignment[new_blueprint.id] = [my_unit.id] # initialize new building
 
-				building_assignment[new_blueprint.id] = [my_unit.id] # initialize new building
-
-				del blueprinting_assignment[my_unit.id]
-				current_roles["blueprinter"].remove(my_unit.id)
-				current_roles["builder"].append(my_unit.id)
+					del blueprinting_assignment[my_unit.id]
+					current_roles["blueprinter"].remove(my_unit.id)
+					current_roles["builder"].append(my_unit.id)
+				else:
+					pass
+					#print(my_unit.id, "can't build but is right next to assigned site")
+			elif my_location == assigned_site.map_location:
+				# when unit is currently on top of the queued building site
+				d = random.choice(variables.directions)
+				movement.try_move(gc,my_unit,(my_location.x,my_location.y),d)
 			else:
-				pass
-				#print(my_unit.id, "can't build but is right next to assigned site")
-		elif my_location == assigned_site.map_location:
-			# when unit is currently on top of the queued building site
-			d = random.choice(variables.directions)
-			movement.try_move(gc,my_unit,(my_location.x,my_location.y),d)
+				# move toward queued building site
+				#next_direction = my_location.direction_to(assigned_site.map_location)
+				#movement.try_move(gc,my_unit,next_direction)
+				try_move_smartly(my_unit,my_location,assigned_site.map_location)
 		else:
-			# move toward queued building site
-			#next_direction = my_location.direction_to(assigned_site.map_location)
-			#movement.try_move(gc,my_unit,next_direction)
-			try_move_smartly(my_unit,my_location,assigned_site.map_location)
+			my_coord = (assigned_location.x,assigned_location.y)
+			standby_mining_locations = explore.coord_neighbors(my_coord,diff=variables.diffs_2,include_self=True)
+
+			closest_distance = float('inf')
+			closest_deposit_coord = None
+
+			for coord in standby_mining_locations:
+				if coord in karbonite_locations:
+					distance_to_deposit =  sense_util.distance_squared_between_coords(coord,my_coord)
+					if distance_to_deposit < closest_distance:
+						closest_distance = distance_to_deposit
+						closest_deposit_coord = coord
+
+			if closest_deposit_coord is not None:
+				closest_deposit = bc.MapLocation(variables.earth,closest_deposit_coord[0],closest_deposit_coord[1])
+				direction_to_deposit = bc.Direction(my_location,closest_deposit)
+				if my_location.is_adjacent_to(closest_deposit) or my_location == closest_deposit:
+					# mine if adjacent to deposit
+					#print("trying to harvest at:",closest_deposit)
+					if gc.can_harvest(my_unit.id,direction_to_deposit):
+						gc.harvest(my_unit.id,direction_to_deposit)
+						#print(unit.id," just harvested!")
+				else:
+					# move toward deposit
+					try_move_smartly(my_unit, my_location, closest_deposit)
+
+
+
+
+
 
 def add_new_location(unit_id, old_coords, direction):
 	if variables.curr_planet == bc.Planet.Earth: 
