@@ -72,7 +72,6 @@ def vector_sum(unit, units, weights = None):
             sum[1]-=(units[unit_index].location.map_location().y- unit.location.map_location().y) * weights[unit_index]
     return sum
 
-
 def get_best_option(optimal_dir):
     # Given an exact optimal direction, gives an ordered tuple of the best map directions to move.
     ratio = abs(optimal_dir[0]/(optimal_dir[1]+0.001))

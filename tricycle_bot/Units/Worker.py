@@ -18,6 +18,7 @@ else:
 def timestep(unit):
 	#print(building_assignment)
 	# last check to make sure the right unit type is running this
+	start_time = time.time()
 	gc = variables.gc
 	info = variables.info
 	karbonite_locations = variables.karbonite_locations
@@ -167,7 +168,8 @@ def timestep(unit):
 		#print(unit.id, "at", unit.location.map_location(), "is trying to move to", away_from_units)
 
 		movement.try_move(gc,unit,(my_location.x,my_location.y),away_from_units)
-
+	if time.time()-start_time > 0.3:
+		print("TIME FOR WORKER:", time.time()-start_time)
 def check_if_saviour_died():
 	for my_unit in variables.my_units:
 		if variables.saviour_worker_id ==my_unit.id:
@@ -495,10 +497,14 @@ def try_move_smartly(unit, map_loc1, map_loc2):
 	if variables.gc.is_move_ready(unit.id):
 		our_coords = (map_loc1.x, map_loc1.y)
 		target_coords = (map_loc2.x, map_loc2.y)
-		explore.add_bfs(variables.bfs_dict, target_coords, passable_locations)
-		#target_coords_thirds = (int(map_loc2.x / variables.bfs_fineness), int(map_loc2.y / variables.bfs_fineness))
-		if our_coords in variables.bfs_dict[target_coords]:
-			best_dirs = Ranger.use_dist_bfs(our_coords, target_coords, variables.bfs_dict)
+		print(target_coords)
+		our_coords_val = Ranger.get_coord_value(our_coords)
+		print(our_coords_val)
+		target_coords_val = Ranger.get_coord_value(target_coords)
+		print(target_coords_val)
+		bfs_array = variables.bfs_array
+		if bfs_array[our_coords_val, target_coords_val] != float('inf'):
+			best_dirs = Ranger.use_dist_bfs(our_coords, target_coords, bfs_array)
 			choice_of_dir = random.choice(best_dirs)
 			shape = variables.direction_to_coord[choice_of_dir]
 			options = sense_util.get_best_option(shape)
@@ -593,28 +599,30 @@ def get_closest_deposit(gc,unit,position,karbonite_locations,in_vision_range=Fal
 
 	for location_coord in explore.coord_neighbors(position_coord, diff=explore.diffs_50, include_self=True):
 		#location_coord_thirds = (int(location_coord[0]/variables.bfs_fineness), int(location_coord[1]/variables.bfs_fineness))
-		explore.add_bfs(variables.bfs_dict, location_coord, passable_locations)
 
-		if location_coord in karbonite_locations and position_coord in variables.bfs_dict[location_coord]:
-			is_deposit_in_vision_range = True
-			
-			karbonite_location = bc.MapLocation(planet,location_coord[0],location_coord[1])
-			distance_to_deposit = sense_util.distance_squared_between_coords(position_coord,location_coord)
+		if location_coord in karbonite_locations:
+			our_coords_val = Ranger.get_coord_value(position_coord)
+			target_coords_val = Ranger.get_coord_value(location_coord)
+			if variables.bfs_array[our_coords_val, target_coords_val] != float('inf'):
+				is_deposit_in_vision_range = True
 
-			if distance_to_deposit < current_distance:
-				current_distance = distance_to_deposit 
-				closest_deposit = karbonite_location
+				karbonite_location = bc.MapLocation(planet,location_coord[0],location_coord[1])
+				distance_to_deposit = sense_util.distance_squared_between_coords(position_coord,location_coord)
+
+				if distance_to_deposit < current_distance:
+					current_distance = distance_to_deposit
+					closest_deposit = karbonite_location
 
 	if not is_deposit_in_vision_range:
 		for x,y in karbonite_locations.keys():
 			karbonite_location = bc.MapLocation(planet,x,y)
 			karbonite_coord = (x,y)
 			#karbonite_coord_thirds = (int(karbonite_coord[0] / variables.bfs_fineness), int(karbonite_coord[1] / variables.bfs_fineness))
-			explore.add_bfs(variables.bfs_dict, karbonite_coord, passable_locations)
-
 			distance_to_deposit = sense_util.distance_squared_between_coords(position_coord,karbonite_coord)
 			#keep updating current closest deposit to unit
-			if distance_to_deposit < current_distance and position_coord in variables.bfs_dict[karbonite_coord]:
+			our_coords_val = Ranger.get_coord_value(position_coord)
+			target_coords_val = Ranger.get_coord_value(karbonite_coord)
+			if distance_to_deposit < current_distance and variables.bfs_array[our_coords_val, target_coords_val] != float('inf'):
 				current_distance = distance_to_deposit 
 				closest_deposit = karbonite_location
 
