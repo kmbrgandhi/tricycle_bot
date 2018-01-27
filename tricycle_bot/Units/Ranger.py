@@ -264,7 +264,7 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
                 if check_radius_squares_factories(gc, location):
                     dir = optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location())
                 elif ((exists_bad_enemy(closest_enemy))) or not gc.can_attack(unit.id, closest_enemy.id):
-                    print('MOVING BACK')
+                    # print('MOVING BACK')
                     #if variables.print_count < 10:
                     #    print("Checking if condition:", time.time() - start_time)
                     start_time = time.time()

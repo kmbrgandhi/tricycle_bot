@@ -88,7 +88,7 @@ def assign_to_quadrant(gc, unit, unit_loc):
             best_coeff = coeff
 
     if best_coeff > 0: 
-        assigned_knights[unit.id] = quadrant_battles[best_quadrant].bottom_left
+        assigned_knights[unit.id] = quadrant_battles[best_quadrant].middle
         return True, best_quadrant
     return False, None
 
