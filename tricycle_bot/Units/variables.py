@@ -76,6 +76,7 @@ death_allies_per_quadrant = {}      ## (quad x, quad y): ((x,y), num_dead)
 factory_spacing = 5
 rocket_spacing = 2
 min_workers_per_building = 4
+repairers_per_building = 4
 recruitment_radius = 17
 
 blueprinting_queue = []
