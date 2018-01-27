@@ -624,9 +624,10 @@ def get_closest_deposit(gc,unit,position,karbonite_locations,in_vision_range=Fal
 def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, building_assignment, battle_locs):
 
 	#start_time = time.time()
-
+	start_time = time.time()
 	closest_deposit = get_closest_deposit(gc,my_unit,my_location,karbonite_locations)
-
+	if time.time()-start_time > 0.3:
+		print(time.time()-start_time)
 	#print("closest deposit time",time.time() - start_time)
 	#check to see if there even are deposits
 	if start_map.on_map(closest_deposit):
