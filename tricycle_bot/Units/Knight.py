@@ -6,9 +6,11 @@ import Units.sense_util as sense_util
 import Units.attack as attack
 import Units.variables as variables
 
+import Units.Ranger as Ranger
+
 order = [bc.UnitType.Worker, bc.UnitType.Knight, bc.UnitType.Ranger, bc.UnitType.Mage,
          bc.UnitType.Healer, bc.UnitType.Factory, bc.UnitType.Rocket]
-knight_unit_priority = [3, 2, 0.5, 0.5, 2, 3, 3]
+knight_unit_priority = [1, 2, 0.5, 0.5, 2, 3, 3]
 battle_radius = 9
 
 def timestep(unit):
@@ -34,12 +36,17 @@ def timestep(unit):
     best_target = None
     location = unit.location
 
+    if variables.curr_planet == bc.Planet.Earth: 
+        quadrant_size = variables.earth_quadrant_size
+    else:
+        quadrant_size = variables.mars_quadrant_size
+
     if location.is_on_map(): 
         # unit_loc = location.map_location()
         if unit.id not in unit_locations:
             loc = unit.location.map_location()
             unit_locations[unit.id] = (loc.x,loc.y)
-            f_f_quad = (int(loc.x / variables.quadrant_size), int(loc.y / variables.quadrant_size))
+            f_f_quad = (int(loc.x / quadrant_size), int(loc.y / quadrant_size))
             quadrant_battles[f_f_quad].add_ally(unit.id, "knight")
         
         unit_loc = unit_locations[unit.id]
@@ -76,52 +83,64 @@ def assign_to_quadrant(gc, unit, unit_loc):
     quadrant_battles = variables.quadrant_battle_locs
     assigned_knights = variables.assigned_knights
 
+    if variables.curr_planet == bc.Planet.Earth: 
+        diagonal = (variables.earth_diagonal)
+    else:
+        diagonal = (variables.mars_diagonal)
+
     best_quadrant = (None, None)
     best_coeff = -float('inf')
 
     for quadrant in quadrant_battles: 
         q_info = quadrant_battles[quadrant]
-        coeff = q_info.urgency_coeff()
-        # distance =  ADD DISTANCE COEFF TOO
-        if coeff > best_coeff: 
-            best_quadrant = quadrant 
-            best_coeff = coeff
+        if q_info.target_loc is not None: 
+            coeff = q_info.urgency_coeff("knight")
+            bfs_array = variables.bfs_array
+            our_coords_val = Ranger.get_coord_value(unit_loc)
+            target_coords_val = Ranger.get_coord_value(q_info.target_loc)
+            if bfs_array[our_coords_val, target_coords_val]!=float('inf'):
+                distance = bfs_array[our_coords_val, target_coords_val]
+                coeff += (1 - distance/diagonal)
+            if coeff > best_coeff and q_info.target_loc is not None: 
+                best_quadrant = quadrant 
+                best_coeff = coeff
 
     if best_coeff > 0: 
-        assigned_knights[unit.id] = quadrant_battles[best_quadrant].middle
-        return True, best_quadrant
+        assigned_knights[unit.id] = quadrant_battles[best_quadrant].target_loc
+        return True, assigned_knights[unit.id]
     return False, None
 
-def try_move_smartly(unit, coords1, coords2):
+def try_move_smartly(unit, map_loc1, map_loc2):
     if variables.gc.is_move_ready(unit.id):
-        if int(coords1[0] / variables.bfs_fineness) == int(coords1[1] / variables.bfs_fineness) and int(coords2[0]/ variables.bfs_fineness)== int(coords2[1] / variables.bfs_fineness):#sense_util.distance_squared_between_maplocs(map_loc1, map_loc2) < (2 * variables.bfs_fineness ** 2)+1:
-            map_loc1 = bc.MapLocation(variables.curr_planet, coords1[0], coords1[1])
-            map_loc2 = bc.MapLocation(variables.curr_planet, coords2[0], coords2[1])
-            d = map_loc1.direction_to(map_loc2)
-        else:
-            target_coords_thirds = (int(coords2[0] / variables.bfs_fineness), int(coords2[1] / variables.bfs_fineness))
-            if (coords1, target_coords_thirds) in variables.precomputed_bfs:
-                d = variables.precomputed_bfs[(coords1, target_coords_thirds)]
-            else:
-                map_loc1 = bc.MapLocation(variables.curr_planet, coords1[0], coords1[1])
-                map_loc2 = bc.MapLocation(variables.curr_planet, coords2[0], coords2[1])
-                d = map_loc1.direction_to(map_loc2)
-        shape = variables.direction_to_coord[d]
-        options = sense_util.get_best_option(shape)
-        for option in options:
-            if variables.gc.can_move(unit.id, option):
-                variables.gc.move_robot(unit.id, option)
-                ## CHANGE LOC IN NEW DATA STRUCTURE
-                add_new_location(unit.id, coords1, option)
-                break
+        our_coords = map_loc1
+        target_coords = map_loc2
+        bfs_array = variables.bfs_array
+        our_coords_val = Ranger.get_coord_value(our_coords)
+        target_coords_val = Ranger.get_coord_value(target_coords)
+        if bfs_array[our_coords_val, target_coords_val]!=float('inf'):
+            best_dirs = Ranger.use_dist_bfs(our_coords, target_coords, bfs_array)
+            choice_of_dir = random.choice(best_dirs)
+            shape = variables.direction_to_coord[choice_of_dir]
+            options = sense_util.get_best_option(shape)
+            for option in options:
+                if variables.gc.can_move(unit.id, option):
+                    variables.gc.move_robot(unit.id, option)
+                    ## CHANGE LOC IN NEW DATA STRUCTURE
+                    add_new_location(unit.id, our_coords, option)
+                    break
 
 def add_new_location(unit_id, old_coords, direction):
+    if variables.curr_planet == bc.Planet.Earth: 
+        quadrant_size = variables.earth_quadrant_size
+    else:
+        quadrant_size = variables.mars_quadrant_size
+
     unit_mov = variables.direction_to_coord[direction]
     new_coords = (old_coords[0]+unit_mov[0], old_coords[1]+unit_mov[1])
     variables.unit_locations[unit_id] = new_coords
 
-    old_quadrant = (int(old_coords[0] / variables.quadrant_size), int(old_coords[1] / variables.quadrant_size))
-    new_quadrant = (int(new_coords[0] / variables.quadrant_size), int(new_coords[1] / variables.quadrant_size))
+    old_quadrant = (int(old_coords[0] / quadrant_size), int(old_coords[1] / quadrant_size))
+    new_quadrant = (int(new_coords[0] / quadrant_size), int(new_coords[1] / quadrant_size))
 
     if old_quadrant != new_quadrant: 
         variables.quadrant_battle_locs[old_quadrant].remove_ally(unit_id)
@@ -141,16 +160,25 @@ def update_battles():
     """
     Remove locations & units that aren't valid anymore.
     """
-    gc = variables.gc
     assigned_knights = variables.assigned_knights
-    
-    enemy_team = variables.enemy_team
+    quadrant_battles = variables.quadrant_battle_locs
 
+    if variables.curr_planet == bc.Planet.Earth: 
+        quadrant_size = variables.earth_quadrant_size
+    else:
+        quadrant_size = variables.mars_quadrant_size
+    
     ## Units
     remove = set()
     for knight_id in assigned_knights:
         if knight_id not in variables.my_unit_ids:
             remove.add(knight_id)
+        else: 
+            loc = assigned_knights[knight_id]
+            f_f_quad = (int(loc[0] / quadrant_size), int(loc[1] / quadrant_size))
+            knight_coeff = quadrant_battles[f_f_quad].urgency_coeff("knight")
+            if knight_coeff == 0: 
+                remove.add(knight_id)
 
     for knight_id in remove:
         del assigned_knights[knight_id]

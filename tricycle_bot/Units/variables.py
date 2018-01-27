@@ -73,11 +73,23 @@ else:
     longest = earth_start_map.width
 
 if longest > 40: 
-    quadrant_size = 10
+    earth_quadrant_size = 10
 elif longest > 30: 
-    quadrant_size = 8
+    earth_quadrant_size = 8
 else: 
-    quadrant_size = 5
+    earth_quadrant_size = 5
+
+if mars_start_map.height > mars_start_map.width: 
+    longest = mars_start_map.height
+else:
+    longest = mars_start_map.width
+
+if longest > 40: 
+    mars_quadrant_size = 10
+elif longest > 30: 
+    mars_quadrant_size = 8
+else: 
+    mars_quadrant_size = 5
     
 quadrant_battle_locs = {}
 
@@ -241,7 +253,6 @@ if curr_planet == bc.Planet.Earth:
                 passable_locations_earth[coords]= False
 
     number_of_cells = earth_width * earth_height
-    start_time = time.time()
     S = dok_matrix((number_of_cells, number_of_cells), dtype=int)
     for x in range(earth_width):
         for y in range(earth_height):
@@ -255,7 +266,6 @@ if curr_planet == bc.Planet.Earth:
                         S[val2, val] = 1
 
     bfs_array = csgraph.shortest_path(S, method = 'D', unweighted = True)
-    print(time.time()-start_time)
     #bfs_dict = {} # stores the distances found by BFS so far
     #precomputed_bfs = explore.precompute_earth(passable_locations_earth, coord_to_direction, wavepoints)
     #start_time = time.time()

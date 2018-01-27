@@ -23,23 +23,28 @@ def try_move(gc,unit,coords,direction):
 			add_new_location(unit.id, coords, current_direction)
 
 def add_new_location(unit_id, old_coords, direction):
+	if variables.curr_planet == bc.Planet.Earth: 
+		quadrant_size = variables.earth_quadrant_size
+	else:
+		quadrant_size = variables.mars_quadrant_size
+
 	unit_mov = variables.direction_to_coord[direction]
 	new_coords = (old_coords[0]+unit_mov[0], old_coords[1]+unit_mov[1])
 	variables.unit_locations[unit_id] = new_coords
 
-	old_quadrant = (int(old_coords[0] / variables.quadrant_size), int(old_coords[1] / variables.quadrant_size))
-	new_quadrant = (int(new_coords[0] / variables.quadrant_size), int(new_coords[1] / variables.quadrant_size))
+	old_quadrant = (int(old_coords[0] / quadrant_size), int(old_coords[1] / quadrant_size))
+	new_quadrant = (int(new_coords[0] / quadrant_size), int(new_coords[1] / quadrant_size))
 
 	if old_quadrant != new_quadrant: 
 		variables.quadrant_battle_locs[old_quadrant].remove_ally(unit_id)
 		variables.quadrant_battle_locs[new_quadrant].add_ally(unit_id, "worker")
 
 def optimal_direction_towards(gc, unit, location, target, directions):
-    # return the optimal direction towards a target that is achievable; not A*, but faster.
-    shape = [target.x - location.x, target.y - location.y]
-    options = sense_util.get_best_option(shape)
-    for option in options:
-        if gc.can_move(unit.id, option):
-            return option
-    return directions[8]
+	# return the optimal direction towards a target that is achievable; not A*, but faster.
+	shape = [target.x - location.x, target.y - location.y]
+	options = sense_util.get_best_option(shape)
+	for option in options:
+		if gc.can_move(unit.id, option):
+			return option
+	return directions[8]
 
