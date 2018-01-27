@@ -194,8 +194,15 @@ rocket_locs = {}
 
 # RANGER
 ranger_roles = {"fighter":[],"sniper":[], "go_to_mars":[]}
+
+# Mages
+mage_roles = {"fighter":[], "go_to_mars":[]}
+
+# Rangers and mages
 targeting_units = {}    ## enemy_id: num of allied units attacking it
 which_rocket = {}       ## rocket_id: unit_id
+
+
 
 #FIGHTERS
 producing = [0, 0, 0, 0, 0]
@@ -258,6 +265,7 @@ if curr_planet == bc.Planet.Earth:
                 passable_locations_earth[coords]= False
 
     number_of_cells = earth_width * earth_height
+    start_time = time.time()
     S = dok_matrix((number_of_cells, number_of_cells), dtype=int)
     for x in range(earth_width):
         for y in range(earth_height):
@@ -271,6 +279,7 @@ if curr_planet == bc.Planet.Earth:
                         S[val2, val] = 1
 
     bfs_array = csgraph.shortest_path(S, method = 'D', unweighted = True)
+    print(time.time()-start_time)
     #bfs_dict = {} # stores the distances found by BFS so far
     #precomputed_bfs = explore.precompute_earth(passable_locations_earth, coord_to_direction, wavepoints)
     #start_time = time.time()
@@ -308,7 +317,7 @@ else:
                         S[val, val2] = 1
 
     bfs_array = csgraph.shortest_path(S, method='D', unweighted=True)
-
+    print(time.time()-start_time)
 attacker = set([bc.UnitType.Ranger, bc.UnitType.Knight, bc.UnitType.Mage, bc.UnitType.Healer])
 stockpile_until_75 = False
 between_stockpiles = 0

@@ -287,7 +287,7 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
             if gc.is_move_ready(unit.id):
 
                 if closest_enemy is not None:
-                    dir = optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location())
+                    dir = go_to_loc(unit, location, closest_enemy.location.map_location())#optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location())
 
                     next_turn_loc = location.add(dir)
                     attack = get_attack(gc, unit, next_turn_loc, targeting_units)
