@@ -103,7 +103,7 @@ class QuadrantInfo():
                     if gc.can_sense_location(map_loc): 
                         if gc.has_unit_at_location(map_loc):
                             unit = gc.sense_unit_at_location(map_loc)
-                            if unit.team == variables.enemy_team: 
+                            if unit.team == variables.enemy_team and unit.unit_type != bc.UnitType.Worker: 
                                 self.enemy_locs[loc] = unit
                                 self.enemies.add(unit.id)
                         elif loc in self.enemy_locs: 
