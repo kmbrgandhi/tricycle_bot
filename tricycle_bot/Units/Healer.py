@@ -14,7 +14,7 @@ def timestep(unit):
     # last check to make sure the right unit type is running this
     if unit.unit_type != bc.UnitType.Healer:
         return
-
+    # print('HEALER ID: ', unit.id)
     gc = variables.gc
 
     composition = variables.info
@@ -61,6 +61,8 @@ def timestep(unit):
                 if best_target is not None:
                     heal = True
                 assigned, best_loc = assign_to_quadrant(gc, unit, unit_loc)
+                # print('assigned? ', assigned)
+                # print('assigned loc: ', best_loc)
                 if not assigned: 
                     nearby = gc.sense_nearby_units_by_team(bc.MapLocation(variables.curr_planet, unit_loc[0], unit_loc[1]), 8, variables.my_team)
                     best_dir = sense_util.best_available_direction(gc,unit,nearby)  
@@ -81,6 +83,7 @@ def timestep(unit):
         loc = bc.MapLocation(variables.curr_planet, unit_loc[0], unit_loc[1])
         enemies = gc.sense_nearby_units_by_team(loc, unit.vision_range, enemy_team)
         if len(enemies) > 0: 
+            # print('I SEE ENEMIES')
             enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(loc))
             enemy_loc = enemies[0].location.map_location()
             best_dir = dir_away_from_enemy(gc, unit, loc, enemy_loc)
@@ -92,12 +95,16 @@ def timestep(unit):
                 best_loc = ally.location.map_location()
             elif unit.id in assigned_healers: 
                 best_loc = assigned_healers[unit.id]
-            else: 
-                best_dir = get_explore_dir(gc, unit, loc, directions)
+                # print('already had a loc: ', best_loc)
+            else:
+                # print('UH OH')
+            # else: 
+            #     best_dir = get_explore_dir(gc, unit, loc, directions)
 
         # Special movement if already within healing range of the best location
-        if best_loc is not None and sense_util.distance_squared_between_coords(unit_loc, best_loc) < unit.attack_range():
+        if best_loc is not None and sense_util.distance_squared_between_coords(unit_loc, best_loc) < unit.attack_range()/2:
             best_loc = None ## Change this
+            # print('oopz too close')
 
         ## Do shit
         if best_target is not None:
