@@ -17,6 +17,7 @@ import Units.quadrants as quadrants
 import research
 import time
 import cProfile
+import gc as gcollector
 
 
 print("pystarting")
@@ -63,6 +64,7 @@ for unit in variables.earth_start_map.initial_units:
 while True:
     #beginning_start_time = time.time()
     time_left = gc.get_time_left_ms()
+    print("TIME LEFT:", time_left)
 
     update.update_variables()
 
@@ -70,7 +72,7 @@ while True:
     info = variables.info
 
     print("PYROUND:",gc.round())
-
+    print(len(variables.bfs_dict))
     try:
         for unit in variables.my_units:
             # respective unit types execute their own AI
@@ -146,6 +148,8 @@ while True:
     #    print('TIME SPENT ON HEALERS:', time_healers)
     #print('TIME SPENT ON ROCKETS:', time_knights)
     #print('TOTAL TIME:', time.time()-beginning_start_time)
+    if gc.round()%5==0:
+        gcollector.collect()
     gc.next_turn()
     # these lines are not strictly necessary, but it helps make the logs make more sense.
     # it forces everything we've written this turn to be written to the manager.

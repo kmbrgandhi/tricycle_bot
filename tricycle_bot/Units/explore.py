@@ -105,12 +105,13 @@ def precompute_earth_dist(passable_locations_earth, direction_coords, wavepoints
 
 def add_bfs(bfs_dict, dest_coords, passable_locations_earth):
     if dest_coords in passable_locations_earth and passable_locations_earth[dest_coords]:
-        if (dest_coords, dest_coords) in bfs_dict:
+        if dest_coords in bfs_dict:
             return
         else:
+            bfs_dict[dest_coords] = {}
             value_dict = bfs_distance(dest_coords, passable_locations_earth)
             for coords in value_dict:
-                bfs_dict[(coords, dest_coords)] = value_dict[coords]
+                bfs_dict[dest_coords][coords] = value_dict[coords]
 
 def bfs_distance(init_coords, passable_locations_earth):
     init = init_coords

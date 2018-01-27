@@ -492,7 +492,7 @@ def try_move_smartly(unit, map_loc1, map_loc2):
 		target_coords = (map_loc2.x, map_loc2.y)
 		explore.add_bfs(variables.bfs_dict, target_coords, passable_locations)
 		#target_coords_thirds = (int(map_loc2.x / variables.bfs_fineness), int(map_loc2.y / variables.bfs_fineness))
-		if (our_coords, target_coords) in variables.bfs_dict:
+		if our_coords in variables.bfs_dict[target_coords]:
 			best_dirs = Ranger.use_dist_bfs(our_coords, target_coords, variables.bfs_dict)
 			choice_of_dir = random.choice(best_dirs)
 			shape = variables.direction_to_coord[choice_of_dir]
@@ -590,7 +590,7 @@ def get_closest_deposit(gc,unit,position,karbonite_locations,in_vision_range=Fal
 		#location_coord_thirds = (int(location_coord[0]/variables.bfs_fineness), int(location_coord[1]/variables.bfs_fineness))
 		explore.add_bfs(variables.bfs_dict, location_coord, passable_locations)
 
-		if location_coord in karbonite_locations and (position_coord, location_coord) in variables.bfs_dict:
+		if location_coord in karbonite_locations and position_coord in variables.bfs_dict[location_coord]:
 			is_deposit_in_vision_range = True
 			
 			karbonite_location = bc.MapLocation(planet,location_coord[0],location_coord[1])
@@ -609,7 +609,7 @@ def get_closest_deposit(gc,unit,position,karbonite_locations,in_vision_range=Fal
 
 			distance_to_deposit = sense_util.distance_squared_between_coords(position_coord,karbonite_coord)
 			#keep updating current closest deposit to unit
-			if distance_to_deposit < current_distance and (position_coord, karbonite_coord) in variables.bfs_dict:
+			if distance_to_deposit < current_distance and position_coord in variables.bfs_dict[karbonite_coord]:
 				current_distance = distance_to_deposit 
 				closest_deposit = karbonite_location
 
@@ -683,7 +683,8 @@ def mine_mars(gc,unit,my_location):
 	current_distance = float('inf')
 	closest_deposit = bc.MapLocation(planet,-1,-1)
 	for deposit_location in all_locations:
-		if gc.karbonite_at(deposit_location) == 0:
+		deposit_location_coords = (deposit_location.x, deposit_location.y)
+		if gc.karbonite_at(deposit_location) == 0 or not passable_locations[deposit_location_coords]:
 			continue
 		distance_to_deposit = sense_util.distance_squared_between_maplocs(my_location, deposit_location)
 		#keep updating current closest deposit to unit	

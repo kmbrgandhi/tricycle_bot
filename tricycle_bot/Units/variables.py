@@ -216,7 +216,6 @@ if curr_planet == bc.Planet.Earth:
                 passable_locations_earth[coords] = True
             else:
                 passable_locations_earth[coords]= False
-
     bfs_dict = {} # stores the distances found by BFS so far
     #precomputed_bfs = explore.precompute_earth(passable_locations_earth, coord_to_direction, wavepoints)
     #start_time = time.time()

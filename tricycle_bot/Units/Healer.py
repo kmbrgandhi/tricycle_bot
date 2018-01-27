@@ -150,7 +150,7 @@ def try_move_smartly(unit, map_loc1, map_loc2):
 		target_coords = map_loc2
 		explore.add_bfs(variables.bfs_dict, target_coords, passable_locations)
 		#target_coords_thirds = (int(map_loc2.x / variables.bfs_fineness), int(map_loc2.y / variables.bfs_fineness))
-		if (our_coords, target_coords) in variables.bfs_dict:
+		if our_coords in variables.bfs_dict[target_coords]:
 			best_dirs = Ranger.use_dist_bfs(our_coords, target_coords, variables.bfs_dict)
 			choice_of_dir = random.choice(best_dirs)
 			shape = variables.direction_to_coord[choice_of_dir]
@@ -255,7 +255,7 @@ def get_best_direction(gc, unit_id, unit_loc, target_loc, direction_to_coord, bf
     target_coords = (target_loc.x, target_loc.y)
     explore.add_bfs(bfs_dict, target_coords, passable_locations)
     #target_coords_thirds = (int(target_loc.x/bfs_fineness), int(target_loc.y/bfs_fineness))
-    if (start_coords, target_coords) in bfs_dict:
+    if start_coords in bfs_dict[target_coords]:
         best_dirs = Ranger.use_dist_bfs(start_coords, target_coords, bfs_dict)
         choice_of_dir = random.choice(best_dirs)
         shape = direction_to_coord[choice_of_dir]

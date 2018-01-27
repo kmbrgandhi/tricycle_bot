@@ -208,7 +208,7 @@ def go_to_mars_sense(gc, unit, battle_locs, location, enemies, direction_to_coor
         explore.add_bfs(bfs_dict, target_coords, passable_locations)
         # target_coords_thirds = (int(target_loc.x / bfs_fineness), int(target_loc.y / bfs_fineness))
 
-        if (start_coords, target_coords) in bfs_dict:
+        if start_coords in bfs_dict[target_coords]:
             best_dirs = use_dist_bfs(start_coords, target_coords, bfs_dict)
             choice_of_dir = random.choice(best_dirs)
             shape = direction_to_coord[choice_of_dir]
@@ -335,7 +335,7 @@ def go_to_loc(unit, start_loc, target_loc):
     target_coords = (target_loc.x, target_loc.y)
     explore.add_bfs(variables.bfs_dict, target_coords, passable_locations)
     # target_coords_thirds = (int(target_loc.x / bfs_fineness), int(target_loc.y / bfs_fineness))
-    if (start_coords, target_coords) in bfs_dict:
+    if start_coords in bfs_dict[target_coords]:
         best_dirs = use_dist_bfs(start_coords, target_coords, bfs_dict)
         choice_of_dir = random.choice(best_dirs)
         shape = variables.direction_to_coord[choice_of_dir]
@@ -352,7 +352,7 @@ def move_to_rocket(gc, unit, location, direction_to_coord, bfs_dict):
             target_loc = variables.rocket_locs[rocket]
             target_coords = (target_loc.x, target_loc.y)
             explore.add_bfs(bfs_dict, target_coords, passable_locations)
-            if (location_coords, target_coords) in bfs_dict:
+            if location_coords in bfs_dict[target_coords]:
                 variables.which_rocket[unit.id] = (target_loc, rocket)
                 break
 
@@ -376,7 +376,7 @@ def move_to_rocket(gc, unit, location, direction_to_coord, bfs_dict):
         target_coords = (target_loc.x, target_loc.y)
         explore.add_bfs(bfs_dict, target_coords, passable_locations)
         #target_coords_thirds = (int(target_loc.x / bfs_fineness), int(target_loc.y / bfs_fineness))
-        if (location_coords, target_coords) in bfs_dict:
+        if location_coords in bfs_dict[target_coords]:
             best_dirs = use_dist_bfs(location_coords, target_coords, bfs_dict)
             choice_of_dir = random.choice(best_dirs)
             shape = direction_to_coord[choice_of_dir]
@@ -483,7 +483,7 @@ def pick_from_battle_locs(bfs_dict, init_loc, battle_locs):
         choice = battle_locs[pair][0]
         choice_coords = (choice.x, choice.y)
         explore.add_bfs(bfs_dict, choice_coords, passable_locations)
-        if (location_coords, choice_coords) in bfs_dict:
+        if location_coords in bfs_dict[choice_coords]:
             choices.append(choice_coords)
     if len(choices) == 0:
         return None
@@ -516,7 +516,7 @@ def go_to_battle_new(gc, unit, battle_locs, location, direction_to_coord):
     return directions[8]
 
 def use_dist_bfs(start_coords, target_coords, bfs_dict):
-    dist = bfs_dict[(start_coords, target_coords)]
+    dist = bfs_dict[target_coords][start_coords]
 
     best_dirs = []
     min_dir = None
@@ -527,25 +527,27 @@ def use_dist_bfs(start_coords, target_coords, bfs_dict):
     for direction in all_but_center_dir:
         coord_version = variables.direction_to_coord[direction]
         new_coords = (start_coords[0] + coord_version[0], start_coords[1] + coord_version[1])
-        if (new_coords, target_coords) in bfs_dict:
-            new_dist = bfs_dict[(new_coords, target_coords)]
+        if new_coords in bfs_dict[target_coords]:
+            new_dist = bfs_dict[target_coords][new_coords]
             if new_dist<min_dist:
                 min_dir = direction
                 min_dist = new_dist
 
     return [min_dir]
+    """
     for direction in all_but_center_dir:
         coord_version = variables.direction_to_coord[direction]
         new_coords = (start_coords[0] + coord_version[0], start_coords[1] + coord_version[1])
         #print('option:', new_coords)
-        if (new_coords, target_coords) in bfs_dict:
-            new_dist = bfs_dict[(new_coords, target_coords)]
+        if new_coords in bfs_dict[target_coords:
+            new_dist = bfs_dict[target_coords][new_coords]
             if new_dist <= min_dist:
                 best_dirs.append(direction)
             #elif new_dist == (min_dist + 1) and not are_too_similar(direction, best_dirs):
             #    best_dirs.append(direction)
     #print(best_dirs)
     return best_dirs
+    """
 
 def are_too_similar(direction1, list_of_directions):
     for direction2 in list_of_directions:
@@ -637,7 +639,7 @@ def pick_from_init_enemy_locs(init_loc):
         choice_coords = (choice.x, choice.y)
         explore.add_bfs(variables.bfs_dict, choice_coords, passable_locations)
         #coords_loc_thirds = (int(choice.x /variables.bfs_fineness), int(choice.y/variables.bfs_fineness))
-        if (init_loc, choice_coords) in variables.bfs_dict:
+        if init_loc in variables.bfs_dict[choice_coords]:
             choices.append(choice)
     if len(choices)==0:
         return None
