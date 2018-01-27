@@ -13,7 +13,7 @@ import Units.factory as factory
 import Units.rocket as rocket
 import Units.variables as variables
 import research
-import update_functions as update
+import Units.update_functions as update
 
 print("pystarting")
 
