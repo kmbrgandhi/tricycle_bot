@@ -66,6 +66,8 @@ def timestep(unit):
 	if gc.round() > 250 and not variables.saviour_worker and near_factory(my_location):
 		variables.saviour_worker = True
 		variables.saviour_worker_id = unit.id
+
+	if variables.saviour_worker_id == unit.id:
 		if variables.saviour_blueprinted:
 			try:
 				corr_rocket = gc.unit(variables.saviour_blueprinted_id)
@@ -182,7 +184,7 @@ def check_if_saviour_died():
 	return False
 def near_factory(my_location):
 	my_location_coords = (my_location.x, my_location.y)
-	for coords in explore.coord_neighbors(my_location_coords, diff = explore.diffs_20):
+	for coords in explore.coord_neighbors(my_location_coords, diff = explore.diffs_50):
 		if coords in passable_locations and passable_locations[coords]:
 			map_loc = bc.MapLocation(bc.Planet.Earth, coords[0], coords[1])
 			if variables.gc.can_sense_location(map_loc) and variables.gc.has_unit_at_location(map_loc):

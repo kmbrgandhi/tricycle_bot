@@ -177,6 +177,8 @@ for unit in earth_start_map.initial_units:
         init_enemy_locs.append(loc)
     else:
         our_init_locs.append(loc)
+knight_attacks = {}
+died_without_attacking = 0
 
 ## HEALER VARIABLES ##
 healer_radius = 9
