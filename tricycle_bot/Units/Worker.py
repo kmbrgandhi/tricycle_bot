@@ -132,14 +132,20 @@ def timestep(unit):
 		if unit.id in current_roles[role]:
 			my_role = role
 	
-	print()
-	print("on unit #",unit.id, "position: ",my_location, "role: ",my_role)
+	#print()
+	#print("on unit #",unit.id, "position: ",my_location, "role: ",my_role)
 	#print("KARBONITE: ",gc.karbonite()
 	
 	current_num_workers = info[0]
 	max_num_workers = get_worker_cap(gc,karbonite_locations, info, num_enemies)
-	print("max num workers",max_num_workers)
+	#print("max num workers",max_num_workers)
 	worker_spacing = 8
+
+
+	if current_num_workers < 5:
+		try_replicate = replicate(gc,unit)
+		if try_replicate:
+			return
 
 	# runs this block every turn if unit is miner
 	if my_role == "miner":
@@ -322,8 +328,8 @@ def designate_roles():
 		#print("closest workers to blueprint",closest_workers_to_blueprint)
 		#print("workers in recruitment range",workers_in_recruitment_range)
 
-		print("blueprinting_assignment",blueprinting_assignment)
-		print("building_assignment",building_assignment)
+		#print("blueprinting_assignment",blueprinting_assignment)
+		#print("building_assignment",building_assignment)
 		#print("blueprinting_queue",blueprinting_queue)
 
 
@@ -472,7 +478,7 @@ def designate_roles():
 				new_role = "repairer"
 			"""
 			current_roles[new_role].append(worker.id)
-	print("current roles",variables.current_worker_roles)
+	#print("current roles",variables.current_worker_roles)
 
 
 
@@ -541,11 +547,11 @@ def try_move_smartly(unit, map_loc1, map_loc2):
 	if variables.gc.is_move_ready(unit.id):
 		our_coords = (map_loc1.x, map_loc1.y)
 		target_coords = (map_loc2.x, map_loc2.y)
-		print(target_coords)
+		#print(target_coords)
 		our_coords_val = Ranger.get_coord_value(our_coords)
-		print(our_coords_val)
+		#print(our_coords_val)
 		target_coords_val = Ranger.get_coord_value(target_coords)
-		print(target_coords_val)
+		#print(target_coords_val)
 		bfs_array = variables.bfs_array
 		if bfs_array[our_coords_val, target_coords_val] != float('inf'):
 			best_dirs = Ranger.use_dist_bfs(our_coords, target_coords, bfs_array)
@@ -697,8 +703,7 @@ def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, bui
 		info = variables.info
 		if info[0] < get_worker_cap(gc,variables.karbonite_locations,info,variables.num_enemies):
 			away_from_enemies = sense_util.best_available_direction(gc,my_unit,enemy_units) # includes factories
-			try_replicate = replicate(gc,my_unit,away_from_enemies)
-			#print("replicated by other means")
+			try_replicate = replicate(gc,my_unit,direction_to_deposit)
 			if try_replicate:
 				return
 
@@ -1133,7 +1138,7 @@ def blueprint(gc,my_unit,my_location,karbonite_locations,building_assignment,blu
 				try_move_smartly(my_unit,my_location,assigned_site.map_location)
 		else:
 			my_coord = (assigned_location.x,assigned_location.y)
-			standby_mining_locations = explore.coord_neighbors(my_coord,diff=variables.diffs_2,include_self=True)
+			standby_mining_locations = explore.coord_neighbors(my_coord,diff=explore.diffs_5,include_self=True)
 
 			closest_distance = float('inf')
 			closest_deposit_coord = None
@@ -1147,7 +1152,7 @@ def blueprint(gc,my_unit,my_location,karbonite_locations,building_assignment,blu
 
 			if closest_deposit_coord is not None:
 				closest_deposit = bc.MapLocation(variables.earth,closest_deposit_coord[0],closest_deposit_coord[1])
-				direction_to_deposit = bc.Direction(my_location,closest_deposit)
+				direction_to_deposit = my_location.direction_to(closest_deposit)
 				if my_location.is_adjacent_to(closest_deposit) or my_location == closest_deposit:
 					# mine if adjacent to deposit
 					#print("trying to harvest at:",closest_deposit)
