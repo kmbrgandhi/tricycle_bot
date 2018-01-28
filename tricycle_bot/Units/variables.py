@@ -278,7 +278,7 @@ if curr_planet == bc.Planet.Earth:
             if dist!=float('inf'):
                 dists.append(dist)
     if len(dists)>0:
-        if min(dists) < 20 and max(dists) < 33:
+        if min(dists) < 19 and max(dists) < 25:
             knight_rush = True
 
     ## Karbonite locations update
