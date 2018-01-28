@@ -82,7 +82,7 @@ def timestep(unit):
             enemy_loc = closest_enemy.location.map_location()
             f_f_quad = (int(enemy_loc.x / 5), int(enemy_loc.y / 5))
             if f_f_quad not in next_turn_battle_locs:
-                next_turn_battle_locs[f_f_quad] = (map_loc, 1)
+                next_turn_battle_locs[f_f_quad] = (enemy_loc, 1)
             else:
                 next_turn_battle_locs[f_f_quad] = (next_turn_battle_locs[f_f_quad][0], next_turn_battle_locs[f_f_quad][1]+1)
 
@@ -298,9 +298,13 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
 
                         # and (closest_enemy.location.map_location().distance_squared_to(location)) ** (
                         # 0.5) + 2 < unit.attack_range() ** (0.5)) or not gc.can_attack(unit.id, attack.id):
+
                     elif variables.num_enemies > 0.9*variables.info[2]:
+                        #dir = None
                         dir = sense_util.best_available_direction(gc, unit, [closest_enemy])
                     else:
+                        dir = None
+                        #dir = sense_util.best_available_direction(gc, unit, [closest_enemy])
                         dir = try_orthogonal(gc, unit, location, closest_enemy_loc)
 
             else:
@@ -566,17 +570,17 @@ def move_to_rocket(gc, unit, location, direction_to_coord, bfs_array):
     """
 snipe_priority = {"Rocket": 5, "Factory": 4, "Ranger": 3, "Healer": 2, "Knight": 1, "Worker": 0, "Mage": -1}
 def snipe_priority(unit):
-    if unit.unit_type == bc.UnitType.bc.UnitType.Rocket:
+    if unit.unit_type == bc.UnitType.Rocket:
         return 4
-    elif unit.unit_type == bc.UnitType.bc.UnitType.Factory:
+    elif unit.unit_type == bc.UnitType.Factory:
         return 5
-    elif unit.unit_type == bc.UnitType.bc.UnitType.Ranger:
+    elif unit.unit_type == bc.UnitType.Ranger:
         return 3
-    elif unit.unit_type == bc.UnitType.bc.UnitType.Healer:
+    elif unit.unit_type == bc.UnitType.Healer:
         return 2
-    elif unit.unit_type == bc.UnitType.bc.UnitType.Knight:
+    elif unit.unit_type == bc.UnitType.Knight:
         return 1
-    elif unit.unit_type == bc.UnitType.bc.UnitType.Worker:
+    elif unit.unit_type == bc.UnitType.Worker:
         return 0
     else:
         return -1
@@ -687,7 +691,8 @@ def use_dist_bfs(start_coords, target_coords, bfs_array):
     min_absolute_dist = float('inf')
     #print('start_coords:', start_coords)
     #print('target_coords_thirds:', target_coords_thirds)
-    all_but_center_dir = variables.all_but_center_dir
+    all_but_center_dir = variables.all_but_center_dir[:]
+    random.shuffle(all_but_center_dir)
     for direction in all_but_center_dir:
         coord_version = variables.direction_to_coord[direction]
         new_coords = (start_coords[0] + coord_version[0], start_coords[1] + coord_version[1])
