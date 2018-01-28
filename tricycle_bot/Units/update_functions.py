@@ -2,7 +2,7 @@ import battlecode as bc
 import random
 import sys
 import traceback
-
+import time 
 import Units.variables as variables
 import Units.quadrants as quadrants
 
@@ -144,7 +144,9 @@ def update_variables():
         variables.num_unsuccessful_savior = 0
         variables.saviour_time_between = 0
 
+    start_time = time.time()
     worker.designate_roles()
+    #print("designating time: ",time.time() - start_time)
 
     ## Rangers
     variables.targeting_units = {}

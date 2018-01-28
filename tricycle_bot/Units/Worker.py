@@ -308,7 +308,7 @@ def designate_roles():
 		max_num_blueprinters = 2 #len(blueprinting_queue)*2 + 1 # at least 1 blueprinter, 2 blueprinters per cluster
 		num_miners_per_deposit = 2 #approximate, just to cap miner count as deposit number decreases
 
-
+		#start_time = time.time()
 		closest_workers_to_blueprint = {} # dictionary mapping blueprint_id to a list of worker id sorted by distance to the blueprint
 
 		for building_id in building_assignment:
@@ -326,10 +326,11 @@ def designate_roles():
 					if sense_util.distance_squared_between_maplocs(worker_unit.location.map_location(), blueprint_location) <= variables.recruitment_radius:
 						closest_worker_ids.append(worker_unit.id)
 				closest_workers_to_blueprint[building_id] = closest_worker_ids
-
+		#print("part 1 ",time.time() - start_time)
 
 		closest_workers_to_damaged_building = {}
 
+		#start_time = time.time()
 		for damaged_building in damaged_buildings:
 			damaged_building_location = damaged_building.location.map_location()
 			workers_dist_to_building_sorted = sorted(workers,key=lambda unit:sense_util.distance_squared_between_maplocs(unit.location.map_location(), damaged_building_location))
@@ -343,20 +344,26 @@ def designate_roles():
 
 			closest_workers_to_damaged_building[damaged_building.id] = closest_worker_ids
 
+		#print("part 2",time.time() - start_time)
 		idle_workers = []
 		accessible_karbonite = {}
-
+		"""
+		start_time = time.time()
 		for worker in workers:
 
-			worker_location = worker.location.map_location()
-			worker_coord = (worker_location.x,worker_location.y)
-
+			start_time = time.time()
+			worker_coord = variables.unit_locations[worker.id]
+			worker_adjacent_coords = explore.coord_neighbors(worker_coord,diff=explore.diffs_50,include_self=True)
 			worker_coords_val = Ranger.get_coord_value(worker_coord)
 
+			print("inner part 1",time.time() - start_time)
+			start_time = time.time()
 			can_reach_karbonite = False
 			for karbonite_coord in karbonite_locations.keys():
 				#if gc.round() > 110:
 				#	print("coord",karbonite_coord,"num karbonite",karbonite_locations[karbonite_coord])
+
+				# maybe just check coords that are within a radius of 15 of worker
 				karbonite_coords_val = Ranger.get_coord_value(karbonite_coord)
 				karbonite_at = karbonite_locations[karbonite_coord]
 
@@ -376,11 +383,12 @@ def designate_roles():
 							accessible_karbonite[worker.id] = karbonite_at
 						else:
 							accessible_karbonite[worker.id] += karbonite_at
-
+			print("inner part 2",time.time() - start_time)
 			if not can_reach_karbonite:
 				idle_workers.append(worker)
+		"""
 
-
+		#print("part 3",time.time() - start_time)
 		variables.replication_priority = sorted(accessible_karbonite.keys(),key=lambda unit_id:accessible_karbonite[unit_id])
 
 		#print("accessible karbonite",accessible_karbonite)
@@ -397,7 +405,7 @@ def designate_roles():
 		######################
 		## ROLE DESIGNATION ##
 		######################
-
+		#start_time = time.time()
 		for worker in workers:
 			worker_location = worker.location.map_location()
 			open_slots_to_build = False
@@ -571,7 +579,7 @@ def designate_roles():
 				new_role = "repairer"
 			"""
 			current_roles[new_role].append(worker.id)
-
+		#print("for loop",time.time() - start_time)
 	#print("current roles",variables.current_worker_roles)
 
 
@@ -706,18 +714,28 @@ def board(gc,my_unit,my_location,current_roles):
 
 def replicate(gc,unit,direction=None):
 	replicated = False
+	unit_location = unit.location.map_location()
 
 	if direction is not None:
 		if gc.can_replicate(unit.id,direction):
 			replicated = True
 			gc.replicate(unit.id,direction)
+			replicate_location = unit_location.add(direction)
+			replicated_unit = gc.sense_unit_at_location(replicate_location)
+			variables.unit_locations[replicated_unit.id] = (replicate_location.x,replicate_location.y)
+
 			variables.info[0] += 1
 			variables.my_karbonite = gc.karbonite()
+
 	elif variables.my_karbonite >= variables.unit_types["worker"].replicate_cost():
 		for direction in variables.directions:
 			if gc.can_replicate(unit.id,direction):
 				replicated = True
 				gc.replicate(unit.id,direction)
+				replicate_location = unit_location.add(direction)
+				replicated_unit = gc.sense_unit_at_location(replicate_location)
+				variables.unit_locations[replicated_unit.id] = (replicate_location.x,replicate_location.y)
+
 				variables.info[0] += 1
 				variables.my_karbonite = gc.karbonite()
 	return replicated
@@ -1047,6 +1065,10 @@ def build(gc,my_unit,my_location,start_map,building_assignment,current_roles):
 						if gc.can_replicate(my_unit.id,direction):
 							#print("right before replication")
 							gc.replicate(my_unit.id,direction)
+
+							replicate_location = unit_location.add(direction)
+							replicated_unit = gc.sense_unit_at_location(replicate_location)
+							variables.unit_locations[replicated_unit.id] = (replicate_location.x,replicate_location.y)
 
 							variables.my_karbonite = gc.karbonite()
 							info[0] += 1
