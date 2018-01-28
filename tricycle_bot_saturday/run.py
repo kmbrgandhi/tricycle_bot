@@ -48,8 +48,8 @@ update.initiate_quadrants()
 ##AI EXECUTION##
 while True:
     #beginning_start_time = time.time()
-    time_left = gc.get_time_left_ms()
-    print("TIME LEFT:", time_left)
+    # time_left = gc.get_time_left_ms()
+    # print("TIME LEFT:", time_left)
 
     update.update_variables()
     time_rangers = 0
@@ -58,7 +58,7 @@ while True:
     unit_types = variables.unit_types
     info = variables.info
 
-    print("PYROUND:",gc.round())
+    # print("PYROUND:",gc.round())
     try:
         for unit in variables.my_units:
             if gc.get_time_left_ms()<250:
