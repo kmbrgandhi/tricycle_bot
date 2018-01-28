@@ -5,9 +5,9 @@ import traceback
 import Units.explore as explore
 import Units.sense_util as sense_util
 
-def coefficient_computation(gc, our_unit, their_unit, location, priority, far=False):
+def coefficient_computation(gc, our_unit, their_unit, location, priority):
     # compute the relative appeal of attacking a unit.  Use AOE computation if attacking unit is mage.
-    if not gc.can_attack(our_unit.id, their_unit.id) and not far:
+    if not gc.can_attack(our_unit.id, their_unit.id):
         return 0
     coeff = attack_coefficient(gc, our_unit, their_unit, location, priority)
     if our_unit.unit_type != bc.UnitType.Mage:

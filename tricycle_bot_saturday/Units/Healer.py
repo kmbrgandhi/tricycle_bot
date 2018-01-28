@@ -106,9 +106,7 @@ def timestep(unit):
         else: 
             if unit.id in assigned_overcharge: 
                 ally = assigned_overcharge[unit.id]
-                best_loc_map = ally.location.map_location()
-                best_loc = (best_loc_map.x, best_loc_map.y)
-
+                best_loc = ally.location.map_location()
             elif unit.id in assigned_healers: 
                 best_loc = assigned_healers[unit.id]
             #     print('already had a loc: ', best_loc)
@@ -125,11 +123,6 @@ def timestep(unit):
         if best_target is not None:
             if overcharge and gc.is_overcharge_ready(unit.id):
                 gc.overcharge(unit.id, best_target.id)
-                overcharged_unit = gc.unit(best_target.id)
-                if overcharged_unit.unit_type == variables.unit_types["ranger"]:
-                    print('EXTRA TIMESTEP')
-                    print(overcharged_unit.location.map_location())
-                    Ranger.timestep(overcharged_unit)
             if heal and gc.is_heal_ready(unit.id):
                 gc.heal(unit.id, best_target.id)
         if best_dir is not None and gc.is_move_ready(unit.id) and gc.can_move(unit.id,best_dir): 
@@ -240,7 +233,6 @@ def update_healers():
     gc = variables.gc
     assigned_healers = variables.assigned_healers
     assigned_overcharge = variables.assigned_overcharge
-    variables.overcharge_targets = set([])
     overcharge_targets = variables.overcharge_targets
     quadrant_battles = variables.quadrant_battle_locs
 

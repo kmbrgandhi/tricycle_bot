@@ -98,7 +98,6 @@ def timestep(unit):
                 else:
                     targeting_units[attack_target.id]+= 1
                 gc.attack(unit.id, attack_target.id)
-                variables.overcharge_targets.add(unit.id)
         else:
             if attack_target is not None and gc.is_attack_ready(unit.id) and gc.can_attack(unit.id, attack_target.id):
                 if attack_target.id not in targeting_units:
@@ -106,8 +105,6 @@ def timestep(unit):
                 else:
                     targeting_units[attack_target.id]+=1
                 gc.attack(unit.id, attack_target.id)
-                variables.overcharge_targets.add(unit.id)
-
 
             if dir != None and gc.is_move_ready(unit.id) and gc.can_move(unit.id, dir):
                 gc.move_robot(unit.id, dir)
@@ -163,10 +160,8 @@ def check_radius_squares_factories(gc, location):
     nearby_locs = explore.coord_neighbors(location_coords)
     for nearby_loc_coords in nearby_locs:
         nearby_loc = bc.MapLocation(variables.curr_planet, nearby_loc_coords[0], nearby_loc_coords[1])
-        if gc.can_sense_location(nearby_loc) and gc.has_unit_at_location(nearby_loc):
-            unit = gc.sense_unit_at_location(nearby_loc)
-            if unit.team == variables.my_team and unit.unit_type == bc.UnitType.Factory:
-                return True
+        if gc.can_sense_location(nearby_loc) and gc.has_unit_at_location(nearby_loc) and gc.sense_unit_at_location(nearby_loc).unit_type == bc.UnitType.Factory:
+            return True
     return False
 
 """
@@ -274,10 +269,9 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
         # if variables.print_count < 10:
         #    print("Getting attack:", time.time() - start_time)
         if attack is not None:
-            #visible_enemies = True
             if closest_enemy is not None:
                 start_time = time.time()
-                if check_radius_squares_factories(gc, location) and closest_enemy.unit_type != variables.unit_types["knight"]:
+                if check_radius_squares_factories(gc, location):
                     dir = optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location())
                 elif (exists_bad_enemy(closest_enemy)) or not gc.can_attack(unit.id, closest_enemy.id):
                     # if variables.print_count < 10:
@@ -293,20 +287,14 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
             if gc.is_move_ready(unit.id):
 
                 if closest_enemy is not None:
-                    dir = go_to_loc(unit, location, closest_enemy.location.map_location())#optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location())
-                    if dir is None or dir == variables.directions[8]:
-                        dir = optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location())
+                    dir = optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location())
+
                     next_turn_loc = location.add(dir)
                     attack = get_attack(gc, unit, next_turn_loc, targeting_units)
                     if attack is not None:
                         move_then_attack = True
                 else:
-                    if variables.curr_planet == bc.Planet.Earth:
-                        # print('IS RUNNING TOWARDS INIT LOC')
-                        dir = run_towards_init_loc_new(gc, unit, location, direction_to_coord)
-                    else:
-                        # print('EXPLORING')
-                        dir = get_explore_dir(gc, unit, location)
+                    dir = run_towards_init_loc_new(gc, unit, location, direction_to_coord)
                     # if variables.print_count < 10:
                     #    print("Getting direction:", time.time() - start_time)
     else:
