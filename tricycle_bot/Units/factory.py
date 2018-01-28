@@ -46,9 +46,7 @@ def timestep(unit):
 
 	if variables.knight_rush:
 		if not variables.stockpile_until_75 and gc.can_produce_robot(unit.id, bc.UnitType.Knight): #and should_produce_robot(gc, mining_rate, current_production, karbonite_lower_limit): # otherwise produce a unit, based on most_off_optimal
-			if total_units[0]<4 and gc.can_produce_robot(unit.id, bc.UnitType.Worker):
-				gc.produce_robot(unit.id, bc.UnitType.Worker)
-			elif total_units[0]<2:
+			if total_units[0]<2:
 				if gc.can_produce_robot(unit.id, bc.UnitType.Worker):
 					gc.produce_robot(unit.id, bc.UnitType.Worker)
 			elif total_units[1] < 0.75* num_non_workers or total_units[2]<7:
