@@ -98,6 +98,8 @@ def timestep(unit):
                 else:
                     targeting_units[attack_target.id]+= 1
                 gc.attack(unit.id, attack_target.id)
+                d = map_loc.direction_to(attack_target.location.map_location())
+                variables.where_rangers_attacking[d] += 1
                 variables.overcharge_targets.add(unit.id)
 
             if snipe is not None:
@@ -112,6 +114,8 @@ def timestep(unit):
                 else:
                     targeting_units[attack_target.id]+=1
                 gc.attack(unit.id, attack_target.id)
+                d = map_loc.direction_to(attack_target.location.map_location())
+                variables.where_rangers_attacking[d] += 1
                 variables.overcharge_targets.add(unit.id)
 
 
