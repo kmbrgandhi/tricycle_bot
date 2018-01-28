@@ -305,7 +305,7 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
                     else:
                         dir = None
                         #dir = sense_util.best_available_direction(gc, unit, [closest_enemy])
-                        dir = try_orthogonal(gc, unit, location, closest_enemy_loc)
+                        #dir = try_orthogonal(gc, unit, location, closest_enemy_loc)
 
             else:
                 num_sniping = len(variables.is_sniping)
