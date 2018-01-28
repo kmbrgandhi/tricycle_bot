@@ -222,17 +222,18 @@ def update_battles():
     for knight_id in remove_assigned: 
         del assigned_knights[knight_id]
 
-    knights_no_attack = 0
-    total_knights = len(knight_attacks)
+    knights_dead_no_attack = 0
+    total_dead_knights = 0
     for knight_id in remove:
         num_times_attacked = knight_attacks[knight_id]
         if num_times_attacked == 0: 
-            knights_no_attack += 1
+            knights_dead_no_attack += 1
+        total_dead_knights += 1
         del knight_attacks[knight_id]
 
-    if total_knights == 0: 
+    if total_dead_knights == 0: 
         variables.died_without_attacking = 0
     else: 
-        variables.died_without_attacking = knights_no_attack / total_knights
+        variables.died_without_attacking = knights_dead_no_attack / total_dead_knights
 
 
