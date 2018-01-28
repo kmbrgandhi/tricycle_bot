@@ -145,8 +145,8 @@ def timestep(unit):
 		variables.worker_harvest_amount = unit.worker_harvest_amount()
 
 
-	#print()
-	#print("on unit #",unit.id, "position: ",my_location, "role: ",my_role)
+	print()
+	print("on unit #",unit.id, "position: ",my_location, "role: ",my_role)
 	#print("KARBONITE: ",gc.karbonite()
 	
 	current_num_workers = info[0]
@@ -494,7 +494,7 @@ def designate_roles():
 				new_role = "repairer"
 			"""
 			current_roles[new_role].append(worker.id)
-	#print("current roles",variables.current_worker_roles)
+	print("current roles",variables.current_worker_roles)
 
 
 
@@ -736,7 +736,6 @@ def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, bui
 	#check to see if there even are deposits
 	if start_map.on_map(closest_deposit):
 
-
 		direction_to_deposit = my_location.direction_to(closest_deposit)
 		deposit_coord = (closest_deposit.x,closest_deposit.y)
 		#print(unit.id, "is trying to mine at", direction_to_deposit)
@@ -761,12 +760,14 @@ def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, bui
 		if len(dangerous_enemies) > 0:
 			dir = sense_util.best_available_direction(gc, my_unit, dangerous_enemies)
 			movement.try_move(gc, my_unit, (my_location.x,my_location.y), dir)	
-		else:
+		elif my_location != closest_deposit:
 			# move toward deposit
 			#print("my location",my_location)
 			#print("trying to move to closest deposit",closest_deposit)
 
 			my_location_coord = (my_location.x,my_location.y)
+			mineable_spots = explore.coord_neighbors(deposit_coord,include_self=True)
+
 			if variables.curr_planet == bc.Planet.Earth: 
 				quadrant_size = variables.earth_quadrant_size
 			else:
@@ -776,20 +777,25 @@ def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, bui
 			q_info = variables.quadrant_battle_locs[quadrant]
 			ally_ids_in_quadrant = q_info.all_allies()
 
-			ally_on_deposit = False
+
+			ally_on_deposit_list = []
 			for ally_id in ally_ids_in_quadrant:
 				ally_coord = variables.unit_locations[ally_id]
-				if deposit_coord == ally_coord:
-					ally_on_deposit = True
+				if ally_coord in mineable_spots:
+					ally_on_deposit_list.append(ally_coord)
 
-			if my_location != closest_deposit and not ally_on_deposit:
-				try_move_smartly(my_unit, my_location, closest_deposit)
+			for mineable_spot in mineable_spots:
+				if mineable_spot in passable_locations:
+					if passable_locations[mineable_spot] and mineable_spot not in ally_on_deposit_list:
+						target_loc = bc.MapLocation(variables.curr_planet,mineable_spot[0],mineable_spot[1])
+						print("trying to move to this location",target_loc)
+						try_move_smartly(my_unit, my_location, target_loc)
+						break
 
 
 		if my_location.is_adjacent_to(closest_deposit) or my_location == closest_deposit:
 
 			# mine if adjacent to deposit
-
 			#print("trying to harvest at:",closest_deposit)
 			if gc.can_harvest(my_unit.id,direction_to_deposit):
 
