@@ -344,9 +344,38 @@ def designate_roles():
 
 			closest_workers_to_damaged_building[damaged_building.id] = closest_worker_ids
 
-		#print("part 2",time.time() - start_time)
+
 		idle_workers = []
-		accessible_karbonite = {}
+		if gc.round()>225:
+			for worker in workers:
+				found_karbonite = False
+				position = worker.location.map_location()
+				position_coord = (position.x, position.y)
+				for location_coord in explore.coord_neighbors(position_coord, diff=explore.diffs_50, include_self=True):
+					# location_coord_thirds = (int(location_coord[0]/variables.bfs_fineness), int(location_coord[1]/variables.bfs_fineness))
+					if location_coord in karbonite_locations:
+						our_coords_val = Ranger.get_coord_value(position_coord)
+						target_coords_val = Ranger.get_coord_value(location_coord)
+
+						if variables.curr_planet == bc.Planet.Earth:
+							quadrant_size = variables.earth_quadrant_size
+
+						quadrant = (int(location_coord[0] / quadrant_size), int(location_coord[1] / quadrant_size))
+						q_info = variables.quadrant_battle_locs[quadrant]
+						enemies_in_quadrant = len(q_info.enemies)
+
+						if variables.bfs_array[our_coords_val, target_coords_val] != float(
+								'inf') and enemies_in_quadrant == 0:
+							found_karbonite = True
+				if not found_karbonite:
+					idle_workers.append(worker)
+
+		elif gc.round()>500:
+			idle_workers = [worker for worker in workers]
+
+
+
+
 		"""
 		start_time = time.time()
 		for worker in workers:
