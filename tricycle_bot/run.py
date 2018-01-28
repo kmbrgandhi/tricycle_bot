@@ -47,12 +47,14 @@ update.initiate_quadrants()
 while True:
     #beginning_start_time = time.time()
     # time_left = gc.get_time_left_ms()
-    # print("TIME LEFT:", time_left)
-
+    # print("TIME LEFT:", time_print('time to update')
+    #start_time = time.time()
     update.update_variables()
+    #print(time.time()-start_time)
     time_rangers = 0
     time_workers = 0
     time_healers = 0
+    time_factories = 0
     unit_types = variables.unit_types
     info = variables.info
 
@@ -84,7 +86,6 @@ while True:
                     start_time = time.time()
                     ranger.timestep(unit)
                     time_rangers += (time.time()-start_time)
-                    #print(time.time()-start_time)
                 except Exception as e:
                     #print('RANGER ERROR.')
                     if ranger in variables.ranger_roles["go_to_mars"]:
@@ -104,6 +105,7 @@ while True:
             elif unit.unit_type == unit_types["factory"]:
                 start_time = time.time()
                 factory.timestep(unit)
+                time_factories+=time.time()-start_time
             elif unit.unit_type == unit_types["rocket"]:
                 #start_time = time.time()
                 rocket.timestep(unit)
@@ -136,7 +138,7 @@ while True:
     #print('TIME SPENT ON RANGERS:', time_rangers)
 
     #print('TIME SPENT ON HEALERS:', time_healers)
-    ##print('TIME SPENT ON ROCKETS:', time_knights)
+    #print('TIME SPENT ON FACTORIES:', time_factories)
     #print('TOTAL TIME:', time.time()-beginning_start_time)
     if gc.round()%5==0:
         gcollector.collect()

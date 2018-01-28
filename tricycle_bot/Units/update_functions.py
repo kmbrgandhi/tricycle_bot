@@ -13,19 +13,20 @@ import Units.Ranger as ranger
 import Units.Worker as worker
 import Units.factory as factory
 import Units.rocket as rocket
+import time
 
 def update_variables():
     gc = variables.gc 
 
     ## **************************************** GENERAL **************************************** ## 
 
-    ## Constants 
+    ## Constants
     variables.curr_round = gc.round()
     variables.num_enemies = 0
     variables.print_count = 0
     variables.research = gc.research_info()
 
-    ## Battle locations 
+    ## Battle locations
     variables.last_turn_battle_locs = variables.next_turn_battle_locs.copy()
     variables.next_turn_battle_locs = {}
     if variables.curr_round % 30 == 0:
@@ -34,7 +35,7 @@ def update_variables():
         variables.update_quadrant_healer_loc = False
     # variables.quadrant_battle_locs = {}
 
-    ## Units 
+    ## Units
     variables.my_units = gc.my_units()
     variables.my_unit_ids = set([unit.id for unit in variables.my_units])
     variables.units = gc.units()
