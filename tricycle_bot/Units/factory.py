@@ -48,7 +48,7 @@ def timestep(unit):
 		if optimal_unload_dir is not None:
 			gc.unload(unit.id, optimal_unload_dir)
 	# rockets_need_filling = (len(variables.rocket_locs) >0) and (len(variables.ranger_roles["go_to_mars"])<10)
-	if gc.round()>250 or variables.died_without_attacking > 0.7 or variables.enemy_rangers >= 5:
+	if gc.round()>250 or variables.died_without_attacking > 0.7 or variables.ranged_enemies >= 5:
 		variables.knight_rush = False
 		variables.switch_to_rangers = True
 	"""
@@ -110,7 +110,7 @@ def evaluate_stockpile():
 				   composition[3]+producing[3], composition[4]+producing[4]]
 	num_attacking_units = sum(total_units)
 	if not variables.stockpile_until_75:
-		if ((variables.gc.round()>250 and num_attacking_units > 0.7*variables.num_enemies and num_attacking_units>20) or variables.gc.round()>500) and variables.info[6]<5:
+		if ((variables.gc.round()>350 and num_attacking_units > 0.5*variables.num_enemies and num_attacking_units>15) or variables.gc.round()>515) and variables.info[6]<5:
 				if variables.between_stockpiles > 30 and variables.gc.karbonite()<cost * 1.25:
 					variables.stockpile_until_75 = True
 					variables.between_stockpiles = 0

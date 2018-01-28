@@ -172,7 +172,7 @@ class QuadrantInfo():
         ## Find enemies in quadrant
         # If enemy in location that can't be sensed don't erase it yet
         battle_locs = []
-        rangers = 0
+        ranged = 0
         for loc in self.quadrant_locs: 
             map_loc = bc.MapLocation(variables.curr_planet, loc[0], loc[1])
             if gc.can_sense_location(map_loc): 
@@ -184,10 +184,10 @@ class QuadrantInfo():
                         elif unit.unit_type == variables.unit_types["factory"]:
                             self.enemy_factories.add(unit.id)
                             self.enemies.add(unit.id)
-                        elif unit.unit_type == variables.unit_types["ranger"]:
+                        elif unit.unit_type == variables.unit_types["ranger"] or unit.unit_type == variables.unit_types["mage"]:
                             self.enemies.add(unit.id)
                             self.target_loc = loc
-                            rangers += 1
+                            ranged += 1
                         else:
                             self.enemies.add(unit.id)
                         self.enemy_locs[loc] = unit
@@ -197,7 +197,7 @@ class QuadrantInfo():
             elif loc in self.enemy_locs: 
                 self.enemies.add(self.enemy_locs[loc].id)
                 battle_locs.append(loc)
-        return (battle_locs, rangers)
+        return (battle_locs, ranged)
 
     def remove_ally(self, ally_id): 
         if ally_id in self.knights: 

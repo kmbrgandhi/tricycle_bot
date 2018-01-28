@@ -63,7 +63,7 @@ def timestep(unit):
 				return
 		mine_mars(gc,unit,my_location)
 		return
-	if (gc.round() > 500) or (gc.round()>70 and len(variables.dists)==0) and not variables.saviour_worker and near_factory(my_location):
+	if ((gc.round() > 500) or (gc.round()>100 and len(variables.dists)==0) or (gc.round()>300 and variables.num_enemies<7)) and not variables.saviour_worker and near_factory(my_location):
 		variables.saviour_worker = True
 		variables.saviour_worker_id = unit.id
     # TO DO: ADD CHECK THAT HE ISN'T TOO CLOSE TO ENEMIES.
