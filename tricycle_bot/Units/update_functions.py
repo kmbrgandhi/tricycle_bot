@@ -90,6 +90,13 @@ def update_variables():
     variables.my_karbonite = gc.karbonite()
     variables.producing= [0, 0, 0, 0, 0]
 
+    ## Income
+    variables.worker_harvest_amount = 0
+    variables.past_karbonite_gain = variables.current_karbonite_gain + max(0,10 - int(variables.my_karbonite/40))
+    variables.current_karbonite_gain = 0 # reset counter
+
+
+
     if not worker.check_if_saviour_died():
         variables.saviour_worker_id = None
         variables.saviour_worker = False

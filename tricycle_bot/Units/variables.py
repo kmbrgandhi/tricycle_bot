@@ -38,16 +38,14 @@ unit_types = {"worker":bc.UnitType.Worker,
 ## GENERAL VARIABLES ##
 
 # map info
-karbonite_locations = map_info.get_initial_karbonite_locations(gc)
+curr_planet = gc.planet()
+curr_map = gc.starting_map(curr_planet)
+earth_start_map = gc.starting_map(earth)
+mars_start_map = gc.starting_map(mars)
+
 impassable_terrain_earth = map_info.get_impassable_terrain(gc,earth)
 impassable_terrain_mars = map_info.get_impassable_terrain(gc,mars)
 locs_next_to_terrain = map_info.get_locations_next_to_terrain(gc,earth)
-curr_planet = gc.planet()
-curr_map = gc.starting_map(curr_planet)
-earth_start_map = gc.starting_map(bc.Planet.Earth)
-mars_start_map = gc.starting_map(bc.Planet.Mars)
-
-
 
 earth_diagonal = (earth_start_map.height**2 + earth_start_map.width**2)
 mars_diagonal = (mars_start_map.height**2 + mars_start_map.width**2)
@@ -68,36 +66,37 @@ print_count = 0
 
 ## MAP ##
 if earth_start_map.height > earth_start_map.width: 
-    longest = earth_start_map.height
+	longest = earth_start_map.height
 else:
-    longest = earth_start_map.width
+	longest = earth_start_map.width
 
 if longest > 40: 
-    earth_quadrant_size = 10
+	earth_quadrant_size = 10
 elif longest > 30: 
-    earth_quadrant_size = 8
+	earth_quadrant_size = 8
 else: 
-    earth_quadrant_size = 5
+	earth_quadrant_size = 5
 
 if mars_start_map.height > mars_start_map.width: 
-    longest = mars_start_map.height
+	longest = mars_start_map.height
 else:
-    longest = mars_start_map.width
+	longest = mars_start_map.width
 
 if longest > 40: 
-    mars_quadrant_size = 10
+	mars_quadrant_size = 10
 elif longest > 30: 
-    mars_quadrant_size = 8
+	mars_quadrant_size = 8
 else: 
-    mars_quadrant_size = 5
-    
+	mars_quadrant_size = 5
+	
 quadrant_battle_locs = {}
 
 ## ALL UNITS ##
 my_unit_ids = set([unit.id for unit in my_units])
 unit_locations = {} ## unit id: (x, y)
 for unit in my_units:
-    unit_locations[unit.id] = (unit.location.map_location().x, unit.location.map_location().y)
+	unit_location = unit.location.map_location()
+	unit_locations[unit.id] = (unit_location.x, unit_location.y)
 
 death_allies_per_quadrant = {}      ## (quad x, quad y): ((x,y), num_dead)
 
@@ -155,25 +154,21 @@ for dx in [-4,-3,-2,-1,0,1,2,3,4]:
 	for dy in [-4,-3,-2,-1,0,1,2,3,4]:
 		building_scouting_diff.append((dx,dy))
 
-"""
-distance_to_karbonite_deposits = {}
-for i,j in karbonite_locations:
-	karbonite_location = (i,j)
-	for x in range(earth_start_map.width):
-		for y in range(earth_start_map.height):
-			map_location = (x,y)
-			distance_to_karbonite_deposits[(map_location,karbonite_location)] = sense_util.distance_squared_between_coords(map_location,karbonite_location)
-"""
-
 current_worker_roles = {"miner":[],"builder":[],"blueprinter":[],"boarder":[], "repairer":[]}
+
+reserved_income = 5
+factory_cost_per_round = 40 / 15 + 2 # 40 karbonite per 15 turns to make all offensive units + offset for factory cost
+worker_harvest_amount = 0
+current_karbonite_gain = 0
+past_karbonite_gain = 0
 
 ## KNIGHT VARIABLES ##
 assigned_knights = {}       ## knight_id: (x, y)
 init_enemy_locs = []
 for unit in earth_start_map.initial_units:
-    if unit.team == enemy_team:
-        loc = unit.location.map_location()
-        init_enemy_locs.append(loc)
+	if unit.team == enemy_team:
+		loc = unit.location.map_location()
+		init_enemy_locs.append(loc)
 knight_attacks = {}
 died_without_attacking = 0
 
@@ -221,91 +216,103 @@ mars_width = mars_map.width
 mars_height = mars_map.height
 
 for x in range(-1, mars_width + 1):
-    for y in range(-1, mars_height + 1):
-        coords = (x, y)
-        if x == -1 or y == -1 or x == mars_map.width or y == mars_map.height:
-            passable_locations_mars[coords] = False
-        elif mars_map.is_passable_terrain_at(bc.MapLocation(mars, x, y)):
-            passable_locations_mars[coords] = True
-        else:
-            passable_locations_mars[coords] = False
+	for y in range(-1, mars_height + 1):
+		coords = (x, y)
+		if x == -1 or y == -1 or x == mars_map.width or y == mars_map.height:
+			passable_locations_mars[coords] = False
+		elif mars_map.is_passable_terrain_at(bc.MapLocation(mars, x, y)):
+			passable_locations_mars[coords] = True
+		else:
+			passable_locations_mars[coords] = False
 
 lst_of_passable_mars = [loc for loc in passable_locations_mars if passable_locations_mars[loc]]
 
 num_passable_locations_mars = len(passable_locations_mars)
 
 if curr_planet == bc.Planet.Earth:
-    passable_locations_earth = {}
+	passable_locations_earth = {}
 
-    earth = bc.Planet.Earth
-    earth_map = gc.starting_map(earth)
-    earth_width = earth_map.width
-    earth_height = earth_map.height
-    my_width = earth_width
-    my_height = earth_height
+	earth = bc.Planet.Earth
+	earth_map = gc.starting_map(earth)
+	earth_width = earth_map.width
+	earth_height = earth_map.height
+	my_width = earth_width
+	my_height = earth_height
 
-    for x in range(-1, earth_width+1):
-        for y in range(-1, earth_height+1):
-            coords = (x, y)
-            if x==-1 or y==-1 or x == earth_map.width or y== earth_map.height:
-                passable_locations_earth[coords]= False
-            elif earth_map.is_passable_terrain_at(bc.MapLocation(earth, x, y)):
-                passable_locations_earth[coords] = True
-            else:
-                passable_locations_earth[coords]= False
+	for x in range(-1, earth_width+1):
+		for y in range(-1, earth_height+1):
+			coords = (x, y)
+			if x==-1 or y==-1 or x == earth_map.width or y== earth_map.height:
+				passable_locations_earth[coords]= False
+			elif earth_map.is_passable_terrain_at(bc.MapLocation(earth, x, y)):
+				passable_locations_earth[coords] = True
+			else:
+				passable_locations_earth[coords]= False
 
-    number_of_cells = earth_width * earth_height
-    S = dok_matrix((number_of_cells, number_of_cells), dtype=int)
-    for x in range(earth_width):
-        for y in range(earth_height):
-            curr = (x, y)
-            if passable_locations_earth[curr]:
-                val = y*earth_width + x
-                for coord in explore.coord_neighbors(curr):
-                    if passable_locations_earth[coord]:
-                        val2 = coord[1]*earth_width + coord[0]
-                        S[val, val2] = 1
-                        S[val2, val] = 1
+	number_of_cells = earth_width * earth_height
+	S = dok_matrix((number_of_cells, number_of_cells), dtype=int)
+	for x in range(earth_width):
+		for y in range(earth_height):
+			curr = (x, y)
+			if passable_locations_earth[curr]:
+				val = y*earth_width + x
+				for coord in explore.coord_neighbors(curr):
+					if passable_locations_earth[coord]:
+						val2 = coord[1]*earth_width + coord[0]
+						S[val, val2] = 1
+						S[val2, val] = 1
 
-    bfs_array = csgraph.shortest_path(S, method = 'D', unweighted = True)
-    #bfs_dict = {} # stores the distances found by BFS so far
-    #precomputed_bfs = explore.precompute_earth(passable_locations_earth, coord_to_direction, wavepoints)
-    #start_time = time.time()
-    #precomputed_bfs_dist = explore.precompute_earth_dist(passable_locations_earth, coord_to_direction, wavepoints)
-    #print(time.time()-start_time)
+	bfs_array = csgraph.shortest_path(S, method = 'D', unweighted = True)
+	#bfs_dict = {} # stores the distances found by BFS so far
+	#precomputed_bfs = explore.precompute_earth(passable_locations_earth, coord_to_direction, wavepoints)
+	#start_time = time.time()
+	#precomputed_bfs_dist = explore.precompute_earth_dist(passable_locations_earth, coord_to_direction, wavepoints)
+	#print(time.time()-start_time)
 
 else:
-    my_width = mars_width
-    my_height = mars_height
-    number_of_cells = mars_width * mars_height
-    start_time = time.time()
-    S = dok_matrix((number_of_cells, number_of_cells), dtype=int)
-    for x in range(mars_width):
-        for y in range(mars_height):
-            curr = (x, y)
-            if passable_locations_mars[curr]:
-                val = y * mars_width + x
-                for coord in explore.coord_neighbors(curr):
-                    if passable_locations_mars[coord]:
-                        val2 = coord[1] * mars_width + coord[0]
-                        S[val, val2] = 1
+	my_width = mars_width
+	my_height = mars_height
+	number_of_cells = mars_width * mars_height
+	start_time = time.time()
+	S = dok_matrix((number_of_cells, number_of_cells), dtype=int)
+	for x in range(mars_width):
+		for y in range(mars_height):
+			curr = (x, y)
+			if passable_locations_mars[curr]:
+				val = y * mars_width + x
+				for coord in explore.coord_neighbors(curr):
+					if passable_locations_mars[coord]:
+						val2 = coord[1] * mars_width + coord[0]
+						S[val, val2] = 1
 
-    bfs_array = csgraph.shortest_path(S, method='D', unweighted=True)
+	bfs_array = csgraph.shortest_path(S, method='D', unweighted=True)
 
 attacker = set([bc.UnitType.Ranger, bc.UnitType.Knight, bc.UnitType.Mage, bc.UnitType.Healer])
 stockpile_until_75 = False
 between_stockpiles = 0
 stockpile_has_been_above = False
-# class Constants: 
-#     def __init__(self, directions, my_team, enemy_team, starting_map, locs_next_to_terrain, karbonite_locations):
-#         self.directions = directions
-#         self.my_team = my_team
-#         self.enemy_team = enemy_team
-#         self.locs_next_to_terrain = locs_next_to_terrain
-#         self.karbonite_locations = karbonite_locations
-#         self.starting_map = starting_map
-#         self.init_enemy_locs = []
 
-#         for unit in self.starting_map.initial_units: 
-#             if unit.team == self.enemy_team: 
-#                 self.init_enemy_locs.append(unit.location.map_location())
+## Karbonite locations update
+
+karbonite_locations = {}
+initial_coords = []
+
+for initial_unit in earth_start_map.initial_units:
+	if initial_unit.team == my_team:
+		initial_unit_location = initial_unit.location.map_location()
+		initial_coords.append((initial_unit_location.x,initial_unit_location.y))
+
+for x in range(earth_start_map.width):
+	for y in range(earth_start_map.height):
+		map_location = bc.MapLocation(earth,x,y)
+		karbonite_at = earth_start_map.initial_karbonite_at(map_location)
+		karbonite_coord = (x,y)
+
+		if karbonite_at > 0:
+			target_coords_val = karbonite_coord[1]*my_width + karbonite_coord[0]
+			for initial_coord in initial_coords:
+				our_coords_val = initial_coord[1]*my_width + initial_coord[0]
+				if bfs_array[our_coords_val, target_coords_val] != float('inf'):
+					karbonite_locations[(x,y)] = karbonite_at
+
+worker_starting_cap = max(5,min(12,len(karbonite_locations)/20))
