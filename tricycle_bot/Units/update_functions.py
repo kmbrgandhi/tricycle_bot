@@ -28,6 +28,10 @@ def update_variables():
     ## Battle locations 
     variables.last_turn_battle_locs = variables.next_turn_battle_locs.copy()
     variables.next_turn_battle_locs = {}
+    if variables.curr_round % 30 == 0:
+        variables.update_quadrant_healer_loc = True
+    else: 
+        variables.update_quadrant_healer_loc = False
     # variables.quadrant_battle_locs = {}
 
     ## Units 
@@ -48,6 +52,7 @@ def update_variables():
     for unit_id in variables.unit_locations: 
         if unit_id not in variables.my_unit_ids: 
             remove.add(unit_id)
+
     for unit_id in remove: 
         loc = variables.unit_locations[unit_id]
         del variables.unit_locations[unit_id]
@@ -135,6 +140,11 @@ def update_quadrants():
         q_info = battle_quadrants[quadrant]
         q_info.reset_num_died()
         q_info.update_enemies(gc)
+
+    if variables.update_quadrant_healer_loc: 
+        for quadrant in battle_quadrants: 
+            q_info = battle_quadrants[quadrant]
+            q_info.update_healer_ideal_loc()
 
 def initiate_quadrants(): 
     ## MAKE QUADRANTS

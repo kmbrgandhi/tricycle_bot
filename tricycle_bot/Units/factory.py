@@ -21,11 +21,27 @@ def timestep(unit):
 	num_attacking_units = sum(total_units[1:3])
 	num_non_workers = num_attacking_units + total_units[4]
 	curr_round = gc.round()
+	   
 	# should alter based on curr_round.  this is a temporary idea.
 	# last check to make sure the right unit type is running this
 	if unit.unit_type != bc.UnitType.Factory:
 		# prob should return some kind of error
 		return
+		
+	unit_locations = variables.unit_locations
+	quadrant_battles = variables.quadrant_battle_locs
+	if variables.curr_planet == bc.Planet.Earth: 
+		quadrant_size = variables.earth_quadrant_size
+	else:
+		quadrant_size = variables.mars_quadrant_size
+
+	## Add new ones to unit_locations, else just get the location
+	if unit.id not in unit_locations:
+		loc = unit.location.map_location()
+		unit_locations[unit.id] = (loc.x,loc.y)
+		f_f_quad = (int(loc.x / quadrant_size), int(loc.y / quadrant_size))
+		quadrant_battles[f_f_quad].add_ally(unit.id, "factory")
+
 	garrison = unit.structure_garrison() # units inside of factory
 	if len(garrison) > 0: # try to unload a unit if there exists one in the garrison
 		optimal_unload_dir = optimal_unload(gc, unit, directions, building_assignments, battle_locs)
