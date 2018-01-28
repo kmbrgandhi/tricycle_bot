@@ -113,9 +113,9 @@ def assign_to_quadrant(gc, unit, unit_loc):
             if bfs_array[our_coords_val, target_coords_val]!=float('inf'):
                 distance = bfs_array[our_coords_val, target_coords_val]
                 coeff += 3*(1 - distance/diagonal)
-            if coeff > best_coeff and q_info.target_loc is not None: 
-                best_quadrant = quadrant 
-                best_coeff = coeff
+                if coeff > best_coeff: 
+                    best_quadrant = quadrant 
+                    best_coeff = coeff
 
     if best_coeff > 0: 
         assigned_knights[unit.id] = quadrant_battles[best_quadrant].target_loc

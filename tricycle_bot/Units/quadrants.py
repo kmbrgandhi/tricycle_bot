@@ -40,6 +40,8 @@ class QuadrantInfo():
         self.workers = set()
         self.factories = set()
 
+        self.assigned_healers = set()
+
         self.num_died = 0
 
         self.enemy_locs = {}
@@ -226,15 +228,10 @@ class QuadrantInfo():
     def urgency_coeff_without_add_units(self, robot_type):
         if robot_type == "healer":
             if self.health_coeff is not None:
-                if len(self.all_allies()) > 0:
-                    return (self.num_died / (self.quadrant_size ** 2)) + 1.5 * self.health_coeff
-                else:
-                    return (self.num_died / (self.quadrant_size ** 2)) + 1.5 * self.health_coeff
+                return (self.num_died / (self.quadrant_size ** 2)) + 1.5 * self.health_coeff
             else:
-                if len(self.all_allies()) > 0:
-                    return (self.num_died / (self.quadrant_size ** 2))
-                else:
-                    return (self.num_died / (self.quadrant_size ** 2))
+                return (self.num_died / (self.quadrant_size ** 2))
+
     def urgency_coeff(self, robot_type): 
         """
         1. Number of allied units who died in this quadrant
@@ -246,18 +243,23 @@ class QuadrantInfo():
             else:
                 return self.num_died/(self.quadrant_size**2)
         elif robot_type == "healer":
+            if len(self.rangers) == 0:
+                assigned_coeff = 0
+            else: 
+                assigned_coeff = 1 - len(self.assigned_healers)/len(self.rangers)
+
             if self.health_coeff is not None: 
                 if len(self.all_allies()) > 0: 
-                    return (self.num_died/(self.quadrant_size**2)) + 1.5*self.health_coeff + 0.5*(len(self.fighters())/len(self.all_allies()))
+                    return assigned_coeff + (self.num_died/(self.quadrant_size**2)) + 1.5*self.health_coeff + 0.5*(len(self.fighters())/len(self.all_allies()))
                 else: 
-                    return (self.num_died/(self.quadrant_size**2)) + 1.5*self.health_coeff
+                    return assigned_coeff + (self.num_died/(self.quadrant_size**2)) + 1.5*self.health_coeff
             else: 
                 if len(self.all_allies()) > 0: 
-                    return (self.num_died/(self.quadrant_size**2)) + 0.5*(len(self.fighters())/len(self.all_allies()))
+                    return assigned_coeff + (self.num_died/(self.quadrant_size**2)) + 0.5*(len(self.fighters())/len(self.all_allies()))
                 else: 
-                    return (self.num_died/(self.quadrant_size**2))
+                    return assigned_coeff + (self.num_died/(self.quadrant_size**2))
         elif robot_type == "knight": 
-            return 3*len(self.enemy_factories)/self.quadrant_size + 5*len(self.enemies)/(self.quadrant_size**2) + len(self.enemy_workers)/(self.quadrant_size**2)
+            return 2*len(self.enemy_factories)/self.quadrant_size + 2*len(self.enemies)/(self.quadrant_size**2) + len(self.enemy_workers)/(self.quadrant_size**2)
 
     def __str__(self):
         return "bottom left: " + str(self.bottom_left) + "\nallies: " + str(self.all_allies()) + "\nenemies: " + str(self.enemies) + "\ntarget loc: " + str(self.target_loc) + "\nhealer loc: " + str(self.healer_loc) + "\n"
