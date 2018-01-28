@@ -100,8 +100,8 @@ def update_variables():
         elif unit.unit_type == unit_types["factory"]:
             num_factory+=1
             factories.append(unit)
-            if unit.factory_unit_type() is not None:
-                type = unit.factor_unit_type()
+            if unit.is_factory_producing():
+                type = unit.factory_unit_type()
                 if type == variables.unit_types["worker"]:
                     variables.producing[0]+=1
                 elif type == variables.unit_types["knight"]:
@@ -116,7 +116,13 @@ def update_variables():
             num_rocket+=1
             rockets.append(unit)
     variables.info = [num_workers, num_knights, num_rangers, num_mages, num_healers, num_factory, num_rocket]
-    variables.in_order_units.extend(rangers).extend(workers).extend(knights).extend(mages).extend(healers).extend(factories).extend(rockets)
+    variables.in_order_units.extend(rangers)
+    variables.in_order_units.extend(workers)
+    variables.in_order_units.extend(knights)
+    variables.in_order_units.extend(mages)
+    variables.in_order_units.extend(healers)
+    variables.in_order_units.extend(factories)
+    variables.in_order_units.extend(rockets)
     ## **************************************** UNITS **************************************** ## 
 
     ## Worker 
