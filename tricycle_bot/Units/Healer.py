@@ -241,6 +241,7 @@ def update_healers():
     assigned_healers = variables.assigned_healers
     assigned_overcharge = variables.assigned_overcharge
     overcharge_targets = variables.overcharge_targets
+    variables.overcharge_targets = set()
     quadrant_battles = variables.quadrant_battle_locs
 
     if variables.curr_planet == bc.Planet.Earth:

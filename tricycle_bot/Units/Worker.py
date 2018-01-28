@@ -63,7 +63,7 @@ def timestep(unit):
 				return
 		mine_mars(gc,unit,my_location)
 		return
-	if (gc.round() > 315) or (gc.round()>70 and len(variables.dists)==0) and not variables.saviour_worker and near_factory(my_location):
+	if (gc.round() > 500) or (gc.round()>70 and len(variables.dists)==0) and not variables.saviour_worker and near_factory(my_location):
 		variables.saviour_worker = True
 		variables.saviour_worker_id = unit.id
     # TO DO: ADD CHECK THAT HE ISN'T TOO CLOSE TO ENEMIES.
@@ -1128,7 +1128,7 @@ def get_optimal_building_location(gc, start_map, center, building_type, karbonit
 			if default_location_coords in passable_locations and passable_locations[default_location_coords] and variables.invalid_building_locations[default_location_coords]:
 				return default_location_coords
 
-	for location_coords in explore.coord_neighbors(center_coords, diff=explore.diffs_20, include_self=True):
+	for location_coords in explore.coord_neighbors(center_coords, diff=explore.diffs_50, include_self=True):
 		location = bc.MapLocation(variables.curr_planet, location_coords[0], location_coords[1])
 		#print("can we build here?",variables.invalid_building_locations[location_coords],location)
 		if location_coords in passable_locations and passable_locations[location_coords] and variables.invalid_building_locations[location_coords]:
@@ -1184,7 +1184,7 @@ def can_blueprint_factory(gc,factory_count):
 
 def can_blueprint_rocket(gc,rocket_count):
 	if variables.num_passable_locations_mars > 0 and variables.research.get_level(variables.unit_types["rocket"]) > 0:
-		if gc.round() > 250:
+		if gc.round() > 500:
 			return True
 	return False
 
