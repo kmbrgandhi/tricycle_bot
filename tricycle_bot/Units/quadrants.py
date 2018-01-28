@@ -60,7 +60,7 @@ class QuadrantInfo():
             if x < max_width: 
                 for j in range(self.quadrant_size): 
                     y = self.bottom_left[1] + j
-                    if y < max_height: 
+                    if y < max_height and passable_locations[(x,y)]: 
                         self.quadrant_locs.add((x,y))
 
     def get_passable_locations(self):
@@ -78,9 +78,9 @@ class QuadrantInfo():
             self.healer_loc = self.middle
         else: 
             for loc in self.quadrant_locs:
-                if passable_locations[loc]:
-                    self.target_loc = loc 
-                    self.healer_loc = loc
+                self.target_loc = loc 
+                self.healer_loc = loc
+                break
 
     def update_healer_ideal_loc(self): 
         if variables.curr_planet == bc.Planet.Earth: 
@@ -158,38 +158,39 @@ class QuadrantInfo():
         self.enemy_workers = set()
         self.enemy_factories = set()
 
-        if variables.curr_planet == bc.Planet.Earth: 
+        if variables.curr_planet == bc.Planet.Earth:
+            passable_locations = variables.passable_locations_earth
             max_width = variables.earth_start_map.width
             max_height = variables.earth_start_map.height
-        else: 
+        else:
+            passable_locations = variables.passable_locations_mars
             max_width = variables.mars_start_map.width
             max_height = variables.mars_start_map.height
 
         ## Find enemies in quadrant
         # If enemy in location that can't be sensed don't erase it yet
-        for i in range(self.quadrant_size): 
-            x = self.bottom_left[0] + i
-            for j in range(self.quadrant_size):
-                y = self.bottom_left[1] + j
-                loc = (x,y)
-                if loc[0] < max_width and loc[1] < max_height: 
-                    map_loc = bc.MapLocation(variables.curr_planet, x, y)
-                    if gc.can_sense_location(map_loc): 
-                        if gc.has_unit_at_location(map_loc):
-                            unit = gc.sense_unit_at_location(map_loc)
-                            if unit.team == variables.enemy_team:
-                                if unit.unit_type == bc.UnitType.Worker: 
-                                    self.enemy_workers.add(unit.id)
-                                elif unit.unit_type == bc.UnitType.Factory: 
-                                    self.enemy_factories.add(unit.id)
-                                    self.enemies.add(unit.id)
-                                else: 
-                                    self.enemies.add(unit.id)                                    
-                                self.enemy_locs[loc] = unit
-                        elif loc in self.enemy_locs: 
-                            del self.enemy_locs[loc]
-                    elif loc in self.enemy_locs: 
-                        self.enemies.add(self.enemy_locs[loc].id)
+        battle_locs = []
+        for loc in self.quadrant_locs: 
+            map_loc = bc.MapLocation(variables.curr_planet, loc[0], loc[1])
+            if gc.can_sense_location(map_loc): 
+                if gc.has_unit_at_location(map_loc):
+                    unit = gc.sense_unit_at_location(map_loc)
+                    if unit.team == variables.enemy_team:
+                        if unit.unit_type == variables.unit_types["worker"]:
+                            self.enemy_workers.add(unit.id)
+                        elif unit.unit_type == variables.unit_types["factory"]:
+                            self.enemy_factories.add(unit.id)
+                            self.enemies.add(unit.id)
+                        else:
+                            self.enemies.add(unit.id)
+                        self.enemy_locs[loc] = unit
+                        battle_locs.append((loc))
+                elif loc in self.enemy_locs: 
+                    del self.enemy_locs[loc]
+            elif loc in self.enemy_locs: 
+                self.enemies.add(self.enemy_locs[loc].id)
+                battle_locs.append(loc)
+        return battle_locs
 
     def remove_ally(self, ally_id): 
         if ally_id in self.knights: 
@@ -247,12 +248,12 @@ class QuadrantInfo():
         elif robot_type == "healer":
             if self.health_coeff is not None: 
                 if len(self.all_allies()) > 0: 
-                    return (self.num_died/(self.quadrant_size**2)) + 1.5*self.health_coeff + (len(self.fighters())/len(self.all_allies()))
+                    return (self.num_died/(self.quadrant_size**2)) + 1.5*self.health_coeff + 0.5*(len(self.fighters())/len(self.all_allies()))
                 else: 
                     return (self.num_died/(self.quadrant_size**2)) + 1.5*self.health_coeff
             else: 
                 if len(self.all_allies()) > 0: 
-                    return (self.num_died/(self.quadrant_size**2)) + (len(self.fighters())/len(self.all_allies()))
+                    return (self.num_died/(self.quadrant_size**2)) + 0.5*(len(self.fighters())/len(self.all_allies()))
                 else: 
                     return (self.num_died/(self.quadrant_size**2))
         elif robot_type == "knight": 

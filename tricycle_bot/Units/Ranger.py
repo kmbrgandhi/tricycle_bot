@@ -98,6 +98,8 @@ def timestep(unit):
                 else:
                     targeting_units[attack_target.id]+= 1
                 gc.attack(unit.id, attack_target.id)
+                d = map_loc.direction_to(attack_target.location.map_location())
+                variables.where_rangers_attacking[d] += 1
                 variables.overcharge_targets.add(unit.id)
 
             if snipe is not None:
@@ -112,6 +114,8 @@ def timestep(unit):
                 else:
                     targeting_units[attack_target.id]+=1
                 gc.attack(unit.id, attack_target.id)
+                d = map_loc.direction_to(attack_target.location.map_location())
+                variables.where_rangers_attacking[d] += 1
                 variables.overcharge_targets.add(unit.id)
 
 
@@ -246,19 +250,19 @@ def go_to_mars_sense(gc, unit, battle_locs, location, enemies, direction_to_coor
     return dir, attack, snipe, move_then_attack, visible_enemies, closest_enemy, signals
 
 def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coord, bfs_array, targeting_units, rocket_locs):
+    signals = {}
+    dir = None
+    attack = None
+    snipe = None
+    closest_enemy = None
+    move_then_attack = False
+    visible_enemies = False
     if not unit.ranger_is_sniping():
         if unit.id in variables.is_sniping:
             del variables.is_sniping[unit.id]
         enemies = gc.sense_nearby_units_by_team(location, unit.vision_range, variables.enemy_team)
         if unit.id in ranger_roles["go_to_mars"]:
             return go_to_mars_sense(gc, unit, battle_locs, location, enemies, direction_to_coord, bfs_array, targeting_units, rocket_locs)
-        signals = {}
-        dir = None
-        attack = None
-        snipe = None
-        closest_enemy = None
-        move_then_attack = False
-        visible_enemies = False
         start_time = time.time()
         # if variables.print_count < 10:
         #    print("Sensing nearby units:", time.time() - start_time)
@@ -371,7 +375,7 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
             # if variables.print_count < 10:
             #    print("regular movement:", time.time() - start_time)
 
-        return dir, attack, snipe, move_then_attack, visible_enemies, closest_enemy, signals
+    return dir, attack, snipe, move_then_attack, visible_enemies, closest_enemy, signals
     """
     signals = {}
     dir = None

@@ -13,19 +13,20 @@ import Units.Ranger as ranger
 import Units.Worker as worker
 import Units.factory as factory
 import Units.rocket as rocket
+import time
 
 def update_variables():
     gc = variables.gc 
 
     ## **************************************** GENERAL **************************************** ## 
 
-    ## Constants 
+    ## Constants
     variables.curr_round = gc.round()
     variables.num_enemies = 0
     variables.print_count = 0
     variables.research = gc.research_info()
 
-    ## Battle locations 
+    ## Battle locations
     variables.last_turn_battle_locs = variables.next_turn_battle_locs.copy()
     variables.next_turn_battle_locs = {}
     if variables.curr_round % 30 == 0:
@@ -34,7 +35,7 @@ def update_variables():
         variables.update_quadrant_healer_loc = False
     # variables.quadrant_battle_locs = {}
 
-    ## Units 
+    ## Units
     variables.my_units = gc.my_units()
     variables.my_unit_ids = set([unit.id for unit in variables.my_units])
     variables.units = gc.units()
@@ -171,11 +172,27 @@ def update_quadrants():
     gc = variables.gc 
 
     battle_quadrants = variables.quadrant_battle_locs
+    battle_locs = variables.last_turn_battle_locs
+
+    if variables.curr_planet == bc.Planet.Earth: 
+        quadrant_size = variables.earth_quadrant_size
+    else:
+        quadrant_size = variables.mars_quadrant_size
+
+    already_included_quadrants = set()
+    for q_loc in battle_locs: 
+        map_loc = battle_locs[q_loc][0]
+        my_quadrant = (int(map_loc.x/quadrant_size), int(map_loc.y/quadrant_size))
+        already_included_quadrants.add(my_quadrant)
 
     for quadrant in battle_quadrants: 
         q_info = battle_quadrants[quadrant]
         q_info.reset_num_died()
-        q_info.update_enemies(gc)
+        new_battle_locs = q_info.update_enemies(gc)
+        if quadrant not in already_included_quadrants and len(new_battle_locs) > 0: 
+            loc = new_battle_locs[0]
+            quadrant_loc = (int(loc[0]/5),int(loc[1]/5))
+            battle_locs[quadrant_loc] = (bc.MapLocation(variables.curr_planet,loc[0],loc[1]), 1)
 
     if variables.update_quadrant_healer_loc: 
         for quadrant in battle_quadrants: 
