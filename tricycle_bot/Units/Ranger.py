@@ -348,7 +348,7 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
                         #    print("Getting direction:", time.time() - start_time)
         else:
             # if there are no enemies in sight, check if there is an ongoing battle.  If so, go there.
-            if len(rocket_locs) > 0 and gc.round() > 600 and variables.curr_planet == bc.Planet.Earth:
+            if len(rocket_locs) > 0 and variables.curr_planet == bc.Planet.Earth and (gc.round() > 600 or (variables.num_enemies < 5 and gc.round()>275)):
                 dir = move_to_rocket(gc, unit, location, direction_to_coord, bfs_array)
                 if dir is not None:
                     return dir, attack, snipe, move_then_attack, visible_enemies, closest_enemy, signals

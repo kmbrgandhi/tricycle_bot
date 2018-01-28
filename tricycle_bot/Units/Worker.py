@@ -344,9 +344,38 @@ def designate_roles():
 
 			closest_workers_to_damaged_building[damaged_building.id] = closest_worker_ids
 
-		#print("part 2",time.time() - start_time)
+
 		idle_workers = []
-		accessible_karbonite = {}
+		if gc.round()>300 or (gc.round()>100 and len(variables.dists)==0):
+			for worker in workers:
+				found_karbonite = False
+				position = worker.location.map_location()
+				position_coord = (position.x, position.y)
+				for location_coord in explore.coord_neighbors(position_coord, diff=explore.diffs_50, include_self=True):
+					# location_coord_thirds = (int(location_coord[0]/variables.bfs_fineness), int(location_coord[1]/variables.bfs_fineness))
+					if location_coord in karbonite_locations:
+						our_coords_val = Ranger.get_coord_value(position_coord)
+						target_coords_val = Ranger.get_coord_value(location_coord)
+
+						if variables.curr_planet == bc.Planet.Earth:
+							quadrant_size = variables.earth_quadrant_size
+
+						quadrant = (int(location_coord[0] / quadrant_size), int(location_coord[1] / quadrant_size))
+						q_info = variables.quadrant_battle_locs[quadrant]
+						enemies_in_quadrant = len(q_info.enemies)
+
+						if variables.bfs_array[our_coords_val, target_coords_val] != float(
+								'inf') and enemies_in_quadrant == 0:
+							found_karbonite = True
+				if not found_karbonite:
+					idle_workers.append(worker)
+
+		elif gc.round()>500:
+			idle_workers = [worker for worker in workers]
+
+
+
+
 		"""
 		start_time = time.time()
 		for worker in workers:
@@ -389,7 +418,7 @@ def designate_roles():
 		"""
 
 		#print("part 3",time.time() - start_time)
-		variables.replication_priority = sorted(accessible_karbonite.keys(),key=lambda unit_id:accessible_karbonite[unit_id])
+		#variables.replication_priority = sorted(accessible_karbonite.keys(),key=lambda unit_id:accessible_karbonite[unit_id])
 
 		#print("accessible karbonite",accessible_karbonite)
 
@@ -1362,6 +1391,7 @@ def idle(gc,my_unit,my_location,building_assignment,blueprinting_assignment):
 	nearest_factory_loc = None
 	min_num_allies = float('inf')
 	factory_quadrant_coords = None
+	current_roles = variables.current_worker_roles
 
 	my_coords = (my_location.x,my_location.y)
 	my_quadrant_coords = get_quadrant_coords(my_coords)
@@ -1398,7 +1428,7 @@ def idle(gc,my_unit,my_location,building_assignment,blueprinting_assignment):
 	if nearest_factory_loc is not None:
 		if my_quadrant_coords == factory_quadrant_coords:
 
-			if gc.round() > 700:
+			if gc.round() > 525 or (gc.round()>275 and variables.num_enemies<7) or (gc.round()>100 and len(variables.dists)==0):
 
 				building_in_progress_count = len(building_assignment.keys()) + len(blueprinting_assignment.keys())
 				#print("building_assignment",building_assignment)
@@ -1408,28 +1438,28 @@ def idle(gc,my_unit,my_location,building_assignment,blueprinting_assignment):
 
 					rocket_count = variables.info[6]
 
-					if can_blueprint_rocket(gc,rocket_count):
+					if rocket_count < 5 and can_blueprint_rocket(gc,rocket_count):
 
-						best_location_tuple = get_optimal_building_location(gc,variables.earth_start_map,worker_location,unit_types["rocket"],karbonite_locations,blueprinting_queue,blueprinting_assignment)
+						best_location_tuple = get_optimal_building_location(gc,variables.earth_start_map,my_location,variables.unit_types["rocket"],variables.karbonite_locations,variables.blueprinting_queue,blueprinting_assignment)
 						#print("best location is",best_location_tuple)
 						#print("time for building location",time.time() - inside_time)
 						if best_location_tuple is not None:
-							best_location = bc.MapLocation(earth, best_location_tuple[0], best_location_tuple[1])
+							best_location = bc.MapLocation(variables.earth, best_location_tuple[0], best_location_tuple[1])
 
 							current_roles["idle"].remove(my_unit.id)
 							current_roles["blueprinter"].append(my_unit.id)
-							new_site = BuildSite(best_location,unit_types["rocket"])
-							blueprinting_assignment[worker.id] = new_site
+							new_site = BuildSite(best_location,variables.unit_types["rocket"])
+							blueprinting_assignment[my_unit.id] = new_site
 
-							factory_quadrants.append(factory_quadrant_coords)
+							variables.factory_quadrants.append(factory_quadrant_coords)
 
 							nearby_sites = adjacent_locations(best_location)
 
 							for site in nearby_sites:
 								site_coord = (site.x,site.y)
 								if site_coord not in passable_locations or not passable_locations[site_coord]: continue
-								if invalid_building_locations[site_coord]:
-									invalid_building_locations[site_coord] = False
+								if variables.invalid_building_locations[site_coord]:
+									variables.invalid_building_locations[site_coord] = False
 
 			nearby = gc.sense_nearby_units_by_team(my_location, variables.worker_spacing, variables.my_team)
 
