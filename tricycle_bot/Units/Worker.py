@@ -155,9 +155,9 @@ def timestep(unit):
 	#print("max starting worker cap",worker_starting_cap)
 	worker_spacing = 8
 
-
-	if current_num_workers < worker_starting_cap:
+	if current_num_workers < worker_starting_cap and gc.round() <= 100:
 		try_replicate = replicate(gc,unit)
+		#print("still replicating??",try_replicate)
 		if try_replicate:
 			return
 
@@ -497,6 +497,21 @@ def designate_roles():
 	#print("current roles",variables.current_worker_roles)
 
 
+# parameters: amount of karbonite on the map, factory number ( diff behavior before and after our first factory), 
+def get_worker_cap(gc,karbonite_locations, info, num_enemies):
+	#print("KARBONITE INFO LENGTH: ",len(karbonite_locations))
+	#print("number of reachable deposits",len(karbonite_locations))
+
+	if num_enemies > 2*sum(info[1:4])/3:
+		#print('replication cap yes')
+		return 6
+	elif info[5] >= 1:
+		return min(5 + float(len(karbonite_locations)/30),20)
+	else:
+		return min(3 + float(len(karbonite_locations)/3),6)
+
+
+
 
 def get_workers_per_building(gc,start_map,building_location):
 	max_workers_per_building = 4
@@ -612,20 +627,6 @@ def board(gc,my_unit,my_location,current_roles):
 		#movement.try_move(gc,my_unit,direction_to_rocket)
 
 
-# parameters: amount of karbonite on the map, factory number ( diff behavior before and after our first factory), 
-def get_worker_cap(gc,karbonite_locations, info, num_enemies):
-	#print("KARBONITE INFO LENGTH: ",len(karbonite_locations))
-	#print("number of reachable deposits",len(karbonite_locations))
-
-	if num_enemies > 2*sum(info[1:4])/3:
-		#print('replication cap yes')
-		return 6
-	elif info[5] >= 1:
-		return min(5 + float(len(karbonite_locations)/30),20)
-	else:
-		return min(3 + float(len(karbonite_locations)/3),6)
-
-
 def replicate(gc,unit,direction=None):
 	replicated = False
 
@@ -736,7 +737,6 @@ def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, bui
 	#check to see if there even are deposits
 	if start_map.on_map(closest_deposit):
 
-
 		direction_to_deposit = my_location.direction_to(closest_deposit)
 		deposit_coord = (closest_deposit.x,closest_deposit.y)
 		#print(unit.id, "is trying to mine at", direction_to_deposit)
@@ -761,12 +761,14 @@ def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, bui
 		if len(dangerous_enemies) > 0:
 			dir = sense_util.best_available_direction(gc, my_unit, dangerous_enemies)
 			movement.try_move(gc, my_unit, (my_location.x,my_location.y), dir)	
-		else:
+		elif my_location != closest_deposit:
 			# move toward deposit
 			#print("my location",my_location)
 			#print("trying to move to closest deposit",closest_deposit)
 
 			my_location_coord = (my_location.x,my_location.y)
+			mineable_spots = explore.coord_neighbors(deposit_coord,include_self=True)
+
 			if variables.curr_planet == bc.Planet.Earth: 
 				quadrant_size = variables.earth_quadrant_size
 			else:
@@ -776,20 +778,24 @@ def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, bui
 			q_info = variables.quadrant_battle_locs[quadrant]
 			ally_ids_in_quadrant = q_info.all_allies()
 
-			ally_on_deposit = False
+
+			ally_on_deposit_list = []
 			for ally_id in ally_ids_in_quadrant:
 				ally_coord = variables.unit_locations[ally_id]
-				if deposit_coord == ally_coord:
-					ally_on_deposit = True
+				if ally_coord in mineable_spots:
+					ally_on_deposit_list.append(ally_coord)
 
-			if my_location != closest_deposit and not ally_on_deposit:
-				try_move_smartly(my_unit, my_location, closest_deposit)
+			for mineable_spot in mineable_spots:
+				if mineable_spot in passable_locations:
+					if passable_locations[mineable_spot] and mineable_spot not in ally_on_deposit_list:
+						target_loc = bc.MapLocation(variables.curr_planet,mineable_spot[0],mineable_spot[1])
+						try_move_smartly(my_unit, my_location, target_loc)
+						break
 
 
 		if my_location.is_adjacent_to(closest_deposit) or my_location == closest_deposit:
 
 			# mine if adjacent to deposit
-
 			#print("trying to harvest at:",closest_deposit)
 			if gc.can_harvest(my_unit.id,direction_to_deposit):
 
