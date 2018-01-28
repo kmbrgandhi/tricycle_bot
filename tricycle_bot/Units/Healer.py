@@ -145,12 +145,12 @@ def assign_to_quadrant(gc, unit, unit_loc):
         q_info = quadrant_battles[quadrant]
         coeff = q_info.urgency_coeff("healer")
         # distance =  ADD DISTANCE COEFF TOO
-        if coeff > best_coeff and q_info.target_loc is not None: 
+        if coeff > best_coeff and q_info.healer_loc is not None: 
             best_quadrant = quadrant 
             best_coeff = coeff
 
     if best_coeff > 0: 
-        assigned_healers[unit.id] = quadrant_battles[best_quadrant].target_loc
+        assigned_healers[unit.id] = quadrant_battles[best_quadrant].healer_loc
         return True, assigned_healers[unit.id]
     return False, None
 
