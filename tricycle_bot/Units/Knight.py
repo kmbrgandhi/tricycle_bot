@@ -209,8 +209,11 @@ def update_battles():
     remove_assigned = set()
     remove = set()
     for knight_id in knight_attacks:
-        if knight_id in assigned_knights and knight_id not in variables.my_unit_ids:
+        if knight_id not in assigned_knights and knight_id not in variables.my_unit_ids:
+            remove.add(knight_id)
+        elif knight_id in assigned_knights and knight_id not in variables.my_unit_ids:
             remove_assigned.add(knight_id)
+            remove.add(knight_id)
         else: 
             loc = assigned_knights[knight_id]
             f_f_quad = (int(loc[0] / quadrant_size), int(loc[1] / quadrant_size))
@@ -218,8 +221,7 @@ def update_battles():
             if knight_coeff == 0: 
                 remove_assigned.add(knight_id)
 
-        if knight_id in knight_attacks and knight_id not in variables.my_unit_ids: 
-            remove.add(knight_id)
+
 
     for knight_id in remove_assigned: 
         del assigned_knights[knight_id]
