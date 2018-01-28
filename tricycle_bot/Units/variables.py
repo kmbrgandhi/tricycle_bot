@@ -143,7 +143,7 @@ for dx in [-4,-3,-2,-1,0,1,2,3,4]:
 current_worker_roles = {"miner":[],"builder":[],"blueprinter":[],"boarder":[],"repairer":[],"idle":[]}
 
 reserved_income = 5
-factory_cost_per_round = 40 / 15 + 2 # 40 karbonite per 15 turns to make all offensive units + offset for factory cost
+factory_cost_per_round = float(40) / 15 + 1.5 # 40 karbonite per 15 turns to make all offensive units + offset for factory cost
 worker_harvest_amount = 0
 current_karbonite_gain = 0
 past_karbonite_gain = 0
@@ -160,6 +160,7 @@ for unit in earth_start_map.initial_units:
         our_init_locs.append(loc)
 knight_attacks = {}
 died_without_attacking = 0
+enemy_rangers = 0
 
 ## HEALER VARIABLES ##
 healer_radius = 9

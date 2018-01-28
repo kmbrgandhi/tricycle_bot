@@ -426,16 +426,17 @@ def designate_roles():
 
 			worker_starting_cap = variables.worker_starting_cap
 			#print("worker starting cap",worker_starting_cap)
+			num_miners = len(current_roles["miner"])
+			need_blueprinter = False
+			if len(current_roles["blueprinter"])==0 and gc.round()>4 and len(workers)>3 and variables.info[5]==0 and variables.info[6]==0:
+				need_blueprinter = True
 
-
-			num_miners = len(current_roles["miner"])	
-			if my_role is None and num_miners < worker_starting_cap and gc.round() <= 100 and worker not in idle_workers:
+			if my_role is None and not need_blueprinter and num_miners < worker_starting_cap and gc.round() <= 100 and worker not in idle_workers:
 				current_roles["miner"].append(worker.id)
 				#print(worker.id,"becomes a miner again")
 				continue
 
-
-			if my_role != "repairer" and my_role != "builder" and my_role != "blueprinter":
+			if gc.round() > 2 and my_role != "repairer" and my_role != "builder" and my_role != "blueprinter":
 				#print("closest workeres to damaged building",closest_workers_to_damaged_building)
 				for building_id in closest_workers_to_damaged_building:
 					if worker.id in closest_workers_to_damaged_building[building_id]:
@@ -450,7 +451,7 @@ def designate_roles():
 
 			#print("unit: ",worker.id,my_role)
 			# recruit nearby workers to finish building
-			if my_role != "blueprinter" and my_role != "builder" and not role_revised:
+			if gc.round()>2 and my_role != "blueprinter" and my_role != "builder" and not role_revised:
 				for building_id in building_assignment:
 					assigned_workers = building_assignment[building_id]
 					assigned_location = gc.unit(building_id).location.map_location()
@@ -474,7 +475,7 @@ def designate_roles():
 
 			# recruit nearby worker to place down a blueprint
 			#print("hello?",worker.id)
-			if my_role != "blueprinter" and my_role != "builder" and not role_revised:
+			if gc.round()>2 and my_role != "blueprinter" and my_role != "builder" and not role_revised:
 				building_in_progress_count = len(building_assignment.keys()) + len(blueprinting_assignment.keys())
 				#print("building_assignment",building_assignment)
 				#print("blueprinting_assignment",blueprinting_assignment)
@@ -513,6 +514,7 @@ def designate_roles():
 
 						best_location_tuple = get_optimal_building_location(gc,start_map,worker_location,unit_types["factory"],karbonite_locations,blueprinting_queue,blueprinting_assignment)
 						#print(worker.id,"building in ",best_location_tuple)
+						#print('best_location_tuple:', best_location_tuple)
 						if best_location_tuple is not None:
 							best_location = bc.MapLocation(earth, best_location_tuple[0], best_location_tuple[1])
 							#print(worker.id,"can build a factory")
@@ -712,17 +714,19 @@ def board(gc,my_unit,my_location,current_roles):
 		#movement.try_move(gc,my_unit,direction_to_rocket)
 
 
-def replicate(gc,unit,direction=None):
+def replicate(gc,unit,directions=None):
 	replicated = False
 	unit_location = unit.location.map_location()
 
-	if direction is not None:
-		if gc.can_replicate(unit.id,direction):
-			replicated = True
-			gc.replicate(unit.id,direction)
+	if directions is not None:
+		for direction in directions:
+			if gc.can_replicate(unit.id,direction):
+				replicated = True
+				gc.replicate(unit.id,direction)
 
-			variables.info[0] += 1
-			variables.my_karbonite = gc.karbonite()
+				variables.info[0] += 1
+				variables.my_karbonite = gc.karbonite()
+				break
 
 	elif variables.my_karbonite >= variables.unit_types["worker"].replicate_cost():
 		for direction in variables.directions:
@@ -811,7 +815,6 @@ def get_closest_deposit(gc,unit,position,karbonite_locations,in_vision_range=Fal
 	return closest_deposit
 	
 def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, building_assignment, battle_locs):
-
 	start_time = time.time()
 	closest_deposit = get_closest_deposit(gc,my_unit,my_location,karbonite_locations)
 	#print("closest deposit",closest_deposit)
@@ -885,7 +888,6 @@ def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, bui
 				current_roles["miner"].remove(my_unit.id)
 				#print(my_unit.id," just harvested!")
 
-
 		"""
 		if current_num_workers < worker_starting_cap and gc.round() <= 100:
 			try_replicate = replicate(gc,unit)
@@ -897,12 +899,13 @@ def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, bui
 		#print("worker cap",get_worker_cap(gc,variables.karbonite_locations,info,variables.num_enemies))
 		if info[0] < get_worker_cap(gc,variables.karbonite_locations,info,variables.num_enemies):
 			if my_location != closest_deposit:
-				try_replicate = replicate(gc,my_unit,direction_to_deposit)
+				shape = [closest_deposit.x- my_location.x, closest_deposit.y - my_location.y]
+				list_of_dirs = sense_util.get_best_option(shape)
+				try_replicate = replicate(gc,my_unit,list_of_dirs)
 			else:
 				try_replicate = replicate(gc,my_unit)
 			#print("try replicate",try_replicate)
 			#print(my_unit.id,"just replicated")
-
 	else:
 		current_roles["miner"].remove(my_unit.id)
 		#print(my_unit.id," no deposits around")
