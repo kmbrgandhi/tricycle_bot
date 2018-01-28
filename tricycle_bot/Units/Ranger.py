@@ -276,19 +276,24 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
         if attack is not None:
             #visible_enemies = True
             if closest_enemy is not None:
-                start_time = time.time()
+                closest_enemy_loc = closest_enemy.location.map_location()
                 if check_radius_squares_factories(gc, location) and closest_enemy.unit_type != variables.unit_types["knight"]:
-                    dir = optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location())
-                elif (exists_bad_enemy(closest_enemy)) or not gc.can_attack(unit.id, closest_enemy.id):
+                    dir = optimal_direction_towards(gc, unit, location, closest_enemy_loc)
+                elif closest_enemy.unit_type == variables.unit_types["knight"] or not gc.can_attack(unit.id, closest_enemy.id):
                     # if variables.print_count < 10:
                     #    print("Checking if condition:", time.time() - start_time)
-                    start_time = time.time()
+                    #start_time = time.time()
                     dir = sense_util.best_available_direction(gc, unit, [closest_enemy])
                     # if variables.print_count < 10:
                     #    print("Getting best available direction:", time.time() - start_time)
 
                     # and (closest_enemy.location.map_location().distance_squared_to(location)) ** (
                     # 0.5) + 2 < unit.attack_range() ** (0.5)) or not gc.can_attack(unit.id, attack.id):
+                elif variables.num_enemies > 0.9*variables.info[2]:
+                    dir = sense_util.best_available_direction(gc, unit, [closest_enemy])
+                else:
+                    dir = try_orthogonal(gc, unit, location, closest_enemy_loc)
+
         else:
             if gc.is_move_ready(unit.id):
 
@@ -434,6 +439,24 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
 
     return dir, attack, snipe, move_then_attack, visible_enemies, closest_enemy, signals
     """
+
+
+def try_orthogonal(gc, unit, location, closest_enemy):
+    direction_between = location.direction_to(closest_enemy)
+    poss_1 = direction_between.rotate_right().rotate_right()
+    poss_2 = direction_between.rotate_left().rotate_left()
+    posses = [poss_1, poss_2]
+    which = random.choice([0, 1])
+    if gc.can_move(unit.id, posses[which]):
+        new_loc = location.add(posses[which])
+        if sense_util.distance_squared_between_maplocs(new_loc, closest_enemy) <50:
+            return posses[which]
+    other = 1 - which
+    if gc.can_move(unit.id, posses[other]):
+        new_loc = location.add(posses[other])
+        if sense_util.distance_squared_between_maplocs(new_loc, closest_enemy) < 50:
+            return posses[other]
+    return None
 
 def get_coord_value(coords):
     return coords[1]*variables.my_width + coords[0]

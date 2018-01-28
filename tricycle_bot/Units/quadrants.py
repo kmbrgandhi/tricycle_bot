@@ -218,6 +218,18 @@ class QuadrantInfo():
         elif robot_type == "worker":
             self.workers.add(ally_id) 
 
+    def urgency_coeff_without_add_units(self, robot_type):
+        if robot_type == "healer":
+            if self.health_coeff is not None:
+                if len(self.all_allies()) > 0:
+                    return (self.num_died / (self.quadrant_size ** 2)) + 1.5 * self.health_coeff
+                else:
+                    return (self.num_died / (self.quadrant_size ** 2)) + 1.5 * self.health_coeff
+            else:
+                if len(self.all_allies()) > 0:
+                    return (self.num_died / (self.quadrant_size ** 2))
+                else:
+                    return (self.num_died / (self.quadrant_size ** 2))
     def urgency_coeff(self, robot_type): 
         """
         1. Number of allied units who died in this quadrant
