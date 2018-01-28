@@ -172,6 +172,7 @@ class QuadrantInfo():
         ## Find enemies in quadrant
         # If enemy in location that can't be sensed don't erase it yet
         battle_locs = []
+        rangers = 0
         for loc in self.quadrant_locs: 
             map_loc = bc.MapLocation(variables.curr_planet, loc[0], loc[1])
             if gc.can_sense_location(map_loc): 
@@ -183,6 +184,10 @@ class QuadrantInfo():
                         elif unit.unit_type == variables.unit_types["factory"]:
                             self.enemy_factories.add(unit.id)
                             self.enemies.add(unit.id)
+                        elif unit.unit_type == variables.unit_types["ranger"]:
+                            self.enemies.add(unit.id)
+                            self.target_loc = loc
+                            rangers += 1
                         else:
                             self.enemies.add(unit.id)
                         self.enemy_locs[loc] = unit
@@ -192,7 +197,7 @@ class QuadrantInfo():
             elif loc in self.enemy_locs: 
                 self.enemies.add(self.enemy_locs[loc].id)
                 battle_locs.append(loc)
-        return battle_locs
+        return (battle_locs, rangers)
 
     def remove_ally(self, ally_id): 
         if ally_id in self.knights: 
@@ -259,7 +264,7 @@ class QuadrantInfo():
                 else: 
                     return assigned_coeff + (self.num_died/(self.quadrant_size**2))
         elif robot_type == "knight": 
-            return 2*len(self.enemy_factories)/self.quadrant_size + 2*len(self.enemies)/(self.quadrant_size**2) + len(self.enemy_workers)/(self.quadrant_size**2)
+            return 1.5*len(self.enemy_factories)/self.quadrant_size + 1.5*len(self.enemies)/(self.quadrant_size**2) + 0.5*len(self.enemy_workers)/(self.quadrant_size**2)
 
     def __str__(self):
         return "bottom left: " + str(self.bottom_left) + "\nallies: " + str(self.all_allies()) + "\nenemies: " + str(self.enemies) + "\ntarget loc: " + str(self.target_loc) + "\nhealer loc: " + str(self.healer_loc) + "\n"
