@@ -175,6 +175,9 @@ rocket_locs = {}
 # RANGER
 ranger_roles = {"fighter":[],"sniper":[], "go_to_mars":[]}
 is_sniping = {}
+where_rangers_attacking = {}                    ## Direction in which ranger is attacking
+for d in directions: 
+    where_rangers_attacking[d] = 0
 
 # Mages
 mage_roles = {"fighter":[], "go_to_mars":[]}
