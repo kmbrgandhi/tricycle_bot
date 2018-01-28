@@ -46,9 +46,7 @@ def update_variables():
         variables.enemy_rangers = 0
 
     # Update which ally unit id's are still alive & deaths per quadrant
-    start_time = time.time()
     update_quadrants() # Updates enemies in quadrant & resets num dead allies
-    print("update quadrants: ", time.time()-start_time)
 
     if variables.curr_planet == bc.Planet.Earth: 
         quadrant_size = variables.earth_quadrant_size
