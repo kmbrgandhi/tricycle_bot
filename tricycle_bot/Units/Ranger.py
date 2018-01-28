@@ -684,6 +684,7 @@ def use_dist_bfs(start_coords, target_coords, bfs_array):
     best_dirs = []
     min_dir = None
     min_dist = float('inf')
+    min_absolute_dist = float('inf')
     #print('start_coords:', start_coords)
     #print('target_coords_thirds:', target_coords_thirds)
     all_but_center_dir = variables.all_but_center_dir
@@ -697,6 +698,12 @@ def use_dist_bfs(start_coords, target_coords, bfs_array):
                 if new_dist<min_dist:
                     min_dir = direction
                     min_dist = new_dist
+                    min_absolute_dist = abs(target_coords[0] - new_coords[1]) + abs(target_coords[1]-new_coords[1])
+                elif new_dist == min_dist:
+                    absolute_dist = abs(target_coords[0] - new_coords[1]) + abs(target_coords[1]-new_coords[1])
+                    if absolute_dist < min_absolute_dist:
+                        min_absolute_dist = absolute_dist
+                        min_dir = direction
 
     return [min_dir]
     """
