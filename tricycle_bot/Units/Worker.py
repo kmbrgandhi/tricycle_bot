@@ -145,8 +145,8 @@ def timestep(unit):
 		variables.worker_harvest_amount = unit.worker_harvest_amount()
 
 
-	print()
-	print("on unit #",unit.id, "position: ",my_location, "role: ",my_role)
+	#print()
+	#print("on unit #",unit.id, "position: ",my_location, "role: ",my_role)
 	#print("KARBONITE: ",gc.karbonite()
 	
 	current_num_workers = info[0]
@@ -155,9 +155,9 @@ def timestep(unit):
 	#print("max starting worker cap",worker_starting_cap)
 	worker_spacing = 8
 
-
-	if current_num_workers < worker_starting_cap:
+	if current_num_workers < worker_starting_cap and gc.round() <= 100:
 		try_replicate = replicate(gc,unit)
+		#print("still replicating??",try_replicate)
 		if try_replicate:
 			return
 
@@ -494,7 +494,22 @@ def designate_roles():
 				new_role = "repairer"
 			"""
 			current_roles[new_role].append(worker.id)
-	print("current roles",variables.current_worker_roles)
+	#print("current roles",variables.current_worker_roles)
+
+
+# parameters: amount of karbonite on the map, factory number ( diff behavior before and after our first factory), 
+def get_worker_cap(gc,karbonite_locations, info, num_enemies):
+	#print("KARBONITE INFO LENGTH: ",len(karbonite_locations))
+	#print("number of reachable deposits",len(karbonite_locations))
+
+	if num_enemies > 2*sum(info[1:4])/3:
+		#print('replication cap yes')
+		return 6
+	elif info[5] >= 1:
+		return min(5 + float(len(karbonite_locations)/30),20)
+	else:
+		return min(3 + float(len(karbonite_locations)/3),6)
+
 
 
 
@@ -610,20 +625,6 @@ def board(gc,my_unit,my_location,current_roles):
 		try_move_smartly(my_unit, my_location, rocket_location)
 		#direction_to_rocket = my_location.direction_to(rocket_location)
 		#movement.try_move(gc,my_unit,direction_to_rocket)
-
-
-# parameters: amount of karbonite on the map, factory number ( diff behavior before and after our first factory), 
-def get_worker_cap(gc,karbonite_locations, info, num_enemies):
-	#print("KARBONITE INFO LENGTH: ",len(karbonite_locations))
-	#print("number of reachable deposits",len(karbonite_locations))
-
-	if num_enemies > 2*sum(info[1:4])/3:
-		#print('replication cap yes')
-		return 6
-	elif info[5] >= 1:
-		return min(5 + float(len(karbonite_locations)/30),20)
-	else:
-		return min(3 + float(len(karbonite_locations)/3),6)
 
 
 def replicate(gc,unit,direction=None):
@@ -788,7 +789,6 @@ def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, bui
 				if mineable_spot in passable_locations:
 					if passable_locations[mineable_spot] and mineable_spot not in ally_on_deposit_list:
 						target_loc = bc.MapLocation(variables.curr_planet,mineable_spot[0],mineable_spot[1])
-						print("trying to move to this location",target_loc)
 						try_move_smartly(my_unit, my_location, target_loc)
 						break
 
