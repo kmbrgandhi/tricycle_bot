@@ -145,8 +145,8 @@ def timestep(unit):
 		variables.worker_harvest_amount = unit.worker_harvest_amount()
 
 
-	print()
-	print("on unit #",unit.id, "position: ",my_location, "role: ",my_role)
+	#print()
+	#print("on unit #",unit.id, "position: ",my_location, "role: ",my_role)
 	#print("KARBONITE: ",gc.karbonite()
 	
 	current_num_workers = info[0]
@@ -156,17 +156,17 @@ def timestep(unit):
 
 
 	if my_role == "miner":
-		#start_time = time.time()
+		start_time = time.time()
 		mine(gc,unit,my_location,earth_start_map,karbonite_locations,current_roles, building_assignment, next_turn_battle_locs)
 		#print("mining time: ",time.time() - start_time)
 
 	elif my_role == "builder":
-		#start_time = time.time()
+		start_time = time.time()
 		build(gc,unit,my_location,earth_start_map,building_assignment,current_roles)
 		#print("building time: ",time.time() - start_time)
 
 	elif my_role == "blueprinter":
-		#start_time = time.time()
+		start_time = time.time()
 		blueprint(gc,unit,my_location,karbonite_locations,building_assignment,blueprinting_assignment,current_roles)
 		#print("blueprinting time: ",time.time() - start_time)
 
@@ -389,8 +389,8 @@ def designate_roles():
 		#print("closest workers to blueprint",closest_workers_to_blueprint)
 		#print("workers in recruitment range",workers_in_recruitment_range)
 
-		print("blueprinting_assignment",blueprinting_assignment)
-		print("building_assignment",building_assignment)
+		#print("blueprinting_assignment",blueprinting_assignment)
+		#print("building_assignment",building_assignment)
 		#print("blueprinting_queue",blueprinting_queue)
 
 
@@ -423,7 +423,7 @@ def designate_roles():
 			num_miners = len(current_roles["miner"])	
 			if my_role is None and num_miners < worker_starting_cap and gc.round() <= 100 and worker not in idle_workers:
 				current_roles["miner"].append(worker.id)
-				print(worker.id,"becomes a miner again")
+				#print(worker.id,"becomes a miner again")
 				continue
 
 
@@ -434,7 +434,7 @@ def designate_roles():
 						if my_role is not None and worker.id in current_roles[my_role]:
 							current_roles[my_role].remove(worker.id)
 						current_roles["repairer"].append(worker.id)
-						print("this is where",worker.id,"becomes a repairer")
+						#print("this is where",worker.id,"becomes a repairer")
 						role_revised = True
 						my_role = "repairer"
 						break
@@ -465,13 +465,13 @@ def designate_roles():
 							break
 
 			# recruit nearby worker to place down a blueprint
-			print("hello?",worker.id)
+			#print("hello?",worker.id)
 			if my_role != "blueprinter" and my_role != "builder" and not role_revised:
 				building_in_progress_count = len(building_assignment.keys()) + len(blueprinting_assignment.keys())
 				#print("building_assignment",building_assignment)
 				#print("blueprinting_assignment",blueprinting_assignment)
 				#print("building_in_progress_count",building_in_progress_count)
-				print("before the building in progress check",worker.id)
+				#print("before the building in progress check",worker.id)
 				if building_in_progress_count < building_in_progress_cap(gc):
 
 					if can_blueprint_rocket(gc,rocket_count):
@@ -504,10 +504,10 @@ def designate_roles():
 					elif can_blueprint_factory(gc,factory_count):
 
 						best_location_tuple = get_optimal_building_location(gc,start_map,worker_location,unit_types["factory"],karbonite_locations,blueprinting_queue,blueprinting_assignment)
-						print(worker.id,"building in ",best_location_tuple)
+						#print(worker.id,"building in ",best_location_tuple)
 						if best_location_tuple is not None:
 							best_location = bc.MapLocation(earth, best_location_tuple[0], best_location_tuple[1])
-							print(worker.id,"can build a factory")
+							#print(worker.id,"can build a factory")
 							if my_role is not None and worker.id in current_roles[my_role]:
 								current_roles[my_role].remove(worker.id)
 
@@ -534,7 +534,7 @@ def designate_roles():
 							#print(worker.id," just added to building queue",best_location)
 
 							#print(worker.id,"cannot build a rocket or factory")
-					print(worker.id,"cannot build a rocket or factory")
+					#print(worker.id,"cannot build a rocket or factory")
 
 			#print(worker.id,"is role:",my_role)
 			#print("idle workers",[unit.id for unit in idle_workers])
@@ -572,7 +572,7 @@ def designate_roles():
 			"""
 			current_roles[new_role].append(worker.id)
 
-	print("current roles",variables.current_worker_roles)
+	#print("current roles",variables.current_worker_roles)
 
 
 # parameters: amount of karbonite on the map, factory number ( diff behavior before and after our first factory), 
@@ -1189,7 +1189,7 @@ def get_optimal_building_location(gc, start_map, center, building_type, karbonit
 def can_blueprint_factory(gc,factory_count):
 	if (gc.round() > 250 and variables.num_enemies < 5) or gc.round() > 400:
 		return False
-	print("factory cap",get_factory_limit())
+	#print("factory cap",get_factory_limit())
 	return factory_count < get_factory_limit()
 
 def can_blueprint_rocket(gc,rocket_count):
