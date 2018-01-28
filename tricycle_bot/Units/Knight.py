@@ -223,11 +223,12 @@ def update_battles():
         del assigned_knights[knight_id]
 
     knights_no_attack = 0
-    total_knights = len(knight_attacks)
+    total_knights = 0
     for knight_id in remove:
         num_times_attacked = knight_attacks[knight_id]
         if num_times_attacked == 0: 
             knights_no_attack += 1
+        total_knights += 1
         del knight_attacks[knight_id]
 
     if total_knights == 0: 
