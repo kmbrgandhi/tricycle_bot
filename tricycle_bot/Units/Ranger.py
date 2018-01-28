@@ -99,6 +99,12 @@ def timestep(unit):
                     targeting_units[attack_target.id]+= 1
                 gc.attack(unit.id, attack_target.id)
                 variables.overcharge_targets.add(unit.id)
+
+            if snipe is not None:
+                snipe_loc = snipe.location.map_location()
+            if snipe is not None and gc.can_begin_snipe(unit.id, snipe_loc) and gc.is_begin_snipe_ready(unit.id):
+                variables.is_sniping[unit.id] = True
+                gc.begin_snipe(unit.id, snipe_loc)
         else:
             if attack_target is not None and gc.is_attack_ready(unit.id) and gc.can_attack(unit.id, attack_target.id):
                 if attack_target.id not in targeting_units:
@@ -113,10 +119,12 @@ def timestep(unit):
                 gc.move_robot(unit.id, dir)
                 ## CHANGE LOC IN NEW DATA STRUCTURE
                 add_new_location(unit.id, (map_loc.x, map_loc.y), dir)
-        """
-        if snipe!=None and gc.can_begin_snipe(unit.id, snipe.location.map_location()) and gc.is_begin_snipe_ready(unit.id):
-            gc.begin_snipe(unit.id, snipe.location)
-        """
+
+            if snipe is not None:
+                snipe_loc = snipe.location.map_location()
+            if snipe is not None and gc.can_begin_snipe(unit.id, snipe_loc) and gc.is_begin_snipe_ready(unit.id):
+                variables.is_sniping[unit.id] = True
+                gc.begin_snipe(unit.id, snipe_loc)
         #if variables.print_count < 10:
         #print("Doing tasks:", time.time() - start_time)
     #if variables.print_count<10:
@@ -238,112 +246,128 @@ def go_to_mars_sense(gc, unit, battle_locs, location, enemies, direction_to_coor
     return dir, attack, snipe, move_then_attack, visible_enemies, closest_enemy, signals
 
 def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coord, bfs_array, targeting_units, rocket_locs):
-    enemies = gc.sense_nearby_units_by_team(location, unit.vision_range, variables.enemy_team)
-    if unit.id in ranger_roles["sniper"]:
-        return snipe_sense(gc, unit, battle_locs, location, enemies, direction_to_coord, bfs_array, targeting_units)
-    elif unit.id in ranger_roles["go_to_mars"]:
-        return go_to_mars_sense(gc, unit, battle_locs, location, enemies, direction_to_coord, bfs_array, targeting_units, rocket_locs)
-    signals = {}
-    dir = None
-    attack = None
-    snipe = None
-    closest_enemy = None
-    move_then_attack = False
-    visible_enemies = False
-    start_time = time.time()
-    # if variables.print_count < 10:
-    #    print("Sensing nearby units:", time.time() - start_time)
-    if len(enemies) > 0:
-        visible_enemies = True
-        start_time = time.time()
+    if not unit.ranger_is_sniping():
+        if unit.id in variables.is_sniping:
+            del variables.is_sniping[unit.id]
+        enemies = gc.sense_nearby_units_by_team(location, unit.vision_range, variables.enemy_team)
+        if unit.id in ranger_roles["go_to_mars"]:
+            return go_to_mars_sense(gc, unit, battle_locs, location, enemies, direction_to_coord, bfs_array, targeting_units, rocket_locs)
+        signals = {}
+        dir = None
+        attack = None
+        snipe = None
         closest_enemy = None
-        closest_dist = float('inf')
-        for enemy in enemies:
-            loc = enemy.location
-            if loc.is_on_map():
-                dist = sense_util.distance_squared_between_maplocs(loc.map_location(), location)
-                if dist < closest_dist:
-                    closest_dist = dist
-                    closest_enemy = enemy
-        # if variables.print_count < 10:
-        #    print("Getting closest enemy:", time.time() - start_time)
-        # sorted_enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(location))
-        # closest_enemy = closest_among_ungarrisoned(sorted_enemies)
+        move_then_attack = False
+        visible_enemies = False
         start_time = time.time()
-        attack = get_attack(gc, unit, location, targeting_units)
         # if variables.print_count < 10:
-        #    print("Getting attack:", time.time() - start_time)
-        if attack is not None:
-            #visible_enemies = True
-            if closest_enemy is not None:
-                closest_enemy_loc = closest_enemy.location.map_location()
-                if check_radius_squares_factories(gc, location) and closest_enemy.unit_type != variables.unit_types["knight"]:
-                    dir = optimal_direction_towards(gc, unit, location, closest_enemy_loc)
-                elif closest_enemy.unit_type == variables.unit_types["knight"] or not gc.can_attack(unit.id, closest_enemy.id):
-                    # if variables.print_count < 10:
-                    #    print("Checking if condition:", time.time() - start_time)
-                    #start_time = time.time()
-                    dir = sense_util.best_available_direction(gc, unit, [closest_enemy])
-                    # if variables.print_count < 10:
-                    #    print("Getting best available direction:", time.time() - start_time)
-
-                    # and (closest_enemy.location.map_location().distance_squared_to(location)) ** (
-                    # 0.5) + 2 < unit.attack_range() ** (0.5)) or not gc.can_attack(unit.id, attack.id):
-                elif variables.num_enemies > 0.9*variables.info[2]:
-                    dir = sense_util.best_available_direction(gc, unit, [closest_enemy])
-                else:
-                    dir = try_orthogonal(gc, unit, location, closest_enemy_loc)
-
-        else:
-            if gc.is_move_ready(unit.id):
-
+        #    print("Sensing nearby units:", time.time() - start_time)
+        if len(enemies) > 0:
+            visible_enemies = True
+            start_time = time.time()
+            closest_enemy = None
+            closest_dist = float('inf')
+            for enemy in enemies:
+                loc = enemy.location
+                if loc.is_on_map():
+                    dist = sense_util.distance_squared_between_maplocs(loc.map_location(), location)
+                    if dist < closest_dist:
+                        closest_dist = dist
+                        closest_enemy = enemy
+            # if variables.print_count < 10:
+            #    print("Getting closest enemy:", time.time() - start_time)
+            # sorted_enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(location))
+            # closest_enemy = closest_among_ungarrisoned(sorted_enemies)
+            start_time = time.time()
+            attack = get_attack(gc, unit, location, targeting_units)
+            # if variables.print_count < 10:
+            #    print("Getting attack:", time.time() - start_time)
+            if attack is not None:
+                #visible_enemies = True
                 if closest_enemy is not None:
-                    dir = go_to_loc(unit, location, closest_enemy.location.map_location())#optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location())
-                    if dir is None or dir == variables.directions[8]:
-                        dir = optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location())
-                    next_turn_loc = location.add(dir)
-                    attack = get_attack(gc, unit, next_turn_loc, targeting_units)
-                    if attack is not None:
-                        move_then_attack = True
-                else:
-                    if variables.curr_planet == bc.Planet.Earth:
-                        # print('IS RUNNING TOWARDS INIT LOC')
-                        dir = run_towards_init_loc_new(gc, unit, location, direction_to_coord)
-                    else:
-                        # print('EXPLORING')
-                        dir = get_explore_dir(gc, unit, location)
-                    # if variables.print_count < 10:
-                    #    print("Getting direction:", time.time() - start_time)
-    else:
-        # if there are no enemies in sight, check if there is an ongoing battle.  If so, go there.
-        if len(rocket_locs) > 0 and gc.round() > 600 and variables.curr_planet == bc.Planet.Earth:
-            dir = move_to_rocket(gc, unit, location, direction_to_coord, bfs_array)
-            if dir is not None:
-                return dir, attack, snipe, move_then_attack, visible_enemies, closest_enemy, signals
-        if len(battle_locs) > 0:
-            # print('IS GOING TO BATTLE')
-            dir = go_to_battle_new(gc, unit, battle_locs, location, direction_to_coord)
-            # queued_paths[unit.id] = target
-        else:
-            # dir = move_away(gc, unit, battle_locs)
-            if variables.curr_planet == bc.Planet.Earth:
-                # print('IS RUNNING TOWARDS INIT LOC')
-                dir = run_towards_init_loc_new(gc, unit, location, direction_to_coord)
-            else:
-                # print('EXPLORING')
-                dir = get_explore_dir(gc, unit, location)
-        """
-        elif unit.id in queued_paths:
-            if location!=queued_paths[unit.id]:
-                dir = optimal_direction_towards(gc, unit, location, queued_paths[unit.id])
-                return dir, attack, snipe, move_then_attack, visible_enemies, signals
-            else:
-                del queued_paths[unit.id]
-        """
-        # if variables.print_count < 10:
-        #    print("regular movement:", time.time() - start_time)
+                    closest_enemy_loc = closest_enemy.location.map_location()
+                    if check_radius_squares_factories(gc, location) and closest_enemy.unit_type != variables.unit_types["knight"]:
+                        dir = optimal_direction_towards(gc, unit, location, closest_enemy_loc)
+                    elif closest_enemy.unit_type == variables.unit_types["knight"] or not gc.can_attack(unit.id, closest_enemy.id):
+                        # if variables.print_count < 10:
+                        #    print("Checking if condition:", time.time() - start_time)
+                        #start_time = time.time()
+                        dir = sense_util.best_available_direction(gc, unit, [closest_enemy])
+                        # if variables.print_count < 10:
+                        #    print("Getting best available direction:", time.time() - start_time)
 
-    return dir, attack, snipe, move_then_attack, visible_enemies, closest_enemy, signals
+                        # and (closest_enemy.location.map_location().distance_squared_to(location)) ** (
+                        # 0.5) + 2 < unit.attack_range() ** (0.5)) or not gc.can_attack(unit.id, attack.id):
+                    elif variables.num_enemies > 0.9*variables.info[2]:
+                        dir = sense_util.best_available_direction(gc, unit, [closest_enemy])
+                    else:
+                        dir = try_orthogonal(gc, unit, location, closest_enemy_loc)
+
+            else:
+                num_sniping = len(variables.is_sniping)
+                if gc.research_info().get_level(variables.unit_types["ranger"]) ==3 and gc.is_begin_snipe_ready(unit.id) and num_sniping < 10:
+                    best_unit = None
+                    best_priority = -float("inf")
+                    for poss_enemy in variables.units:
+                        if poss_enemy.location.is_on_map() and poss_enemy.team != gc.team() and snipe_priority(poss_enemy) > best_priority:
+                            best_unit = poss_enemy
+                            best_priority = snipe_priority(poss_enemy)
+
+                        # temporary always target factories
+                        if best_priority == 5:
+                            break
+
+                    snipe = best_unit
+
+                elif gc.is_move_ready(unit.id):
+
+                    if closest_enemy is not None:
+                        dir = go_to_loc(unit, location, closest_enemy.location.map_location())#optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location())
+                        if dir is None or dir == variables.directions[8]:
+                            dir = optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location())
+                        next_turn_loc = location.add(dir)
+                        attack = get_attack(gc, unit, next_turn_loc, targeting_units)
+                        if attack is not None:
+                            move_then_attack = True
+                    else:
+                        if variables.curr_planet == bc.Planet.Earth:
+                            # print('IS RUNNING TOWARDS INIT LOC')
+                            dir = run_towards_init_loc_new(gc, unit, location, direction_to_coord)
+                        else:
+                            # print('EXPLORING')
+                            dir = get_explore_dir(gc, unit, location)
+                        # if variables.print_count < 10:
+                        #    print("Getting direction:", time.time() - start_time)
+        else:
+            # if there are no enemies in sight, check if there is an ongoing battle.  If so, go there.
+            if len(rocket_locs) > 0 and gc.round() > 600 and variables.curr_planet == bc.Planet.Earth:
+                dir = move_to_rocket(gc, unit, location, direction_to_coord, bfs_array)
+                if dir is not None:
+                    return dir, attack, snipe, move_then_attack, visible_enemies, closest_enemy, signals
+            if len(battle_locs) > 0:
+                # print('IS GOING TO BATTLE')
+                dir = go_to_battle_new(gc, unit, battle_locs, location, direction_to_coord)
+                # queued_paths[unit.id] = target
+            else:
+                # dir = move_away(gc, unit, battle_locs)
+                if variables.curr_planet == bc.Planet.Earth:
+                    # print('IS RUNNING TOWARDS INIT LOC')
+                    dir = run_towards_init_loc_new(gc, unit, location, direction_to_coord)
+                else:
+                    # print('EXPLORING')
+                    dir = get_explore_dir(gc, unit, location)
+            """
+            elif unit.id in queued_paths:
+                if location!=queued_paths[unit.id]:
+                    dir = optimal_direction_towards(gc, unit, location, queued_paths[unit.id])
+                    return dir, attack, snipe, move_then_attack, visible_enemies, signals
+                else:
+                    del queued_paths[unit.id]
+            """
+            # if variables.print_count < 10:
+            #    print("regular movement:", time.time() - start_time)
+
+        return dir, attack, snipe, move_then_attack, visible_enemies, closest_enemy, signals
     """
     signals = {}
     dir = None
@@ -543,9 +567,9 @@ def move_to_rocket(gc, unit, location, direction_to_coord, bfs_array):
 snipe_priority = {"Rocket": 5, "Factory": 4, "Ranger": 3, "Healer": 2, "Knight": 1, "Worker": 0, "Mage": -1}
 def snipe_priority(unit):
     if unit.unit_type == bc.UnitType.bc.UnitType.Rocket:
-        return 5
-    elif unit.unit_type == bc.UnitType.bc.UnitType.Factory:
         return 4
+    elif unit.unit_type == bc.UnitType.bc.UnitType.Factory:
+        return 5
     elif unit.unit_type == bc.UnitType.bc.UnitType.Ranger:
         return 3
     elif unit.unit_type == bc.UnitType.bc.UnitType.Healer:

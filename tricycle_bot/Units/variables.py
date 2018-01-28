@@ -190,6 +190,7 @@ rocket_locs = {}
 
 # RANGER
 ranger_roles = {"fighter":[],"sniper":[], "go_to_mars":[]}
+is_sniping = {}
 
 # Mages
 mage_roles = {"fighter":[], "go_to_mars":[]}
@@ -292,9 +293,9 @@ if curr_planet == bc.Planet.Earth:
             dist = bfs_array[our_coords_val, their_coords_val]
             if dist!=float('inf'):
                 dists.append(dist)
-
-    if min(dists) < 17 and max(dists) < 30:
-        knight_rush = True
+    if len(dists)>0:
+        if min(dists) < 25 and max(dists) < 33:
+            knight_rush = True
 
 else:
     my_width = mars_width
