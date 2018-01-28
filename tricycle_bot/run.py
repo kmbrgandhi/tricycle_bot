@@ -56,7 +56,7 @@ while True:
     unit_types = variables.unit_types
     info = variables.info
 
-    #print("PYROUND:",gc.round())
+    print("PYROUND:",gc.round())
     #print("past karbonite gain",variables.past_karbonite_gain)
 
     try:
