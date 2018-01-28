@@ -43,7 +43,7 @@ def timestep(unit):
 		quadrant_battles[f_f_quad].add_ally(unit.id, "factory")
 
 	garrison = unit.structure_garrison() # units inside of factory
-	if len(garrison) > 0: # try to unload a unit if there exists one in the garrison
+	if (variables.num_enemies > 5 and len(garrison) > 0) or len(garrison)>1: # try to unload a unit if there exists one in the garrison
 		optimal_unload_dir = optimal_unload(gc, unit, directions, building_assignments, battle_locs)
 		if optimal_unload_dir is not None:
 			gc.unload(unit.id, optimal_unload_dir)
@@ -94,7 +94,7 @@ def timestep(unit):
 					variables.producing[0]+=1
 			#elif total_units[1]<5 and gc.round() < 70:
 			#	gc.produce_robot(unit.id, bc.UnitType.Knight)
-			elif total_units[2] < 0.7 * num_non_workers or total_units[2]<2:
+			elif total_units[2] < 0.7 * num_non_workers or total_units[2]<3:
 				gc.produce_robot(unit.id, bc.UnitType.Ranger)
 				variables.producing[2] += 1
 			else:
