@@ -629,21 +629,6 @@ def get_worker_cap(gc,karbonite_locations, info, num_enemies):
 
 
 
-def get_workers_per_building(gc,start_map,building_location):
-	max_workers_per_building = 4
-	num_adjacent_spaces = 0
-	adjacent = adjacent_locations(building_location)
-	self_coord = (building_location.x,building_location.y)
-
-	#print("checking workers per building")
-	for location in adjacent:
-		location_coord = (location.x,location.y)
-		if location_coord not in passable_locations or location_coord == self_coord: continue
-		if passable_locations[location_coord]:
-			num_adjacent_spaces += 1
-
-	return min(num_adjacent_spaces,max_workers_per_building)
-
 
 
 def update_for_dead_workers(gc,current_roles,blueprinting_queue,blueprinting_assignment,building_assignment):
@@ -1162,6 +1147,23 @@ def factory_spacing_locations(location):
 			if passable_locations[(x+dx,y+dy)]:
 				output.append(bc.MapLocation(planet,x+dx,y+dy))
 	return output
+
+
+
+def get_workers_per_building(gc,start_map,building_location):
+	max_workers_per_building = 4
+	num_adjacent_spaces = 0
+	adjacent = adjacent_locations(building_location)
+	self_coord = (building_location.x,building_location.y)
+
+	#print("checking workers per building")
+	for location in adjacent:
+		location_coord = (location.x,location.y)
+		if location_coord not in passable_locations or location_coord == self_coord: continue
+		if passable_locations[location_coord]:
+			num_adjacent_spaces += 1
+
+	return min(num_adjacent_spaces,max_workers_per_building)
 
 
 # generates locations to build factories that are close to karbonite deposits
