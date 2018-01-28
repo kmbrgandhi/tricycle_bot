@@ -40,10 +40,10 @@ def update_variables():
     variables.my_unit_ids = set([unit.id for unit in variables.my_units])
     variables.units = gc.units()
     num_workers= num_knights=num_rangers= num_mages= num_healers= num_factory= num_rocket = 0
-    if variables.enemy_rangers >= 5: 
-        variables.enemy_rangers = 5
+    if variables.ranged_enemies >= 5: 
+        variables.ranged_enemies = 5
     else: 
-        variables.enemy_rangers = 0
+        variables.ranged_enemies = 0
 
     # Update which ally unit id's are still alive & deaths per quadrant
     update_quadrants() # Updates enemies in quadrant & resets num dead allies
@@ -192,8 +192,8 @@ def update_quadrants():
     for quadrant in battle_quadrants: 
         q_info = battle_quadrants[quadrant]
         q_info.reset_num_died()
-        new_battle_locs, rangers = q_info.update_enemies(gc)
-        variables.enemy_rangers += rangers
+        new_battle_locs, ranged = q_info.update_enemies(gc)
+        variables.ranged_enemies += ranged
         if quadrant not in already_included_quadrants and len(new_battle_locs) > 0: 
             loc = new_battle_locs[0]
             quadrant_loc = (int(loc[0]/5),int(loc[1]/5))
