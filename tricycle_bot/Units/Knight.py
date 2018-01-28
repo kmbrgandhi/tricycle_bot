@@ -55,9 +55,11 @@ def timestep(unit):
         # If new knight assign to location 
         if unit.id not in assigned_knights:
             assigned, best_loc = assign_to_quadrant(gc, unit, unit_loc)
-            if not assigned: 
-                nearby = gc.sense_nearby_units_by_team(bc.MapLocation(variables.curr_planet, unit_loc[0], unit_loc[1]), 8, variables.my_team)
-                best_dir = sense_util.best_available_direction(gc,unit,nearby)  
+            if not assigned:
+                unit_loc_map = bc.MapLocation(variables.curr_planet, unit_loc[0], unit_loc[1])
+                best_dir = Ranger.run_towards_init_loc_new(gc, unit, unit_loc_map, variables.direction_to_coord)
+                #nearby = gc.sense_nearby_units_by_team(bc.MapLocation(variables.curr_planet, unit_loc[0], unit_loc[1]), 8, variables.my_team)
+                #best_dir = sense_util.best_available_direction(gc,unit,nearby)
         else: 
             best_loc = assigned_knights[unit.id]
 

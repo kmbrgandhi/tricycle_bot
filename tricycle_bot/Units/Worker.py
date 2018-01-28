@@ -186,6 +186,7 @@ def check_if_saviour_died():
 		if variables.saviour_worker_id ==my_unit.id:
 			return True
 	return False
+
 def near_factory(my_location):
 	my_location_coords = (my_location.x, my_location.y)
 	for coords in explore.coord_neighbors(my_location_coords, diff = explore.diffs_50):
