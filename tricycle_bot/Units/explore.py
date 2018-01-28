@@ -67,7 +67,7 @@ def get_maploc(planet, coords):
 def coord_neighbors(coords, diff = diff_neighbors, include_self = False):
     res = [(coords[0]+i, coords[1]+j) for (i, j) in diff]
     if include_self:
-        res.append(coords)
+        res.insert(0,coords)
     return res
     """
     return [(coords[0]-1, coords[1]-1), (coords[0], coords[1]-1), (coords[0]-1, coords[1]),
