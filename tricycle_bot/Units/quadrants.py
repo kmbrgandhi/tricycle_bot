@@ -244,12 +244,12 @@ class QuadrantInfo():
         elif robot_type == "healer":
             if self.health_coeff is not None: 
                 if len(self.all_allies()) > 0: 
-                    return (self.num_died/(self.quadrant_size**2)) + 1.5*self.health_coeff + (len(self.fighters())/len(self.all_allies()))
+                    return (self.num_died/(self.quadrant_size**2)) + 1.5*self.health_coeff + 0.5*(len(self.fighters())/len(self.all_allies()))
                 else: 
                     return (self.num_died/(self.quadrant_size**2)) + 1.5*self.health_coeff
             else: 
                 if len(self.all_allies()) > 0: 
-                    return (self.num_died/(self.quadrant_size**2)) + (len(self.fighters())/len(self.all_allies()))
+                    return (self.num_died/(self.quadrant_size**2)) + 0.5*(len(self.fighters())/len(self.all_allies()))
                 else: 
                     return (self.num_died/(self.quadrant_size**2))
         elif robot_type == "knight": 
