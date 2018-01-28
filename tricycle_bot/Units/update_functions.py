@@ -40,9 +40,15 @@ def update_variables():
     variables.my_unit_ids = set([unit.id for unit in variables.my_units])
     variables.units = gc.units()
     num_workers= num_knights=num_rangers= num_mages= num_healers= num_factory= num_rocket = 0
+    if variables.enemy_rangers >= 7: 
+        variables.enemy_rangers = 7
+    else: 
+        variables.enemy_rangers = 0
 
     # Update which ally unit id's are still alive & deaths per quadrant
+    start_time = time.time()
     update_quadrants() # Updates enemies in quadrant & resets num dead allies
+    print("update quadrants: ", time.time()-start_time)
 
     if variables.curr_planet == bc.Planet.Earth: 
         quadrant_size = variables.earth_quadrant_size
@@ -188,7 +194,8 @@ def update_quadrants():
     for quadrant in battle_quadrants: 
         q_info = battle_quadrants[quadrant]
         q_info.reset_num_died()
-        new_battle_locs = q_info.update_enemies(gc)
+        new_battle_locs, rangers = q_info.update_enemies(gc)
+        variables.enemy_rangers += rangers
         if quadrant not in already_included_quadrants and len(new_battle_locs) > 0: 
             loc = new_battle_locs[0]
             quadrant_loc = (int(loc[0]/5),int(loc[1]/5))
