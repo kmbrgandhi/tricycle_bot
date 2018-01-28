@@ -563,7 +563,7 @@ def designate_roles():
 
 
 			# early game miner production
-			if rocket_ready_for_loading and len(workers) > 2*sum(info[1:5]):
+			if rocket_ready_for_loading and len(workers) > 2*sum(variables.info[1:5]):
 				new_role = "boarder"
 			elif len(variables.karbonite_locations) > 0:
 				new_role = "miner"
@@ -720,9 +720,6 @@ def replicate(gc,unit,direction=None):
 		if gc.can_replicate(unit.id,direction):
 			replicated = True
 			gc.replicate(unit.id,direction)
-			replicate_location = unit_location.add(direction)
-			replicated_unit = gc.sense_unit_at_location(replicate_location)
-			variables.unit_locations[replicated_unit.id] = (replicate_location.x,replicate_location.y)
 
 			variables.info[0] += 1
 			variables.my_karbonite = gc.karbonite()
@@ -732,9 +729,6 @@ def replicate(gc,unit,direction=None):
 			if gc.can_replicate(unit.id,direction):
 				replicated = True
 				gc.replicate(unit.id,direction)
-				replicate_location = unit_location.add(direction)
-				replicated_unit = gc.sense_unit_at_location(replicate_location)
-				variables.unit_locations[replicated_unit.id] = (replicate_location.x,replicate_location.y)
 
 				variables.info[0] += 1
 				variables.my_karbonite = gc.karbonite()
@@ -1066,10 +1060,6 @@ def build(gc,my_unit,my_location,start_map,building_assignment,current_roles):
 							#print("right before replication")
 							gc.replicate(my_unit.id,direction)
 
-							replicate_location = unit_location.add(direction)
-							replicated_unit = gc.sense_unit_at_location(replicate_location)
-							variables.unit_locations[replicated_unit.id] = (replicate_location.x,replicate_location.y)
-
 							variables.my_karbonite = gc.karbonite()
 							info[0] += 1
 							new_unit = gc.sense_unit_at_location(adjacent_location)
@@ -1147,6 +1137,7 @@ def get_optimal_building_location(gc, start_map, center, building_type, karbonit
 	adjacent_locations = explore.coord_neighbors((center.x,center.y), include_self = True)
 	potential_adjacent_locations = []
 	karbonite_adjacent_locations = {}
+	empty_space_detected = False
 	deposits_located = False
 	center_coords = (center.x, center.y)
 
@@ -1163,7 +1154,11 @@ def get_optimal_building_location(gc, start_map, center, building_type, karbonit
 		allowed_quadrants.update(adjacent_quadrants)
 
 
-	for location_coords in explore.coord_neighbors(center_coords, diff=explore.diffs_50, include_self=True):
+	min_deposit_coord = None
+	min_deposit_karbonite = float('inf')
+	coords_in_vision_range = explore.coord_neighbors(center_coords, diff=explore.diffs_50, include_self=True)
+
+	for location_coords in coords_in_vision_range:
 		location = bc.MapLocation(variables.curr_planet, location_coords[0], location_coords[1])
 		#print("can we build here?",variables.invalid_building_locations[location_coords],location)
 		if location_coords in passable_locations and passable_locations[location_coords] and variables.invalid_building_locations[location_coords]:
@@ -1179,6 +1174,20 @@ def get_optimal_building_location(gc, start_map, center, building_type, karbonit
 			#print("location",location,"adjacent spaces",adjacent_spaces)
 			if adjacent_spaces >= 3 and enemies_in_quadrant == 0 and (quadrant in allowed_quadrants or len(allowed_quadrants) == 0):
 
+				if location_coords not in karbonite_locations:
+					karbonite_at_coord = 0
+					empty_space_detected = True
+				else:
+					karbonite_at_coord = karbonite_locations[location_coords]
+					deposits_located = True
+
+				if karbonite_at_coord < min_deposit_karbonite:
+					min_deposit_karbonite = karbonite_at_coord
+					min_deposit_coord = location_coords
+
+				if karbonite_at_coord > 0:
+					continue
+
 				if location_coords in adjacent_locations:
 					potential_adjacent_locations.append(location_coords)
 
@@ -1193,19 +1202,30 @@ def get_optimal_building_location(gc, start_map, center, building_type, karbonit
 					else:
 						karbonite_adjacent_locations[location_coords] += karbonite_value
 				# print("par t2 location time",time.time() - start_time)
-				if karbonite_adjacent_locations[location_coords] > 0:
-					deposits_located = True
 					
 			else:
 				continue
 
 
-	if deposits_located:
+	if not deposits_located and len(potential_adjacent_locations) > 0:
+		return potential_adjacent_locations[0]
+	elif deposits_located and empty_space_detected:
+		return max(list(karbonite_adjacent_locations.keys()), key=lambda loc: karbonite_adjacent_locations[loc])
+	elif deposits_located and not empty_space_detected and min_deposit_coord is not None:
+		return min_deposit_coord
+	else:
+		return None
+
+	"""
+	if len(karbonite_adjacent_locations) == 0 and min_deposit_coord is not None:
+		return min_deposit_coord
+	elif deposits_located:
 		return max(list(karbonite_adjacent_locations.keys()), key=lambda loc: karbonite_adjacent_locations[loc])
 	elif len(potential_adjacent_locations) > 0:
 		return potential_adjacent_locations[0]
 	else:
 		return None
+	"""
 
 # function to flexibly determine when a good time to expand factories
 def can_blueprint_factory(gc,factory_count):
