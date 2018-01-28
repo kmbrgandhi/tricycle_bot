@@ -55,6 +55,7 @@ while True:
     info = variables.info
 
     print("PYROUND:",gc.round())
+    #print("past karbonite gain",variables.past_karbonite_gain)
     try:
         for unit in variables.my_units:
             if gc.get_time_left_ms()<250:
