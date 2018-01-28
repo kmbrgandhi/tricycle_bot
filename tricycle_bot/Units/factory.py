@@ -61,10 +61,13 @@ def timestep(unit):
 			if total_units[0]<2:
 				if gc.can_produce_robot(unit.id, bc.UnitType.Worker):
 					gc.produce_robot(unit.id, bc.UnitType.Worker)
+					variables.producing[0] += 1
 			elif total_units[1] < 0.75* num_non_workers or total_units[2]<7:
 				gc.produce_robot(unit.id, bc.UnitType.Knight)
+				variables.producing[1] += 1
 			else:
 				gc.produce_robot(unit.id, bc.UnitType.Healer)
+				variables.producing[4] += 1
 	else:
 		produce_some_knights = False
 		my_location = unit.location.map_location()
@@ -80,33 +83,36 @@ def timestep(unit):
 
 		if produce_some_knights and gc.can_produce_robot(unit.id, bc.UnitType.Knight):
 			gc.produce_robot(unit.id, bc.UnitType.Knight)
+			variables.producing[1] += 1
 
 
-		if not variables.stockpile_until_75 and (total_units[0]<2 or gc.round()<680 or len(variables.rocket_locs)>0) and gc.can_produce_robot(unit.id, bc.UnitType.Ranger) \
+		elif not variables.stockpile_until_75 and (total_units[0]<2 or gc.round()<680 or len(variables.rocket_locs)>0) and gc.can_produce_robot(unit.id, bc.UnitType.Ranger) \
 				and (total_units[0]<2 or gc.round() < 150 or num_attacking_units < 100 or num_attacking_units < 2*variables.num_enemies): #and should_produce_robot(gc, mining_rate, current_production, karbonite_lower_limit): # otherwise produce a unit, based on most_off_optimal
 			if total_units[0]<2:
 				if gc.can_produce_robot(unit.id, bc.UnitType.Worker):
 					gc.produce_robot(unit.id, bc.UnitType.Worker)
+					variables.producing[0]+=1
 			#elif total_units[1]<5 and gc.round() < 70:
 			#	gc.produce_robot(unit.id, bc.UnitType.Knight)
 			elif total_units[2] < 0.65 * num_non_workers or total_units[2]<2:
 				gc.produce_robot(unit.id, bc.UnitType.Ranger)
+				variables.producing[2] += 1
 			else:
 				gc.produce_robot(unit.id, bc.UnitType.Healer)
+				variables.producing[4] += 1
 
 		#current_production += order[best].factory_cost()
 
 def evaluate_stockpile():
-	return
-	cost = variables.cost_of_factory
+	cost = variables.cost_of_rocket
 	composition = variables.info
 	producing = variables.producing
-	total_units = [composition[0], composition[1], composition[2],
-				   composition[3], composition[4]]
-	num_attacking_units = sum(total_units[1:4])
+	total_units = [composition[1]+producing[1], composition[2]+producing[2],
+				   composition[3]+producing[3], composition[4]+producing[4]]
+	num_attacking_units = sum(total_units)
 	if not variables.stockpile_until_75:
-		if (variables.gc.round()>250 and num_attacking_units > 0.48*variables.num_enemies) or variables.gc.round()>500:
-				if variables.between_stockpiles > 40 and variables.gc.karbonite()<cost * 1.25:
+		if ((variables.gc.round()>250 and num_attacking_units > 0.48*variables.num_enemies and num_attacking_units>20) or variables.gc.round()>500) and variables.info[6]<5:
+				if variables.between_stockpiles > 30 and variables.gc.karbonite()<cost * 1.25:
 					variables.stockpile_until_75 = True
 					variables.between_stockpiles = 0
 				else:

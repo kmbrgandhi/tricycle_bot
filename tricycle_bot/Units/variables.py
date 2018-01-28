@@ -58,6 +58,7 @@ directions = list(bc.Direction)
 non_list_directions = bc.Direction
 my_units = gc.my_units()
 units = gc.units()
+in_order_units = []
 my_karbonite = gc.karbonite()
 research = gc.research_info()
 curr_round = gc.round()
@@ -220,6 +221,7 @@ saviour_blueprinted_id = None
 num_unsuccessful_savior = 0
 saviour_time_between = 0
 cost_of_factory = 200
+cost_of_rocket = 150
 
 mars = bc.Planet.Mars
 mars_map = gc.starting_map(mars)
