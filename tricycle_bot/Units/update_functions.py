@@ -72,28 +72,56 @@ def update_variables():
 
     # Update num of ally units of each type
     unit_types = variables.unit_types
+    variables.producing = [0, 0, 0, 0, 0]
+    variables.in_order_units = []
+    workers = []
+    rangers = []
+    knights = []
+    mages = []
+    healers = []
+    factories = []
+    rockets = []
     for unit in variables.my_units:
         if unit.unit_type == unit_types["worker"]:
             num_workers+=1
+            workers.append(unit)
         elif unit.unit_type == unit_types["knight"]:
             num_knights+=1
+            rangers.append(unit)
         elif unit.unit_type == unit_types["ranger"]:
             num_rangers+=1
+            knights.append(unit)
         elif unit.unit_type == unit_types["mage"]:
             num_mages+=1
+            mages.append(unit)
         elif unit.unit_type == unit_types["healer"]:
             num_healers+=1
+            healers.append(unit)
         elif unit.unit_type == unit_types["factory"]:
             num_factory+=1
+            factories.append(unit)
+            if unit.factory_unit_type() is not None:
+                type = unit.factor_unit_type()
+                if type == variables.unit_types["worker"]:
+                    variables.producing[0]+=1
+                elif type == variables.unit_types["knight"]:
+                    variables.producing[1]+=1
+                elif type == variables.unit_types["ranger"]:
+                    variables.producing[2]+=1
+                elif type == variables.unit_types["mage"]:
+                    variables.producing[3]+=1
+                else:
+                    variables.producing[4]+=1
         elif unit.unit_type == unit_types["rocket"]:
             num_rocket+=1
+            rockets.append(unit)
     variables.info = [num_workers, num_knights, num_rangers, num_mages, num_healers, num_factory, num_rocket]
-
+    variables.in_order_units.extend(rangers).extend(workers).extend(knights).extend(mages).extend(healers).extend(factories).extend(rockets)
     ## **************************************** UNITS **************************************** ## 
 
     ## Worker 
     variables.my_karbonite = gc.karbonite()
-    variables.producing= [0, 0, 0, 0, 0]
+
 
     ## Income
     variables.worker_harvest_amount = 0

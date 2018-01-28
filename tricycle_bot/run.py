@@ -60,7 +60,7 @@ while True:
     #print("past karbonite gain",variables.past_karbonite_gain)
 
     try:
-        for unit in variables.my_units:
+        for unit in variables.in_order_units:
             if gc.get_time_left_ms()<250:
                 break
             # respective unit types execute their own AI

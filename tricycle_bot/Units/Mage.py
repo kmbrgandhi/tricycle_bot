@@ -70,7 +70,7 @@ def timestep(unit):
         # start_time = time.time()
         dir, attack_target, snipe, move_then_attack, visible_enemies, closest_enemy, signals = mage_sense(gc, unit,
                                                                                                             variables.last_turn_battle_locs,
-                                                                                                            ranger_roles,
+                                                                                                            mage_roles,
                                                                                                             map_loc,
                                                                                                             variables.direction_to_coord,
                                                                                                             variables.bfs_array,
