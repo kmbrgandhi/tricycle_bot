@@ -47,7 +47,7 @@ update.initiate_quadrants()
 while True:
     #beginning_start_time = time.time()
     # time_left = gc.get_time_left_ms()
-    # print("TIME LEFT:", time_print('time to update')
+    #print("TIME LEFT:", gc.get_time_left_ms())
     #start_time = time.time()
     update.update_variables()
     #print(time.time()-start_time)
@@ -135,7 +135,8 @@ while True:
 
     #print('TIME SPENT ON WORKERS:', time_workers)
 
-    #print('TIME SPENT ON RANGERS:', time_rangers)
+    #if time_rangers > 0.02:
+    #    print('TIME SPENT ON RANGERS:', time_rangers)
 
     #print('TIME SPENT ON HEALERS:', time_healers)
     #print('TIME SPENT ON FACTORIES:', time_factories)
