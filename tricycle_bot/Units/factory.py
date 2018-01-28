@@ -5,6 +5,7 @@ import traceback
 import numpy as np
 import Units.sense_util as sense_util
 import Units.variables as variables
+import Units.explore as explore
 
 
 def timestep(unit):
@@ -47,9 +48,18 @@ def timestep(unit):
 		if optimal_unload_dir is not None:
 			gc.unload(unit.id, optimal_unload_dir)
 	# rockets_need_filling = (len(variables.rocket_locs) >0) and (len(variables.ranger_roles["go_to_mars"])<10)
-	if gc.round()>250 or variables.died_without_attacking > 0.7:
+	if gc.round()>250 or variables.died_without_attacking > 0.6:
 		variables.knight_rush = False
 		variables.switch_to_rangers = True
+	"""
+	produce_some_knights = False
+	my_location = unit.location.map_location()
+	my_location_coords = (my_location.x, my_location.y)
+	if gc.round()<250:
+		dist_to_nearest_factory = float('inf')
+		for neighbor in explore.coord_neighbors(my_location_coords, diff = explore.diffs_20):
+	"""
+
 	if variables.knight_rush:
 		if not variables.stockpile_until_75 and gc.can_produce_robot(unit.id, bc.UnitType.Knight): #and should_produce_robot(gc, mining_rate, current_production, karbonite_lower_limit): # otherwise produce a unit, based on most_off_optimal
 			if total_units[0]<4 and gc.can_produce_robot(unit.id, bc.UnitType.Worker):
@@ -57,23 +67,19 @@ def timestep(unit):
 			elif total_units[0]<2:
 				if gc.can_produce_robot(unit.id, bc.UnitType.Worker):
 					gc.produce_robot(unit.id, bc.UnitType.Worker)
-			elif total_units[1] < 0.9* num_non_workers or total_units[2]<7:
+			elif total_units[1] < 0.75* num_non_workers or total_units[2]<7:
 				gc.produce_robot(unit.id, bc.UnitType.Knight)
 			else:
-				gc.produce_robot(unit.id, bc.UnitType.Ranger)
+				gc.produce_robot(unit.id, bc.UnitType.Healer)
 	else:
 		if not variables.stockpile_until_75 and (total_units[0]<2 or gc.round()<680 or len(variables.rocket_locs)>0) and gc.can_produce_robot(unit.id, bc.UnitType.Ranger) \
-				and (total_units[0]<2 or gc.round() < 150
-					 or num_attacking_units<min(max(1.2*(variables.earth_start_map.width*variables.earth_start_map.height)**(0.5), 40), 100)
-					 or num_attacking_units < 2*variables.num_enemies): #and should_produce_robot(gc, mining_rate, current_production, karbonite_lower_limit): # otherwise produce a unit, based on most_off_optimal
-			if total_units[0]<4 and gc.can_produce_robot(unit.id, bc.UnitType.Worker):
-				gc.produce_robot(unit.id, bc.UnitType.Worker)
-			elif total_units[0]<2:
+				and (total_units[0]<2 or gc.round() < 150 or num_attacking_units < 100 or num_attacking_units < 2*variables.num_enemies): #and should_produce_robot(gc, mining_rate, current_production, karbonite_lower_limit): # otherwise produce a unit, based on most_off_optimal
+			if total_units[0]<2:
 				if gc.can_produce_robot(unit.id, bc.UnitType.Worker):
 					gc.produce_robot(unit.id, bc.UnitType.Worker)
 			#elif total_units[1]<5 and gc.round() < 70:
 			#	gc.produce_robot(unit.id, bc.UnitType.Knight)
-			elif total_units[2] < 0.62 * num_non_workers or total_units[2]<2:
+			elif total_units[2] < 0.65 * num_non_workers or total_units[2]<2:
 				gc.produce_robot(unit.id, bc.UnitType.Ranger)
 			else:
 				gc.produce_robot(unit.id, bc.UnitType.Healer)
@@ -89,7 +95,7 @@ def evaluate_stockpile():
 	num_attacking_units = sum(total_units[1:4])
 	if (variables.gc.round()>250 and num_attacking_units > 0.5*variables.num_enemies) or variables.gc.round()>500:
 		if not variables.stockpile_until_75:
-			if variables.between_stockpiles > 20 and variables.gc.karbonite()<cost * 1.25:
+			if variables.between_stockpiles > 25 and variables.gc.karbonite()<cost * 1.25:
 				variables.stockpile_until_75 = True
 				variables.between_stockpiles = 0
 			else:
