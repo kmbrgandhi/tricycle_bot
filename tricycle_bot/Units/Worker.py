@@ -145,8 +145,8 @@ def timestep(unit):
 		variables.worker_harvest_amount = unit.worker_harvest_amount()
 
 
-	#print()
-	#print("on unit #",unit.id, "position: ",my_location, "role: ",my_role)
+	print()
+	print("on unit #",unit.id, "position: ",my_location, "role: ",my_role)
 	#print("KARBONITE: ",gc.karbonite()
 	
 	current_num_workers = info[0]
@@ -580,7 +580,7 @@ def designate_roles():
 			"""
 			current_roles[new_role].append(worker.id)
 		#print("for loop",time.time() - start_time)
-	#print("current roles",variables.current_worker_roles)
+	print("current roles",variables.current_worker_roles)
 
 
 # parameters: amount of karbonite on the map, factory number ( diff behavior before and after our first factory), 
