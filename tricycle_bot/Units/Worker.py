@@ -133,7 +133,7 @@ def timestep(unit):
 		else:
 			variables.saviour_time_between+=1
 
-	my_role = "idle"
+	my_role = None
 	for role in current_roles:
 		if unit.id in current_roles[role]:
 			my_role = role
@@ -145,8 +145,8 @@ def timestep(unit):
 		variables.worker_harvest_amount = unit.worker_harvest_amount()
 
 
-	#print()
-	#print("on unit #",unit.id, "position: ",my_location, "role: ",my_role)
+	print()
+	print("on unit #",unit.id, "position: ",my_location, "role: ",my_role)
 	#print("KARBONITE: ",gc.karbonite()
 	
 	current_num_workers = info[0]
@@ -155,27 +155,30 @@ def timestep(unit):
 	worker_spacing = 8
 
 
-	# runs this block every turn if unit is miner
 	if my_role == "miner":
-		start_time = time.time()
+		#start_time = time.time()
 		mine(gc,unit,my_location,earth_start_map,karbonite_locations,current_roles, building_assignment, next_turn_battle_locs)
 		#print("mining time: ",time.time() - start_time)
-	# if unit is builder
+
 	elif my_role == "builder":
-		start_time = time.time()
+		#start_time = time.time()
 		build(gc,unit,my_location,earth_start_map,building_assignment,current_roles)
 		#print("building time: ",time.time() - start_time)
-	# if unit is blueprinter
+
 	elif my_role == "blueprinter":
-		start_time = time.time()
+		#start_time = time.time()
 		blueprint(gc,unit,my_location,karbonite_locations,building_assignment,blueprinting_assignment,current_roles)
 		#print("blueprinting time: ",time.time() - start_time)
-	# if unit is boarder
+
 	elif my_role == "boarder": 
 		board(gc,unit,my_location,current_roles)
-	# if unit is idle
+
 	elif my_role == "repairer":
 		repair(gc,unit,my_location,current_roles)
+
+	elif my_role == "idle":
+		idle(gc,unit,my_location,building_assignment,blueprinting_assignment)
+
 	else: 	
 		nearby= gc.sense_nearby_units_by_team(my_location, worker_spacing, variables.my_team)
 
@@ -337,14 +340,15 @@ def designate_roles():
 
 			closest_workers_to_damaged_building[damaged_building.id] = closest_worker_ids
 
-
+		idle_workers = []
 		accessible_karbonite = {}
 		if gc.round() <= 100:
 			for karbonite_coord in karbonite_locations.keys():
 
 				karbonite_at = karbonite_locations[karbonite_coord]
 
-				for worker in workers_able_to_replicate:
+				for worker in workers:
+
 					worker_location = worker.location.map_location()
 					worker_coord = (worker_location.x,worker_location.y)
 
@@ -353,7 +357,11 @@ def designate_roles():
 
 					path_length = variables.bfs_array[worker_coords_val,karbonite_coords_val]
 
-					if path_length < 15:
+					if path_length == float('inf'):
+						idle_workers.append(worker)
+						continue
+
+					if path_length < 15 and worker.ability_heat() <= 10:
 						if worker.id not in accessible_karbonite:
 							accessible_karbonite[worker.id] = karbonite_at
 						else:
@@ -381,8 +389,9 @@ def designate_roles():
 			open_slots_to_build = False
 			unit_build_override = False
 			assigned_building_id = None
-			my_role = "idle"
 			role_revised = False
+			my_role = None
+
 
 			## DESIGNATION FOR ALREADY ASSIGNED WORKERS ##
 			for role in current_roles.keys():
@@ -395,8 +404,10 @@ def designate_roles():
 
 			worker_starting_cap = variables.worker_starting_cap
 			#print("worker starting cap",worker_starting_cap)
+
+
 			num_miners = len(current_roles["miner"])	
-			if my_role == "idle" and num_miners < worker_starting_cap and gc.round() <= 100:
+			if my_role is None and num_miners < worker_starting_cap and gc.round() <= 100 and worker not in idle_workers:
 				current_roles["miner"].append(worker.id)
 				continue
 
@@ -404,11 +415,12 @@ def designate_roles():
 			if my_role != "repairer" and my_role != "builder" and my_role != "blueprinter":
 				for building_id in closest_workers_to_damaged_building:
 					if worker.id in closest_workers_to_damaged_building[building_id]:
-						if my_role != "idle" and worker.id in current_roles[my_role]:
+						if my_role is not None and worker.id in current_roles[my_role]:
 							current_roles[my_role].remove(worker.id)
 						current_roles["repairer"].append(worker.id)
 						role_revised = True
 						my_role = "repairer"
+						break
 
 
 			#print("unit: ",worker.id,my_role)
@@ -421,14 +433,13 @@ def designate_roles():
 					#print("workers per building",workers_per_building)
 					num_open_slots_to_build = workers_per_building - len(assigned_workers)
 
-
 					if num_open_slots_to_build > 0 and building_id in closest_workers_to_blueprint:
 
 						closest_worker_list = closest_workers_to_blueprint[building_id]
 						recruitable_workers = closest_worker_list[:min(num_open_slots_to_build,len(closest_worker_list))]
 
 						if worker.id in recruitable_workers:
-							if my_role != "idle" and worker.id in current_roles[my_role]:
+							if my_role is not None and worker.id in current_roles[my_role]:
 								current_roles[my_role].remove(worker.id)
 							current_roles["builder"].append(worker.id)
 							building_assignment[building_id].append(worker.id)
@@ -452,7 +463,7 @@ def designate_roles():
 						if best_location_tuple is not None:
 							best_location = bc.MapLocation(earth, best_location_tuple[0], best_location_tuple[1])
 
-							if my_role != "idle" and worker.id in current_roles[my_role]:
+							if my_role is not None and worker.id in current_roles[my_role]:
 								current_roles[my_role].remove(worker.id)
 
 							current_roles["blueprinter"].append(worker.id)
@@ -477,7 +488,7 @@ def designate_roles():
 						if best_location_tuple is not None:
 							best_location = bc.MapLocation(earth, best_location_tuple[0], best_location_tuple[1])
 							#print(worker.id,"can build a factory")
-							if my_role != "idle" and worker.id in current_roles[my_role]:
+							if my_role is not None and worker.id in current_roles[my_role]:
 								current_roles[my_role].remove(worker.id)
 
 							current_roles["blueprinter"].append(worker.id)
@@ -499,8 +510,14 @@ def designate_roles():
 
 							#print(worker.id,"cannot build a rocket or factory")
 					#print(worker.id,"cannot build a rocket or factory")
+
+
+			if my_role is None and worker in idle_workers:
+				current_roles["idle"].append(worker.id)
+
+
 			## DESIGNATION FOR UNASSIGNED WORKERS ##
-			if my_role != "idle":
+			if my_role is not None:
 				continue
 
 			num_miners = len(current_roles["miner"])
@@ -526,7 +543,8 @@ def designate_roles():
 				new_role = "repairer"
 			"""
 			current_roles[new_role].append(worker.id)
-	#print("current roles",variables.current_worker_roles)
+
+	print("current roles",variables.current_worker_roles)
 
 
 # parameters: amount of karbonite on the map, factory number ( diff behavior before and after our first factory), 
@@ -1263,6 +1281,8 @@ def blueprint(gc,my_unit,my_location,karbonite_locations,building_assignment,blu
 					try_move_smartly(my_unit, my_location, closest_deposit)
 
 
+def idle(gc,my_unit,my_location,building_assignment,blueprinting_assignment):
+	
 
 
 def add_new_location(unit_id, old_coords, direction):

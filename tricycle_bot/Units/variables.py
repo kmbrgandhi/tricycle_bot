@@ -156,7 +156,7 @@ for dx in [-4,-3,-2,-1,0,1,2,3,4]:
 	for dy in [-4,-3,-2,-1,0,1,2,3,4]:
 		building_scouting_diff.append((dx,dy))
 
-current_worker_roles = {"miner":[],"builder":[],"blueprinter":[],"boarder":[], "repairer":[]}
+current_worker_roles = {"miner":[],"builder":[],"blueprinter":[],"boarder":[],"repairer":[],"idle":[]}
 
 reserved_income = 5
 factory_cost_per_round = 40 / 15 + 2 # 40 karbonite per 15 turns to make all offensive units + offset for factory cost
