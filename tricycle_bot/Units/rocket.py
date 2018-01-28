@@ -44,7 +44,7 @@ def timestep(unit):
             near = curr_loc.add(dir)
             if gc.has_unit_at_location(near):
                 nearby_unit = gc.sense_unit_at_location(near)
-                if nearby_unit.unit_type!=variable.unit_types["factory"] and nearby_unit.unit_type!=variable.unit_types["rocket"] and gc.can_load(unit.id, nearby_unit.id):
+                if nearby_unit.unit_type!=variable.unit_types["worker"] and nearby_unit.unit_type!=variable.unit_types["factory"] and nearby_unit.unit_type!=variable.unit_types["rocket"] and gc.can_load(unit.id, nearby_unit.id):
                     gc.load(unit.id, nearby_unit.id)
                     if nearby_unit.id == variable.saviour_worker_id:
                         variable.saviour_worker_id = None

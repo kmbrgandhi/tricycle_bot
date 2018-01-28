@@ -56,8 +56,9 @@ while True:
     unit_types = variables.unit_types
     info = variables.info
 
-    print("PYROUND:",gc.round())
-    #print("past karbonite gain",variables.past_karbonite_gain)
+    #print("PYROUND:",gc.round())
+    #print('TIME LEFT', gc.get_time_left_ms())
+    ##print("past karbonite gain",variables.past_karbonite_gain)
 
     try:
         for unit in variables.in_order_units:
@@ -101,9 +102,8 @@ while True:
                 healer.timestep(unit)
                 time_healers+=(time.time()-start_time)
             elif unit.unit_type == unit_types["factory"]:
-                #start_time = time.time()
+                start_time = time.time()
                 factory.timestep(unit)
-                #time_factories+=(time.time()-start_time)
             elif unit.unit_type == unit_types["rocket"]:
                 #start_time = time.time()
                 rocket.timestep(unit)
