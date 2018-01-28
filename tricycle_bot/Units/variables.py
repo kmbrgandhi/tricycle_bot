@@ -128,6 +128,7 @@ for x in range(earth_start_map.width):
 		invalid_building_locations[(x,y)] = True
 
 factory_locations = []
+factory_quadrants = []
 
 factory_spacing_diff = []
 for dx in [-2,-1,0,1,2]:
