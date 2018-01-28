@@ -186,6 +186,7 @@ class QuadrantInfo():
                             self.enemies.add(unit.id)
                         elif unit.unit_type == variables.unit_types["ranger"]:
                             self.enemies.add(unit.id)
+                            self.target_loc = loc
                             rangers += 1
                         else:
                             self.enemies.add(unit.id)
@@ -263,7 +264,7 @@ class QuadrantInfo():
                 else: 
                     return assigned_coeff + (self.num_died/(self.quadrant_size**2))
         elif robot_type == "knight": 
-            return 2*len(self.enemy_factories)/self.quadrant_size + 2*len(self.enemies)/(self.quadrant_size**2) + len(self.enemy_workers)/(self.quadrant_size**2)
+            return 1.5*len(self.enemy_factories)/self.quadrant_size + 1.5*len(self.enemies)/(self.quadrant_size**2) + 0.5*len(self.enemy_workers)/(self.quadrant_size**2)
 
     def __str__(self):
         return "bottom left: " + str(self.bottom_left) + "\nallies: " + str(self.all_allies()) + "\nenemies: " + str(self.enemies) + "\ntarget loc: " + str(self.target_loc) + "\nhealer loc: " + str(self.healer_loc) + "\n"

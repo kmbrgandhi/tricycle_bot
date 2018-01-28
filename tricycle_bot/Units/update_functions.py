@@ -40,8 +40,8 @@ def update_variables():
     variables.my_unit_ids = set([unit.id for unit in variables.my_units])
     variables.units = gc.units()
     num_workers= num_knights=num_rangers= num_mages= num_healers= num_factory= num_rocket = 0
-    if variables.enemy_rangers >= 7: 
-        variables.enemy_rangers = 7
+    if variables.enemy_rangers >= 5: 
+        variables.enemy_rangers = 5
     else: 
         variables.enemy_rangers = 0
 
