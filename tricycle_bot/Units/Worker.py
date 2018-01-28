@@ -68,7 +68,11 @@ def timestep(unit):
 		variables.saviour_worker_id = unit.id
     # TO DO: ADD CHECK THAT HE ISN'T TOO CLOSE TO ENEMIES.
 	if variables.saviour_worker_id == unit.id:
-		if variables.saviour_blueprinted:
+		total_units = [variables.info[1] + variables.producing[1], variables.info[2] +variables.producing[2],
+					   variables.info[3] + variables.producing[3], variables.info[4] + variables.producing[4]]
+		if sum(total_units) < 0.9 * variables.num_enemies:
+			do_nothing = True
+		elif variables.saviour_blueprinted:
 			try:
 				corr_rocket = gc.unit(variables.saviour_blueprinted_id)
 				if not corr_rocket.structure_is_built():
