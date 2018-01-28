@@ -4,6 +4,8 @@ import sys
 import traceback
 
 import Units.variables as variables
+import Units.explore as explore
+import Units.sense_util as sense_util
 
 class QuadrantInfo():
     '''
@@ -16,7 +18,15 @@ class QuadrantInfo():
         else:
             self.quadrant_size = variables.mars_quadrant_size 
 
-        self.target_loc = self.get_passable_location()
+        self.quadrant_locs = set()
+        self.get_quadrant_locs()
+
+        self.middle = (self.bottom_left[0]+int(self.quadrant_size/2), self.bottom_left[1]+int(self.quadrant_size/2))
+        
+        self.target_loc = None 
+        self.healer_loc = None
+
+        self.get_passable_locations()
 
         self.enemies = set()
         self.enemy_workers = set()
@@ -27,6 +37,7 @@ class QuadrantInfo():
         self.healers = set()
         self.mages = set()
         self.workers = set()
+        self.factories = set()
 
         self.num_died = 0
 
@@ -34,8 +45,24 @@ class QuadrantInfo():
 
         self.health_coeff = None
 
-    def get_passable_location(self):
-        middle = (self.bottom_left[0]+int(self.quadrant_size/2), self.bottom_left[1]+int(self.quadrant_size/2))
+    def get_quadrant_locs(self):
+        if variables.curr_planet == bc.Planet.Earth: 
+            passable_locations = variables.passable_locations_earth
+            max_width = variables.earth_start_map.width
+            max_height = variables.earth_start_map.height
+        else: 
+            passable_locations = variables.passable_locations_mars
+            max_width = variables.mars_start_map.width
+            max_height = variables.mars_start_map.height
+        for i in range(self.quadrant_size): 
+            x = self.bottom_left[0] + i
+            if x < max_width: 
+                for j in range(self.quadrant_size): 
+                    y = self.bottom_left[1] + j
+                    if y < max_height: 
+                        self.quadrant_locs.add((x,y))
+
+    def get_passable_locations(self):
         if variables.curr_planet == bc.Planet.Earth: 
             passable_locations = variables.passable_locations_earth
             max_width = variables.earth_start_map.width
@@ -45,17 +72,48 @@ class QuadrantInfo():
             max_width = variables.mars_start_map.width
             max_height = variables.mars_start_map.height
 
-        if middle[0] < max_width and middle[1] < max_height and passable_locations[middle]: 
-            return middle
+        if self.middle[0] < max_width and self.middle[1] < max_height and passable_locations[self.middle]: 
+            self.target_loc = self.middle
+            self.healer_loc = self.middle
         else: 
-            for i in range(self.quadrant_size):
-                x = self.bottom_left[0] + i
-                for j in range(self.quadrant_size):
-                    y = self.bottom_left[1] + j
-                    loc = (x,y)
-                    if loc[0] < max_width and loc[1] < max_height and passable_locations[loc]:
-                        return loc 
-        return None
+            for loc in self.quadrant_locs:
+                if passable_locations[loc]:
+                    self.target_loc = loc 
+                    self.healer_loc = loc
+
+    def update_healer_ideal_loc(self): 
+        if variables.curr_planet == bc.Planet.Earth: 
+            passable_locations = variables.passable_locations_earth
+        else: 
+            passable_locations = variables.passable_locations_mars
+
+        neighbor_quadrants = self.get_neighboring_quadrants() 
+
+        enemies = set()
+        most_enemies = 0
+        worst_quadrant = None
+        for quadrant in neighbor_quadrants: 
+            if quadrant in variables.quadrant_battle_locs: 
+                q_enemies = variables.quadrant_battle_locs[quadrant].enemies
+                enemies.update(q_enemies)
+                if len(q_enemies) > most_enemies: 
+                    most_enemies = len(q_enemies)
+                    worst_quadrant = quadrant
+
+        if len(enemies) == 0: 
+            return 
+
+        worst_middle = variables.quadrant_battle_locs[worst_quadrant].middle
+        furthest_away = sorted(self.quadrant_locs, key=lambda x: sense_util.distance_squared_between_coords(x, worst_middle),reverse=True)
+
+        for loc in furthest_away: 
+            if passable_locations[loc]: 
+                self.healer_loc = loc
+                break
+
+    def get_neighboring_quadrants(self): 
+        quadrant = (int(self.bottom_left[0] / self.quadrant_size), int(self.bottom_left[1] / self.quadrant_size))
+        return explore.coord_neighbors(quadrant)
 
     def all_allies(self): 
         return self.knights | self.rangers | self.healers | self.mages | self.workers
@@ -137,6 +195,8 @@ class QuadrantInfo():
         elif ally_id in self.workers: 
             self.workers.remove(ally_id)
             # self.num_died += 1
+        elif ally_id in self.factories: 
+            self.factories.remove(ally_id)
 
     def add_ally(self, ally_id, robot_type): 
         if robot_type == "knight": 
@@ -162,14 +222,20 @@ class QuadrantInfo():
                 return self.num_died/(self.quadrant_size**2)
         elif robot_type == "healer":
             if self.health_coeff is not None: 
-                return (self.num_died/(self.quadrant_size**2)) + self.health_coeff
+                if len(self.all_allies()) > 0: 
+                    return (self.num_died/(self.quadrant_size**2)) + 1.5*self.health_coeff + (len(self.fighters())/len(self.all_allies()))
+                else: 
+                    return (self.num_died/(self.quadrant_size**2)) + 1.5*self.health_coeff
             else: 
-                return (self.num_died/(self.quadrant_size**2))
+                if len(self.all_allies()) > 0: 
+                    return (self.num_died/(self.quadrant_size**2)) + (len(self.fighters())/len(self.all_allies()))
+                else: 
+                    return (self.num_died/(self.quadrant_size**2))
         elif robot_type == "knight": 
             return len(self.enemy_factories)/self.quadrant_size + 2*len(self.enemies)/(self.quadrant_size**2) + len(self.enemy_workers)/(self.quadrant_size**2)
 
     def __str__(self):
-        return "bottom left: " + str(self.bottom_left) + "\nallies: " + str(self.all_allies()) + "\nenemies: " + str(self.enemies) + "\ndied: " + str(self.num_died) + "\ncoeff: " + str(self.urgency_coeff("knight")) + "\n"
+        return "bottom left: " + str(self.bottom_left) + "\nallies: " + str(self.all_allies()) + "\nenemies: " + str(self.enemies) + "\ntarget loc: " + str(self.target_loc) + "\nhealer loc: " + str(self.healer_loc) + "\n"
 
     def __repr__(self):
-        return "bottom left: " + str(self.bottom_left) + "\nallies: " + str(self.all_allies()) + "\nenemies: " + str(self.enemies) + "\ndied: " + str(self.num_died) + "\ncoeff: " + str(self.urgency_coeff("knight")) + "\n" 
+        return "bottom left: " + str(self.bottom_left) + "\nallies: " + str(self.all_allies()) + "\nenemies: " + str(self.enemies) + "\ntarget loc: " + str(self.target_loc) + "\nhealer loc: " + str(self.healer_loc) + "\n" 

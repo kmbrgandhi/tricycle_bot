@@ -99,6 +99,7 @@ for unit in my_units:
 	unit_locations[unit.id] = (unit_location.x, unit_location.y)
 
 death_allies_per_quadrant = {}      ## (quad x, quad y): ((x,y), num_dead)
+update_quadrant_healer_loc = True
 
 ## WORKER VARIABLES ##
 

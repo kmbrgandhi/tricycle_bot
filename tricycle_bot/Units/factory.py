@@ -5,6 +5,7 @@ import traceback
 import numpy as np
 import Units.sense_util as sense_util
 import Units.variables as variables
+import Units.explore as explore
 
 
 def timestep(unit):
@@ -20,20 +21,45 @@ def timestep(unit):
 	num_attacking_units = sum(total_units[1:3])
 	num_non_workers = num_attacking_units + total_units[4]
 	curr_round = gc.round()
+	   
 	# should alter based on curr_round.  this is a temporary idea.
 	# last check to make sure the right unit type is running this
 	if unit.unit_type != bc.UnitType.Factory:
 		# prob should return some kind of error
 		return
+		
+	unit_locations = variables.unit_locations
+	quadrant_battles = variables.quadrant_battle_locs
+	if variables.curr_planet == bc.Planet.Earth: 
+		quadrant_size = variables.earth_quadrant_size
+	else:
+		quadrant_size = variables.mars_quadrant_size
+
+	## Add new ones to unit_locations, else just get the location
+	if unit.id not in unit_locations:
+		loc = unit.location.map_location()
+		unit_locations[unit.id] = (loc.x,loc.y)
+		f_f_quad = (int(loc.x / quadrant_size), int(loc.y / quadrant_size))
+		quadrant_battles[f_f_quad].add_ally(unit.id, "factory")
+
 	garrison = unit.structure_garrison() # units inside of factory
 	if len(garrison) > 0: # try to unload a unit if there exists one in the garrison
 		optimal_unload_dir = optimal_unload(gc, unit, directions, building_assignments, battle_locs)
 		if optimal_unload_dir is not None:
 			gc.unload(unit.id, optimal_unload_dir)
 	# rockets_need_filling = (len(variables.rocket_locs) >0) and (len(variables.ranger_roles["go_to_mars"])<10)
-	if gc.round()>250 or variables.died_without_attacking > 0.5:
+	if gc.round()>250 or variables.died_without_attacking > 0.6:
 		variables.knight_rush = False
 		variables.switch_to_rangers = True
+	"""
+	produce_some_knights = False
+	my_location = unit.location.map_location()
+	my_location_coords = (my_location.x, my_location.y)
+	if gc.round()<250:
+		dist_to_nearest_factory = float('inf')
+		for neighbor in explore.coord_neighbors(my_location_coords, diff = explore.diffs_20):
+	"""
+
 	if variables.knight_rush:
 		if not variables.stockpile_until_75 and gc.can_produce_robot(unit.id, bc.UnitType.Knight): #and should_produce_robot(gc, mining_rate, current_production, karbonite_lower_limit): # otherwise produce a unit, based on most_off_optimal
 			if total_units[0]<4 and gc.can_produce_robot(unit.id, bc.UnitType.Worker):
@@ -41,10 +67,10 @@ def timestep(unit):
 			elif total_units[0]<2:
 				if gc.can_produce_robot(unit.id, bc.UnitType.Worker):
 					gc.produce_robot(unit.id, bc.UnitType.Worker)
-			elif total_units[1] < 0.9* num_non_workers or total_units[2]<7:
+			elif total_units[1] < 0.75* num_non_workers or total_units[2]<7:
 				gc.produce_robot(unit.id, bc.UnitType.Knight)
 			else:
-				gc.produce_robot(unit.id, bc.UnitType.Ranger)
+				gc.produce_robot(unit.id, bc.UnitType.Healer)
 	else:
 		if not variables.stockpile_until_75 and (total_units[0]<2 or gc.round()<680 or len(variables.rocket_locs)>0) and gc.can_produce_robot(unit.id, bc.UnitType.Ranger) \
 				and (total_units[0]<2 or gc.round() < 150 or num_attacking_units < 100 or num_attacking_units < 2*variables.num_enemies): #and should_produce_robot(gc, mining_rate, current_production, karbonite_lower_limit): # otherwise produce a unit, based on most_off_optimal
