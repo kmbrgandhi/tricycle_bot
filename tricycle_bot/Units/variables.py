@@ -115,6 +115,7 @@ blueprinting_assignment = {}
 all_building_locations = {}
 invalid_building_locations = {}
 
+replication_priority = []
 
 ranger_reachable_sites = []
 for x in range(earth_start_map.width):

@@ -5,6 +5,7 @@ import sys
 import time
 import traceback
 
+import research
 import Units.Healer as healer
 import Units.Knight as knight
 import Units.Mage as mage
@@ -13,8 +14,8 @@ import Units.Worker as worker
 import Units.factory as factory
 import Units.rocket as rocket
 import Units.variables as variables
-import research
 import Units.update_functions as update
+import Units.explore as explore
 
 print("pystarting")
 
