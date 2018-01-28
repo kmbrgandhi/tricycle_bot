@@ -102,8 +102,7 @@ while True:
                 time_healers+=(time.time()-start_time)
             elif unit.unit_type == unit_types["factory"]:
                 #start_time = time.time()
-                pass
-                #factory.timestep(unit)
+                factory.timestep(unit)
                 #time_factories+=(time.time()-start_time)
             elif unit.unit_type == unit_types["rocket"]:
                 #start_time = time.time()
