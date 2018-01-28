@@ -108,12 +108,16 @@ class QuadrantInfo():
         furthest_away = sorted(list(self.quadrant_locs), key=lambda x: sense_util.distance_squared_between_coords(x, worst_middle),reverse=True)
         for loc in furthest_away: 
             accessible = False
-            for init_loc in variables.our_init_locs: 
-                bfs_array = variables.bfs_array
-                our_coords_val = Ranger.get_coord_value((init_loc.x,init_loc.y))
-                target_coords_val = Ranger.get_coord_value(loc)
-                if bfs_array[our_coords_val, target_coords_val]!=float('inf'):
-                    accessible = True
+            if variables.curr_planet == bc.Planet.Earth:
+                for init_loc in variables.our_init_locs:
+                    bfs_array = variables.bfs_array
+                    our_coords_val = Ranger.get_coord_value((init_loc.x,init_loc.y))
+                    target_coords_val = Ranger.get_coord_value(loc)
+                    if bfs_array[our_coords_val, target_coords_val]!=float('inf'):
+                        accessible = True
+            else:
+                accessible = True
+
 
             if passable_locations[loc] and accessible: 
                 self.healer_loc = loc

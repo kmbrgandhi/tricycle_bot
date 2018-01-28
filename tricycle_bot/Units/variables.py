@@ -341,6 +341,23 @@ else:
     bfs_array = csgraph.shortest_path(S, method='D', unweighted=True)
     print(time.time()-start_time)
 
+    karbonite_locations = {}
+    initial_coords = []
+
+    for initial_unit in earth_start_map.initial_units:
+        if initial_unit.team == my_team:
+            initial_unit_location = initial_unit.location.map_location()
+            initial_coords.append((initial_unit_location.x, initial_unit_location.y))
+
+    for x in range(earth_start_map.width):
+        for y in range(earth_start_map.height):
+            map_location = bc.MapLocation(earth, x, y)
+            karbonite_at = earth_start_map.initial_karbonite_at(map_location)
+            karbonite_coord = (x, y)
+
+            if karbonite_at > 0:
+                karbonite_locations[(x, y)] = karbonite_at
+
 attacker = set([bc.UnitType.Ranger, bc.UnitType.Knight, bc.UnitType.Mage, bc.UnitType.Healer])
 stockpile_until_75 = False
 between_stockpiles = 0
