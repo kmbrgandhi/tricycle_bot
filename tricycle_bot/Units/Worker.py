@@ -563,7 +563,7 @@ def designate_roles():
 
 
 			# early game miner production
-			if rocket_ready_for_loading and len(workers) > 2*sum(info[1:5]):
+			if rocket_ready_for_loading and len(workers) > 2*sum(variables.info[1:5]):
 				new_role = "boarder"
 			elif len(variables.karbonite_locations) > 0:
 				new_role = "miner"
@@ -1066,7 +1066,7 @@ def build(gc,my_unit,my_location,start_map,building_assignment,current_roles):
 							#print("right before replication")
 							gc.replicate(my_unit.id,direction)
 
-							replicate_location = unit_location.add(direction)
+							replicate_location = my_location.add(direction)
 							replicated_unit = gc.sense_unit_at_location(replicate_location)
 							variables.unit_locations[replicated_unit.id] = (replicate_location.x,replicate_location.y)
 
