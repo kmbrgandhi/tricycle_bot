@@ -46,7 +46,7 @@ def timestep(unit):
 			else:
 				gc.produce_robot(unit.id, bc.UnitType.Ranger)
 	else:
-		if not variables.stockpile_until_75 and (total_units[0]<2 or gc.round()<665) and gc.can_produce_robot(unit.id, bc.UnitType.Ranger) \
+		if not variables.stockpile_until_75 and (total_units[0]<2 or gc.round()<680 or len(variables.rocket_locs)>0) and gc.can_produce_robot(unit.id, bc.UnitType.Ranger) \
 				and (total_units[0]<2 or gc.round() < 150
 					 or num_attacking_units<min(max(1.2*(variables.earth_start_map.width*variables.earth_start_map.height)**(0.5), 40), 100)
 					 or num_attacking_units < 2*variables.num_enemies): #and should_produce_robot(gc, mining_rate, current_production, karbonite_lower_limit): # otherwise produce a unit, based on most_off_optimal
@@ -57,7 +57,7 @@ def timestep(unit):
 					gc.produce_robot(unit.id, bc.UnitType.Worker)
 			#elif total_units[1]<5 and gc.round() < 70:
 			#	gc.produce_robot(unit.id, bc.UnitType.Knight)
-			elif total_units[2] < 0.65 * num_non_workers or total_units[2]<1:
+			elif total_units[2] < 0.65 * num_non_workers or total_units[2]<2:
 				gc.produce_robot(unit.id, bc.UnitType.Ranger)
 			else:
 				gc.produce_robot(unit.id, bc.UnitType.Healer)

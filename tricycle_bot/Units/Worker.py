@@ -66,7 +66,7 @@ def timestep(unit):
 	if gc.round() > 315 and not variables.saviour_worker and near_factory(my_location):
 		variables.saviour_worker = True
 		variables.saviour_worker_id = unit.id
-
+    # TO DO: ADD CHECK THAT HE ISN'T TOO CLOSE TO ENEMIES.
 	if variables.saviour_worker_id == unit.id:
 		if variables.saviour_blueprinted:
 			try:
