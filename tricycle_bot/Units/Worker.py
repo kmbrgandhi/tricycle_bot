@@ -145,8 +145,8 @@ def timestep(unit):
 		variables.worker_harvest_amount = unit.worker_harvest_amount()
 
 
-	print()
-	print("on unit #",unit.id, "position: ",my_location, "role: ",my_role)
+	#print()
+	#print("on unit #",unit.id, "position: ",my_location, "role: ",my_role)
 	#print("KARBONITE: ",gc.karbonite()
 	
 	current_num_workers = info[0]
@@ -180,7 +180,7 @@ def timestep(unit):
 		idle(gc,unit,my_location,building_assignment,blueprinting_assignment)
 
 	else: 	
-		nearby= gc.sense_nearby_units_by_team(my_location, worker_spacing, variables.my_team)
+		nearby= gc.sense_nearby_units_by_team(my_location, variables.worker_spacing, variables.my_team)
 
 		away_from_units = sense_util.best_available_direction(gc,unit,nearby)	
 		#print(unit.id, "at", unit.location.map_location(), "is trying to move to", away_from_units)
@@ -266,6 +266,9 @@ def designate_roles():
 						damaged_buildings.append(my_unit)
 						damaged_factory_count += 1
 				factory_count += 1
+				factory_location = my_unit.location.map_location()
+				if factory_location not in variables.factory_locations:
+					variables.factory_locations.append(factory_location)
 
 			elif my_unit.unit_type == unit_types["rocket"]:
 				if my_unit.structure_is_built() and len(my_unit.structure_garrison()) < my_unit.structure_max_capacity():
@@ -342,30 +345,36 @@ def designate_roles():
 
 		idle_workers = []
 		accessible_karbonite = {}
-		if gc.round() <= 100:
+
+		for worker in workers:
+
+			worker_location = worker.location.map_location()
+			worker_coord = (worker_location.x,worker_location.y)
+
+			worker_coords_val = Ranger.get_coord_value(worker_coord)
+
+			can_reach_karbonite = False
 			for karbonite_coord in karbonite_locations.keys():
 
+				karbonite_coords_val = Ranger.get_coord_value(karbonite_coord)
 				karbonite_at = karbonite_locations[karbonite_coord]
 
-				for worker in workers:
+				path_length = variables.bfs_array[worker_coords_val,karbonite_coords_val]
 
-					worker_location = worker.location.map_location()
-					worker_coord = (worker_location.x,worker_location.y)
-
-					worker_coords_val = Ranger.get_coord_value(worker_coord)
-					karbonite_coords_val = Ranger.get_coord_value(karbonite_coord)
-
-					path_length = variables.bfs_array[worker_coords_val,karbonite_coords_val]
-
-					if path_length == float('inf'):
-						idle_workers.append(worker)
-						continue
+				if path_length == float('inf'):
+					continue
+				else: 
+					can_reach_karbonite = True
 
 					if path_length < 15 and worker.ability_heat() <= 10:
 						if worker.id not in accessible_karbonite:
 							accessible_karbonite[worker.id] = karbonite_at
 						else:
 							accessible_karbonite[worker.id] += karbonite_at
+
+			if not can_reach_karbonite:
+				idle_workers.append(worker)
+
 
 		variables.replication_priority = sorted(accessible_karbonite.keys(),key=lambda unit_id:accessible_karbonite[unit_id])
 
@@ -413,10 +422,12 @@ def designate_roles():
 
 
 			if my_role != "repairer" and my_role != "builder" and my_role != "blueprinter":
+				#print("closest workeres to damaged building",closest_workers_to_damaged_building)
 				for building_id in closest_workers_to_damaged_building:
 					if worker.id in closest_workers_to_damaged_building[building_id]:
 						if my_role is not None and worker.id in current_roles[my_role]:
 							current_roles[my_role].remove(worker.id)
+						print("unit has become a repairer FIRST")
 						current_roles["repairer"].append(worker.id)
 						role_revised = True
 						my_role = "repairer"
@@ -511,7 +522,6 @@ def designate_roles():
 							#print(worker.id,"cannot build a rocket or factory")
 					#print(worker.id,"cannot build a rocket or factory")
 
-
 			if my_role is None and worker in idle_workers:
 				current_roles["idle"].append(worker.id)
 
@@ -533,6 +543,7 @@ def designate_roles():
 			elif len(variables.karbonite_locations) > 0:
 				new_role = "miner"
 			else:
+				print("unit went from no role to repairer")
 				new_role = "repairer"
 			"""
 			if num_miners_per_deposit * len(karbonite_locations) > num_miners:
@@ -544,7 +555,7 @@ def designate_roles():
 			"""
 			current_roles[new_role].append(worker.id)
 
-	print("current roles",variables.current_worker_roles)
+	#print("current roles",variables.current_worker_roles)
 
 
 # parameters: amount of karbonite on the map, factory number ( diff behavior before and after our first factory), 
@@ -1220,6 +1231,8 @@ def blueprint(gc,my_unit,my_location,karbonite_locations,building_assignment,blu
 				if gc.can_blueprint(my_unit.id, assigned_site.building_type, direction_to_site):
 					gc.blueprint(my_unit.id, assigned_site.building_type, direction_to_site)
 					
+					variables.factory_locations.append(assigned_location)
+
 					if assigned_site.building_type == variables.unit_types["factory"]:
 						variables.info[5] += 1
 					else:
@@ -1282,7 +1295,71 @@ def blueprint(gc,my_unit,my_location,karbonite_locations,building_assignment,blu
 
 
 def idle(gc,my_unit,my_location,building_assignment,blueprinting_assignment):
-	
+
+	nearest_factory_loc = None
+	min_num_allies = float('inf')
+	factory_quadrant_coords = None
+
+	my_coords = (my_location.x,my_location.y)
+	my_quadrant_coords = get_quadrant_coords(my_coords)
+
+	#print("factory locations",variables.factory_locations)
+	for factory_loc in variables.factory_locations:
+
+		factory_coords = (factory_loc.x,factory_loc.y)
+
+		my_coords_val = Ranger.get_coord_value(my_coords)
+		factory_coords_val = Ranger.get_coord_value(factory_coords)
+
+		path_length = variables.bfs_array[my_coords_val,factory_coords_val]
+
+		if path_length == float('inf'): continue
+
+
+		quadrant_coords = get_quadrant_coords(factory_coords)
+		q_info = variables.quadrant_battle_locs[quadrant_coords]
+		enemies_in_quadrant = len(q_info.enemies)
+		allies_in_quadrant = len(q_info.all_allies())
+
+		#print("factory_loc",factory_loc)
+		#print("enemies_in_quadrant",enemies_in_quadrant)
+		#print("allies_in_quadrant",allies_in_quadrant)
+		#print("min_num_allies",min_num_allies)
+
+		if enemies_in_quadrant == 0 and allies_in_quadrant < min_num_allies:
+			nearest_factory_loc = factory_loc
+			min_num_allies = allies_in_quadrant
+			factory_quadrant_coords = quadrant_coords
+
+
+	if nearest_factory_loc is not None:
+		if my_quadrant_coords == factory_quadrant_coords:
+			nearby = gc.sense_nearby_units_by_team(my_location, variables.worker_spacing, variables.my_team)
+
+			away_from_units = sense_util.best_available_direction(gc,my_unit,nearby)	
+			#print(unit.id, "at", unit.location.map_location(), "is trying to move to", away_from_units)
+
+			movement.try_move(gc,my_unit,my_coords,away_from_units)
+
+
+
+
+
+
+
+		else:
+			try_move_smartly(my_unit,my_location,nearest_factory_loc)
+	else:
+		pass
+
+def get_quadrant_coords(coords):
+	if variables.curr_planet == bc.Planet.Earth: 
+		quadrant_size = variables.earth_quadrant_size
+	else:
+		quadrant_size = variables.mars_quadrant_size
+
+	return (int(coords[0] / quadrant_size), int(coords[1] / quadrant_size))
+
 
 
 def add_new_location(unit_id, old_coords, direction):

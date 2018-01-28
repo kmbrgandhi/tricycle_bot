@@ -108,6 +108,7 @@ rocket_spacing = 2
 min_workers_per_building = 4
 repairers_per_building = 4
 recruitment_radius = 30
+worker_spacing = 5
 
 blueprinting_queue = []
 building_assignment = {}
@@ -125,26 +126,7 @@ for x in range(earth_start_map.width):
 			invalid_building_locations[(x,y)] = False
 		invalid_building_locations[(x,y)] = True
 
-
-"""
-area = earth_start_map.width * earth_start_map.height
-
-for unit in earth_start_map.initial_units: 
-	if unit.team == enemy_team:
-		loc = unit.location.map_location()
-
-		if area < 873:
-			enemy_loc_restriction = explore.coord_neighbors((loc.x,loc.y), diff=explore.diffs_50, include_self=True)
-		else: 
-			enemy_loc_restriction = gc.all_locations_within(loc,81)
-
-		for enemy_prox_loc in enemy_loc_restriction:
-			coord = (enemy_prox_loc.x,enemy_prox_loc.y)
-			if coord not in invalid_building_locations: 
-				continue
-			if invalid_building_locations[coord]:
-				invalid_building_locations[coord] = False
-"""
+factory_locations = []
 
 factory_spacing_diff = []
 for dx in [-2,-1,0,1,2]:
