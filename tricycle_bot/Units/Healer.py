@@ -130,7 +130,7 @@ def timestep(unit):
                 if overcharged_unit.unit_type == variables.unit_types["ranger"]:
                     Ranger.timestep(overcharged_unit)
         if best_heal_target is not None:
-            if heal and gc.is_heal_ready(unit.id):
+            if heal and gc.is_heal_ready(unit.id) and gc.can_heal(unit.id, best_heal_target.id):
                 gc.heal(unit.id, best_heal_target.id)
         if best_dir is not None and gc.is_move_ready(unit.id) and gc.can_move(unit.id,best_dir):
             gc.move_robot(unit.id, best_dir)
@@ -162,6 +162,7 @@ def assign_to_quadrant(gc, unit, unit_loc):
 
     if best_coeff > 0:
         assigned_healers[unit.id] = quadrant_battles[best_quadrant].healer_loc
+        quadrant_battles[best_quadrant].assigned_healers.add(unit.id)
         return True, assigned_healers[unit.id]
     return False, None
 
@@ -256,18 +257,21 @@ def update_healers():
     ## Remove dead healers from assigned healers OR healers with expired locations
     remove = set()
     for healer_id in assigned_healers:
+        loc = assigned_healers[healer_id]
+        f_f_quad = (int(loc[0] / quadrant_size), int(loc[1] / quadrant_size))
         if healer_id not in variables.my_unit_ids:
-            remove.add(healer_id)
+            remove.add((healer_id, f_f_quad))
         else:
-            loc = assigned_healers[healer_id]
-            f_f_quad = (int(loc[0] / quadrant_size), int(loc[1] / quadrant_size))
             healer_coeff = quadrant_battles[f_f_quad].urgency_coeff_without_add_units("healer")
             if healer_coeff == 0:
-                remove.add(healer_id)
+                remove.add((healer_id,f_f_quad))
 
-    for healer_id in remove:
+    for healer_id, f_f_quad in remove:
         if healer_id in assigned_healers:
             del assigned_healers[healer_id]
+        q_info = quadrant_battles[f_f_quad]
+        if healer_id in q_info.assigned_healers: 
+            q_info.assigned_healers.remove(healer_id)
 
     # ## Remove dead healers from assigned overcharge
     # remove = set()
