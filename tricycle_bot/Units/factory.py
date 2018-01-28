@@ -62,9 +62,7 @@ def timestep(unit):
 
 	if variables.knight_rush:
 		if not variables.stockpile_until_75 and gc.can_produce_robot(unit.id, bc.UnitType.Knight): #and should_produce_robot(gc, mining_rate, current_production, karbonite_lower_limit): # otherwise produce a unit, based on most_off_optimal
-			if total_units[0]<4 and gc.can_produce_robot(unit.id, bc.UnitType.Worker):
-				gc.produce_robot(unit.id, bc.UnitType.Worker)
-			elif total_units[0]<2:
+			if total_units[0]<2:
 				if gc.can_produce_robot(unit.id, bc.UnitType.Worker):
 					gc.produce_robot(unit.id, bc.UnitType.Worker)
 			elif total_units[1] < 0.75* num_non_workers or total_units[2]<7:
@@ -87,27 +85,28 @@ def timestep(unit):
 		#current_production += order[best].factory_cost()
 
 def evaluate_stockpile():
-	cost = variables.cost_of_rocket
+	return
+	cost = variables.cost_of_factory
 	composition = variables.info
 	producing = variables.producing
-	total_units = [composition[0] + producing[0], composition[1] + producing[1], composition[2] + producing[2],
-				   composition[3] + producing[3], composition[4] + producing[4]]
+	total_units = [composition[0], composition[1], composition[2],
+				   composition[3], composition[4]]
 	num_attacking_units = sum(total_units[1:4])
-	if (variables.gc.round()>250 and num_attacking_units > 0.5*variables.num_enemies) or variables.gc.round()>500:
-		if not variables.stockpile_until_75:
-			if variables.between_stockpiles > 25 and variables.gc.karbonite()<cost * 1.25:
-				variables.stockpile_until_75 = True
-				variables.between_stockpiles = 0
-			else:
-				variables.between_stockpiles+=1
-		if variables.stockpile_until_75:
-			if variables.gc.karbonite()>cost * 1.25:
-				if variables.stockpile_has_been_above:
-					variables.stockpile_until_75 = False
+	if not variables.stockpile_until_75:
+		if (variables.gc.round()>250 and num_attacking_units > 0.48*variables.num_enemies) or variables.gc.round()>500:
+				if variables.between_stockpiles > 40 and variables.gc.karbonite()<cost * 1.25:
+					variables.stockpile_until_75 = True
 					variables.between_stockpiles = 0
-					variables.stockpile_has_been_above = False
 				else:
-					variables.stockpile_has_been_above = True
+					variables.between_stockpiles+=1
+	else:
+		if variables.gc.karbonite()>cost * 1.25:
+			if variables.stockpile_has_been_above:
+				variables.stockpile_until_75 = False
+				variables.between_stockpiles = 0
+				variables.stockpile_has_been_above = False
+			else:
+				variables.stockpile_has_been_above = True
 """
 def should_produce_robot(gc, mining_rate, current_production, karbonite_lower_limit):
 	# produce a robot if net karbonite at the end of the turn will be more than karbonite_lower_limit

@@ -218,7 +218,7 @@ saviour_blueprinted = False
 saviour_blueprinted_id = None
 num_unsuccessful_savior = 0
 saviour_time_between = 0
-cost_of_rocket = 150
+cost_of_factory = 200
 
 mars = bc.Planet.Mars
 mars_map = gc.starting_map(mars)
@@ -294,7 +294,7 @@ if curr_planet == bc.Planet.Earth:
             if dist!=float('inf'):
                 dists.append(dist)
 
-    if min(dists) < 22 and max(dists) < 30:
+    if min(dists) < 17 and max(dists) < 30:
         knight_rush = True
 
 else:

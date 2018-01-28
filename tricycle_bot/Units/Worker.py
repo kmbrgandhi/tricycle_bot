@@ -197,7 +197,7 @@ def near_factory(my_location):
 			map_loc = bc.MapLocation(bc.Planet.Earth, coords[0], coords[1])
 			if variables.gc.can_sense_location(map_loc) and variables.gc.has_unit_at_location(map_loc):
 				unit = variables.gc.sense_unit_at_location(map_loc)
-				if unit.unit_type == variables.unit_types["factory"]:
+				if unit.team == variables.my_team and unit.unit_type == variables.unit_types["factory"]:
 					return True
 	return False
 

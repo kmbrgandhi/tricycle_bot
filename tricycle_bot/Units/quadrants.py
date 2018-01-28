@@ -6,6 +6,7 @@ import traceback
 import Units.variables as variables
 import Units.explore as explore
 import Units.sense_util as sense_util
+import Units.Ranger as Ranger
 
 class QuadrantInfo():
     '''
@@ -104,10 +105,17 @@ class QuadrantInfo():
             return 
 
         worst_middle = variables.quadrant_battle_locs[worst_quadrant].middle
-        furthest_away = sorted(self.quadrant_locs, key=lambda x: sense_util.distance_squared_between_coords(x, worst_middle),reverse=True)
-
+        furthest_away = sorted(list(self.quadrant_locs), key=lambda x: sense_util.distance_squared_between_coords(x, worst_middle),reverse=True)
         for loc in furthest_away: 
-            if passable_locations[loc]: 
+            accessible = False
+            for init_loc in variables.our_init_locs: 
+                bfs_array = variables.bfs_array
+                our_coords_val = Ranger.get_coord_value((init_loc.x,init_loc.y))
+                target_coords_val = Ranger.get_coord_value(loc)
+                if bfs_array[our_coords_val, target_coords_val]!=float('inf'):
+                    accessible = True
+
+            if passable_locations[loc] and accessible: 
                 self.healer_loc = loc
                 break
 
@@ -210,6 +218,18 @@ class QuadrantInfo():
         elif robot_type == "worker":
             self.workers.add(ally_id) 
 
+    def urgency_coeff_without_add_units(self, robot_type):
+        if robot_type == "healer":
+            if self.health_coeff is not None:
+                if len(self.all_allies()) > 0:
+                    return (self.num_died / (self.quadrant_size ** 2)) + 1.5 * self.health_coeff
+                else:
+                    return (self.num_died / (self.quadrant_size ** 2)) + 1.5 * self.health_coeff
+            else:
+                if len(self.all_allies()) > 0:
+                    return (self.num_died / (self.quadrant_size ** 2))
+                else:
+                    return (self.num_died / (self.quadrant_size ** 2))
     def urgency_coeff(self, robot_type): 
         """
         1. Number of allied units who died in this quadrant

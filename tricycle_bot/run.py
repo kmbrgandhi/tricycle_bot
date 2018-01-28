@@ -56,7 +56,7 @@ while True:
     unit_types = variables.unit_types
     info = variables.info
 
-    print("PYROUND:",gc.round())
+    #print("PYROUND:",gc.round())
     #print("past karbonite gain",variables.past_karbonite_gain)
 
     try:
@@ -130,13 +130,13 @@ while True:
         traceback.print_exc()
 
     # send the actions we've performed, and wait for our next turn.
-    if time_workers > 0.03:
-        print('TIME SPENT ON WORKERS:', time_workers)
-    if time_rangers>0.03:
-        print('TIME SPENT ON RANGERS:', time_rangers)
-    if time_healers > 0.03:
-        print('TIME SPENT ON HEALERS:', time_healers)
-    #print('TIME SPENT ON ROCKETS:', time_knights)
+    #if time_workers > 0.03:
+    #    print('TIME SPENT ON WORKERS:', time_workers)
+    #if time_rangers>0.03:
+    #    print('TIME SPENT ON RANGERS:', time_rangers)
+    #if time_healers > 0.03:
+    #    print('TIME SPENT ON HEALERS:', time_healers)
+    ##print('TIME SPENT ON ROCKETS:', time_knights)
     #print('TOTAL TIME:', time.time()-beginning_start_time)
     if gc.round()%5==0:
         gcollector.collect()
