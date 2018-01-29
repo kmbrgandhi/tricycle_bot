@@ -186,12 +186,12 @@ class QuadrantInfo():
                             self.enemies.add(unit.id)
                         elif unit.unit_type == variables.unit_types["ranger"] or unit.unit_type == variables.unit_types["mage"]:
                             self.enemies.add(unit.id)
-                            self.target_loc = loc
                             ranged += 1
                         else:
                             self.enemies.add(unit.id)
                         self.enemy_locs[loc] = unit
                         battle_locs.append((loc))
+                        self.target_loc = loc
                 elif loc in self.enemy_locs: 
                     del self.enemy_locs[loc]
             elif loc in self.enemy_locs: 
