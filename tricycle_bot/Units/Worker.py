@@ -63,7 +63,7 @@ def timestep(unit):
 				return
 		mine_mars(gc,unit,my_location)
 		return
-	if (gc.round() > 500) or (gc.round()>70 and len(variables.dists)==0) and not variables.saviour_worker and near_factory(my_location):
+	if ((gc.round() > 500) or (gc.round()>100 and len(variables.dists)==0) or (gc.round()>300 and variables.num_enemies<7)) and not variables.saviour_worker and near_factory(my_location):
 		variables.saviour_worker = True
 		variables.saviour_worker_id = unit.id
     # TO DO: ADD CHECK THAT HE ISN'T TOO CLOSE TO ENEMIES.
@@ -623,26 +623,11 @@ def get_worker_cap(gc,karbonite_locations, info, num_enemies):
 		#print('replication cap yes')
 		return 6
 	elif info[5] >= 1:
-		return min(5 + float(len(karbonite_locations)/30),20)
+		return min(5 + float(len(karbonite_locations)/25),20)
 	else:
 		return variables.worker_starting_cap
 
 
-
-def get_workers_per_building(gc,start_map,building_location):
-	max_workers_per_building = 4
-	num_adjacent_spaces = 0
-	adjacent = adjacent_locations(building_location)
-	self_coord = (building_location.x,building_location.y)
-
-	#print("checking workers per building")
-	for location in adjacent:
-		location_coord = (location.x,location.y)
-		if location_coord not in passable_locations or location_coord == self_coord: continue
-		if passable_locations[location_coord]:
-			num_adjacent_spaces += 1
-
-	return min(num_adjacent_spaces,max_workers_per_building)
 
 
 
@@ -1162,6 +1147,23 @@ def factory_spacing_locations(location):
 			if passable_locations[(x+dx,y+dy)]:
 				output.append(bc.MapLocation(planet,x+dx,y+dy))
 	return output
+
+
+
+def get_workers_per_building(gc,start_map,building_location):
+	max_workers_per_building = 4
+	num_adjacent_spaces = 0
+	adjacent = adjacent_locations(building_location)
+	self_coord = (building_location.x,building_location.y)
+
+	#print("checking workers per building")
+	for location in adjacent:
+		location_coord = (location.x,location.y)
+		if location_coord not in passable_locations or location_coord == self_coord: continue
+		if passable_locations[location_coord]:
+			num_adjacent_spaces += 1
+
+	return min(num_adjacent_spaces,max_workers_per_building)
 
 
 # generates locations to build factories that are close to karbonite deposits
