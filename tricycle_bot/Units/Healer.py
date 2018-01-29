@@ -101,7 +101,8 @@ def timestep(unit):
             enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(loc))
             enemy_loc = enemies[0].location.map_location()
             best_dir = dir_away_from_enemy(gc, unit, loc, enemy_loc)
-
+        elif variables.curr_round > 650: 
+            best_dir = Ranger.move_to_rocket(gc, unit, loc, variables.direction_to_coord, variables.bfs_array)
         # Otherwise, goes to locations in need of healers
         else:
             if unit.id in assigned_overcharge:
