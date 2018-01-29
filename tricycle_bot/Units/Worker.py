@@ -145,8 +145,8 @@ def timestep(unit):
 		variables.worker_harvest_amount = unit.worker_harvest_amount()
 
 
-	print()
-	print("on unit #",unit.id, "position: ",my_location, "role: ",my_role)
+	#print()
+	#print("on unit #",unit.id, "position: ",my_location, "role: ",my_role)
 	#print("KARBONITE: ",gc.karbonite()
 	
 	current_num_workers = info[0]
@@ -611,7 +611,7 @@ def designate_roles():
 			"""
 			current_roles[new_role].append(worker.id)
 		#print("for loop",time.time() - start_time)
-	print("current roles",variables.current_worker_roles)
+	#print("current roles",variables.current_worker_roles)
 
 
 # parameters: amount of karbonite on the map, factory number ( diff behavior before and after our first factory), 
@@ -623,7 +623,7 @@ def get_worker_cap(gc,karbonite_locations, info, num_enemies):
 		#print('replication cap yes')
 		return 6
 	elif info[5] >= 1:
-		return min(5 + float(len(karbonite_locations)/30),20)
+		return min(5 + float(len(karbonite_locations)/25),20)
 	else:
 		return variables.worker_starting_cap
 
