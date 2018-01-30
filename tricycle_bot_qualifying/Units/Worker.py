@@ -1149,59 +1149,6 @@ def factory_spacing_locations(location):
 	return output
 
 
-def is_blocking_site(location_coord):
-	diff_neighbors_ordered = [(0,1),(1,1),(1,0),(1,-1),(0,-1),(-1,-1),(-1,0),(-1,1)]
-	neighbors = explore.coord_neighbors(location_coord,diff=diff_neighbors_ordered)
-	passable_neighbors_ordered = []
-
-	previous_coord = None
-
-	for i in range(len(neighbors)):
-		coord = neighbors[i]
-		if coord in passable_locations:
-			if passable_locations[coord]:
-				passable_neighbors_ordered.append(i)
-
-	if len(passable_neighbors_ordered) <= 1 or len(passable_neighbors_ordered) >= 7:
-		return False
-
-	check_left = passable_neighbors_ordered[0] == 0
-	for j in range(len(passable_neighbors_ordered)):
-
-		if j == len(passable_neighbors_ordered) - 1: break
-
-		square = passable_neighbors_ordered[j]
-		if square % 2 == 0:
-			connected_squares = [square + 1, square + 2]
-		else:
-			connected_squares = [square + 1]
-
-
-		next_square = passable_neighbors_ordered[j+1]
-
-		if next_square not in connected_squares and not check_left:
-			return True
-		elif next_square not in connected_squares and check_left:
-			for k in range(j+1,len(passable_neighbors_ordered)):
-
-				new_square = passable_neighbors_ordered[k]
-				if new_square % 2 == 0:
-					new_connected_squares = [(new_square + 1)%8, (new_square + 2)%8]
-				else:
-					new_connected_squares = [(new_square + 1)%8]
-
-				if k == len(passable_neighbors_ordered) - 1:
-					new_next_square = passable_neighbors_ordered[0]
-				else: 
-					new_next_square = passable_neighbors_ordered[k+1]
-
-				if new_next_square not in new_connected_squares:
-					return True
-			break
-
-	return False
-
-
 
 def get_workers_per_building(gc,start_map,building_location):
 	max_workers_per_building = 4
@@ -1241,7 +1188,6 @@ def get_optimal_building_location(gc, start_map, center, building_type, karbonit
 		allowed_quadrants.update(adjacent_quadrants)
 
 
-
 	min_deposit_coord = None
 	min_deposit_karbonite = float('inf')
 	coords_in_vision_range = explore.coord_neighbors(center_coords, diff=explore.diffs_50, include_self=True)
@@ -1252,15 +1198,15 @@ def get_optimal_building_location(gc, start_map, center, building_type, karbonit
 		if location_coords in passable_locations and passable_locations[location_coords] and variables.invalid_building_locations[location_coords]:
 			# print("optimal building location time",time.time() - start_time)
 
-			#adjacent_spaces = get_workers_per_building(gc,start_map,location)
+			adjacent_spaces = get_workers_per_building(gc,start_map,location)
 			quadrant = get_quadrant_coords(location_coords)
 
 			q_info = variables.quadrant_battle_locs[quadrant]
 			enemies_in_quadrant = len(q_info.enemies)
 
-			#print("is blocking site?",is_blocking_site(location_coords),location_coords)
+
 			#print("location",location,"adjacent spaces",adjacent_spaces)
-			if not is_blocking_site(location_coords) and enemies_in_quadrant == 0 and (quadrant in allowed_quadrants or len(allowed_quadrants) == 0):
+			if adjacent_spaces >= 3 and enemies_in_quadrant == 0 and (quadrant in allowed_quadrants or len(allowed_quadrants) == 0):
 
 				if location_coords not in karbonite_locations:
 					karbonite_at_coord = 0
