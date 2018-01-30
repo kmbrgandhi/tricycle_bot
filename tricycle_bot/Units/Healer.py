@@ -31,7 +31,7 @@ def timestep(unit):
     enemy_team = variables.enemy_team
     my_team = variables.my_team
 
-    assigned_healers = variables.assigned_healers
+    assigned_healers = variables.assigned_healers              ## healer id: (cluster, best_healer_loc)
     assigned_overcharge = variables.assigned_overcharge
     overcharge_targets = variables.overcharge_targets
 
@@ -110,16 +110,13 @@ def timestep(unit):
                 best_loc_map = ally.location.map_location()
                 best_loc = (best_loc_map.x, best_loc_map.y)
             elif unit.id in assigned_healers:
-                best_loc = assigned_healers[unit.id]
-            #     print('already had a loc: ', best_loc)
-            # else:
-            #     print('UH OH')
-
-
-        # # Special movement if already within healing range of the best location
-        # if best_loc is not None and sense_util.distance_squared_between_coords(unit_loc, best_loc) < unit.attack_range()/2:
-        #     best_loc = None ## Change this
-        #     print('oopz too close')
+                quadrant = assigned_healers[unit.id][0]
+                if quadrant_battles[quadrant].healer_loc is not None: 
+                    print('quadrant healer loc is not None')
+                    assigned_healers[unit.id] = (quadrant, quadrant_battles[quadrant].healer_loc)
+                else: 
+                    print('quadrant healer loc NONE')
+                best_loc = assigned_healers[unit.id][1]
 
         ## Do shit
         #print(best_dir)
@@ -162,9 +159,9 @@ def assign_to_quadrant(gc, unit, unit_loc):
                 best_coeff = coeff
 
     if best_coeff > 0:
-        assigned_healers[unit.id] = quadrant_battles[best_quadrant].healer_loc
+        assigned_healers[unit.id] = (best_quadrant, quadrant_battles[best_quadrant].healer_loc)
         quadrant_battles[best_quadrant].assigned_healers.add(unit.id)
-        return True, assigned_healers[unit.id]
+        return True, assigned_healers[unit.id][1]
     return False, None
 
 def try_move_smartly(unit, map_loc1, map_loc2):
@@ -258,8 +255,7 @@ def update_healers():
     ## Remove dead healers from assigned healers OR healers with expired locations
     remove = set()
     for healer_id in assigned_healers:
-        loc = assigned_healers[healer_id]
-        f_f_quad = (int(loc[0] / quadrant_size), int(loc[1] / quadrant_size))
+        f_f_quad, loc = assigned_healers[healer_id]
         if healer_id not in variables.my_unit_ids:
             remove.add((healer_id, f_f_quad))
         else:
