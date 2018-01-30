@@ -97,7 +97,6 @@ def timestep(unit):
         loc = bc.MapLocation(variables.curr_planet, unit_loc[0], unit_loc[1])
         enemies = gc.sense_nearby_units_by_team(loc, unit.vision_range, enemy_team)
         if len(enemies) > 0:
-            # print('I SEE ENEMIES')
             enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(loc))
             enemy_loc = enemies[0].location.map_location()
             best_dir = dir_away_from_enemy(gc, unit, loc, enemy_loc)
@@ -110,9 +109,6 @@ def timestep(unit):
                 best_loc_map = ally.location.map_location()
                 best_loc = (best_loc_map.x, best_loc_map.y)
             elif unit.id in assigned_healers:
-                quadrant = assigned_healers[unit.id][0]
-                if quadrant_battles[quadrant].healer_loc is not None: 
-                    assigned_healers[unit.id] = (quadrant, quadrant_battles[quadrant].healer_loc)
                 best_loc = assigned_healers[unit.id][1]
 
         ## Do shit
@@ -140,26 +136,53 @@ def assign_to_quadrant(gc, unit, unit_loc):
     quadrant_battles = variables.quadrant_battle_locs
     assigned_healers = variables.assigned_healers
 
-    best_quadrant = (None, None)
-    best_coeff = -float('inf')
+    quadrants = [x for x in quadrant_battles]
+    quadrants = sorted(quadrants, key=lambda x: quadrant_battles[x].urgency_coeff("healer"), reverse=True)
 
-    for quadrant in quadrant_battles:
+    # best_quadrant = (None, None)
+    # best_coeff = -float('inf')
+
+    # for quadrant in quadrant_battles:
+    #     q_info = quadrant_battles[quadrant]
+    #     coeff = q_info.urgency_coeff("healer")
+    #     # distance =  ADD DISTANCE COEFF TOO
+    #     if coeff > best_coeff and q_info.healer_loc is not None:
+    #         bfs_array = variables.bfs_array
+    #         our_coords_val = Ranger.get_coord_value(unit_loc)
+    #         target_coords_val = Ranger.get_coord_value(q_info.healer_loc)
+    #         if bfs_array[our_coords_val, target_coords_val]!=float('inf'):
+    #             best_quadrant = quadrant
+    #             best_coeff = coeff
+
+    for quadrant in quadrants: 
         q_info = quadrant_battles[quadrant]
-        coeff = q_info.urgency_coeff("healer")
-        # distance =  ADD DISTANCE COEFF TOO
-        if coeff > best_coeff and q_info.healer_loc is not None:
-            bfs_array = variables.bfs_array
-            our_coords_val = Ranger.get_coord_value(unit_loc)
-            target_coords_val = Ranger.get_coord_value(q_info.healer_loc)
-            if bfs_array[our_coords_val, target_coords_val]!=float('inf'):
-                best_quadrant = quadrant
-                best_coeff = coeff
-
-    if best_coeff > 0:
-        assigned_healers[unit.id] = (best_quadrant, quadrant_battles[best_quadrant].healer_loc)
-        quadrant_battles[best_quadrant].assigned_healers.add(unit.id)
-        return True, assigned_healers[unit.id][1]
+        if q_info.urgency_coeff("healer") > 0:
+            healer_loc = choose_healer_loc(q_info, unit_loc)
+            if healer_loc is not None: 
+                assigned_healers[unit.id] = (quadrant, healer_loc)
+                q_info.assigned_healers[unit.id] = healer_loc
+                return True, healer_loc
+        else: 
+            break
     return False, None
+
+def choose_healer_loc(q_info, unit_loc):
+    possible_healer_locs = q_info.healer_locs
+    if len(possible_healer_locs) > 0:
+        for healer_loc in possible_healer_locs: 
+            if is_accessible(unit_loc, healer_loc): 
+                q_info.healer_locs.remove(healer_loc)
+                return healer_loc
+    else: 
+        return q_info.target_loc
+
+def is_accessible(unit_loc, target_loc): 
+    bfs_array = variables.bfs_array
+    our_coords_val = Ranger.get_coord_value(unit_loc)
+    target_coords_val = Ranger.get_coord_value(target_loc)
+    if bfs_array[our_coords_val, target_coords_val]!=float('inf'):
+        return True 
+    return False
 
 def try_move_smartly(unit, map_loc1, map_loc2):
     if variables.gc.is_move_ready(unit.id):
@@ -264,7 +287,7 @@ def update_healers():
             del assigned_healers[healer_id]
         q_info = quadrant_battles[f_f_quad]
         if healer_id in q_info.assigned_healers: 
-            q_info.assigned_healers.remove(healer_id)
+            del q_info.assigned_healers[healer_id]
 
     # ## Remove dead healers from assigned overcharge
     # remove = set()

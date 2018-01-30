@@ -30,11 +30,15 @@ def update_variables():
     variables.last_turn_battle_locs = variables.next_turn_battle_locs.copy()
     variables.next_turn_battle_locs = {}
     if variables.curr_round % 30 == 0:
-        variables.update_quadrant_healer_loc = True
         variables.update_ranger_attack_dir = True
     else: 
-        variables.update_quadrant_healer_loc = False
         variables.update_ranger_attack_dir = False
+
+    if variables.curr_round % 5 == 0: 
+        variables.update_quadrant_healer_loc = True
+    else:
+        variables.update_quadrant_healer_loc = False
+
 
     # variables.quadrant_battle_locs = {}
 
@@ -206,10 +210,7 @@ def update_quadrants():
     if variables.update_quadrant_healer_loc: 
         for quadrant in battle_quadrants: 
             q_info = battle_quadrants[quadrant]
-            q_info.update_healer_ideal_loc()
-            print('quadrant: ', quadrant)
             q_info.update_healer_locs()
-            print('healer locs: ', q_info.healer_locs)
 
 def initiate_quadrants(): 
     ## MAKE QUADRANTS
