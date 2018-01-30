@@ -31,8 +31,11 @@ def update_variables():
     variables.next_turn_battle_locs = {}
     if variables.curr_round % 30 == 0:
         variables.update_quadrant_healer_loc = True
+        variables.update_ranger_attack_dir = True
     else: 
         variables.update_quadrant_healer_loc = False
+        variables.update_ranger_attack_dir = False
+
     # variables.quadrant_battle_locs = {}
 
     ## Units
@@ -157,17 +160,18 @@ def update_variables():
     variables.targeting_units = {}
     ranger.update_rangers()
 
+    where_rangers_attacking = variables.where_rangers_attacking     # reset where rangers attacking
+    for d in where_rangers_attacking: 
+        where_rangers_attacking[d] = 0
+
     ## Knights
     knight.update_battles()
 
     ## Healers
     healer.update_healers()
 
-    # Rockets
+    ## Rockets
     rocket.update_rockets()
-
-    ## Mages
-
 
     ## Factories
     factory.evaluate_stockpile()
@@ -203,6 +207,9 @@ def update_quadrants():
         for quadrant in battle_quadrants: 
             q_info = battle_quadrants[quadrant]
             q_info.update_healer_ideal_loc()
+            print('quadrant: ', quadrant)
+            q_info.update_healer_locs()
+            print('healer locs: ', q_info.healer_locs)
 
 def initiate_quadrants(): 
     ## MAKE QUADRANTS

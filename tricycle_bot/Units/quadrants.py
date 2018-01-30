@@ -16,8 +16,14 @@ class QuadrantInfo():
         self.bottom_left = bottom_left ## (x,y)
         if variables.curr_planet == bc.Planet.Earth:
             self.quadrant_size = variables.earth_quadrant_size 
+            self.max_width = variables.earth_start_map.width
+            self.max_height = variables.earth_start_map.height
+            self.passable_locations = variables.passable_locations_earth
         else:
             self.quadrant_size = variables.mars_quadrant_size 
+            self.max_width = variables.mars_start_map.width
+            self.max_height = variables.mars_start_map.height
+            self.passable_locations = variables.passable_locations_mars
 
         self.quadrant_locs = set()
         self.get_quadrant_locs()
@@ -86,12 +92,99 @@ class QuadrantInfo():
                 break
 
     def update_healer_locs(self): 
-        if variables.curr_planet == bc.Planet.Earth: 
-            passable_locations = variables.passable_locations_earth
-        else: 
-            passable_locations = variables.passable_locations_mars
+        unit_locations = variables.unit_locations
+        # Only run if there is more than one ranger here 
+        if len(self.rangers) > 0: 
+            ## Get avg ranger location in current quadrant
+            avg_ranger_x = 0
+            avg_ranger_y = 0
+            for ranger_id in self.rangers: 
+                ranger_loc = unit_locations[ranger_id]
+                avg_ranger_x += ranger_loc[0]
+                avg_ranger_y += ranger_loc[1]
+            avg_ranger_x = int(avg_ranger_x/len(self.rangers))
+            avg_ranger_y = int(avg_ranger_y/len(self.rangers))
+            avg_ranger = (avg_ranger_x, avg_ranger_y)
 
-        
+            ## Get direction in which most rangers are attacking 
+            best_dir = None
+            best_count = 0
+
+            for d in variables.where_rangers_attacking: 
+                count = variables.where_rangers_attacking[d]
+                if count > best_count: 
+                    best_dir = d
+                    best_count = count
+
+            ## Set the group of ideal healer locations to be 3-4 squares behind rangers in 
+            ## opposite direction of attack direction
+            if best_dir is not None: 
+                print('best dir: ', best_dir)
+                avg_ranger_map_loc = bc.MapLocation(variables.curr_planet,avg_ranger_x,avg_ranger_y)
+                print('ranger avg loc: ', avg_ranger_map_loc)
+                opp_best_dir = best_dir.opposite()
+                print('opposite: ', opp_best_dir)
+                ideal_loc = avg_ranger_map_loc.add_multiple(opp_best_dir, 3)
+                print('ideal healer loc: ', ideal_loc)
+                self.healer_locs = self.get_ideal_healer_locs(ideal_loc, opp_best_dir)
+            else: 
+                print('no dir with more than 0 attacks')
+        else: 
+            print('no rangers')
+
+    def get_ideal_healer_locs(self, map_loc, d): 
+        side1 = d.rotate_right().rotate_right()
+        side2 = d.rotate_left().rotate_left()
+
+        loc = (map_loc.x, map_loc.y)
+
+        processed_locs = set() 
+
+        if self.is_within_map(loc) and self.passable_locations[loc] and self.is_accessible(loc): 
+            processed_locs.add(loc)
+
+        for i in range(1,int(self.quadrant_size/2)+1): 
+            curr_map_loc1 = map_loc.add_multiple(side1,i)
+            curr_map_loc2 = map_loc.add_multiple(side2,i)
+
+            loc1 = (curr_map_loc1.x, curr_map_loc1.y)
+            loc2 = (curr_map_loc2.x, curr_map_loc2.y)
+
+            if self.is_within_map(loc1) and self.passable_locations[loc1] and self.is_accessible(loc1): 
+                processed_locs.add(loc1)
+
+            if self.is_within_map(loc2) and self.passable_locations[loc2] and self.is_accessible(loc2): 
+                processed_locs.add(loc2)
+
+        return processed_locs
+
+    def is_within_map(self, loc): 
+        if variables.curr_planet == bc.Planet.Earth: 
+            max_width = variables.earth_start_map.width
+            max_height = variables.earth_start_map.height
+        else: 
+            max_width = variables.mars_start_map.width
+            max_height = variables.mars_start_map.height
+
+        if loc[0] >= 0 and loc[0] < max_width and loc[1] >= 0 and loc[1] < max_height: 
+            return True 
+        return False
+
+    def is_accessible(self, coords):
+        """
+        Determines if location 'coords' is accessible from any of our initial locations. 
+        """
+        accessible = False
+        if variables.curr_planet == bc.Planet.Earth:
+            for init_loc in variables.our_init_locs:
+                bfs_array = variables.bfs_array
+                our_coords_val = Ranger.get_coord_value((init_loc.x,init_loc.y))
+                target_coords_val = Ranger.get_coord_value(coords)
+                if bfs_array[our_coords_val, target_coords_val]!=float('inf'):
+                    accessible = True
+        else:
+            accessible = True
+        return accessible
 
     def update_healer_ideal_loc(self): 
         if variables.curr_planet == bc.Planet.Earth: 

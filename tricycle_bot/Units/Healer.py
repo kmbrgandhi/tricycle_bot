@@ -112,10 +112,7 @@ def timestep(unit):
             elif unit.id in assigned_healers:
                 quadrant = assigned_healers[unit.id][0]
                 if quadrant_battles[quadrant].healer_loc is not None: 
-                    print('quadrant healer loc is not None')
                     assigned_healers[unit.id] = (quadrant, quadrant_battles[quadrant].healer_loc)
-                else: 
-                    print('quadrant healer loc NONE')
                 best_loc = assigned_healers[unit.id][1]
 
         ## Do shit
