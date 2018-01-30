@@ -26,6 +26,7 @@ class QuadrantInfo():
         
         self.target_loc = None 
         self.healer_loc = None
+        self.healer_locs = set()
 
         self.get_passable_locations()
 
@@ -83,6 +84,14 @@ class QuadrantInfo():
                 self.target_loc = loc 
                 self.healer_loc = loc
                 break
+
+    def update_healer_locs(self): 
+        if variables.curr_planet == bc.Planet.Earth: 
+            passable_locations = variables.passable_locations_earth
+        else: 
+            passable_locations = variables.passable_locations_mars
+
+        
 
     def update_healer_ideal_loc(self): 
         if variables.curr_planet == bc.Planet.Earth: 

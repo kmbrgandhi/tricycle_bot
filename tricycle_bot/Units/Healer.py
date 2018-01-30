@@ -179,7 +179,6 @@ def try_move_smartly(unit, map_loc1, map_loc2):
             for option in options:
                 if variables.gc.can_move(unit.id, option):
                     variables.gc.move_robot(unit.id, option)
-                    ## CHANGE LOC IN NEW DATA STRUCTURE
                     add_new_location(unit.id, our_coords, option)
                     break
 
