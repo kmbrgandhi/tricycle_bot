@@ -48,10 +48,9 @@ def timestep(unit):
 		if optimal_unload_dir is not None:
 			gc.unload(unit.id, optimal_unload_dir)
 	# rockets_need_filling = (len(variables.rocket_locs) >0) and (len(variables.ranger_roles["go_to_mars"])<10)
-	if variables.knight_rush:
-		if gc.round()>250 or variables.died_without_attacking > 0.7 or variables.ranged_enemies >= 5:
-			variables.knight_rush = False
-			variables.switch_to_rangers = True
+	if gc.round()>250 or variables.died_without_attacking > 0.7 or variables.ranged_enemies >= 5:
+		variables.knight_rush = False
+		variables.switch_to_rangers = True
 	"""
 
 	"""
