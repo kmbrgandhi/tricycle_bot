@@ -70,7 +70,10 @@ while True:
             if unit.unit_type == unit_types["worker"]:
                 try:
                     start_time = time.time()
+                    
                     worker.timestep(unit)
+                    variables.collective_worker_time += (time.time()-start_time) #DO NOT COMMENT OUT
+
                     time_workers += (time.time()-start_time)
 
                 except Exception as e:
