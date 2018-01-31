@@ -168,7 +168,7 @@ def get_attack(gc, unit, location, targeting_units):
     for enemy in vuln_enemies:
         if enemy.id in targeting_units:
             if enemy.unit_type == variables.unit_types["knight"]:
-                mult = 30 - unit.knight_defense()
+                mult = 30 - enemy.knight_defense()
             else:
                 mult = 30
             remaining_health = enemy.health - targeting_units[enemy.id] * mult

@@ -623,7 +623,6 @@ def get_worker_cap(gc,karbonite_locations, info, num_enemies):
 		#print('replication cap yes')
 		return 6
 	elif info[5] >= 1:
-		print(5 + int(len(karbonite_locations)/25))
 		return 5 + int(len(karbonite_locations)/25)
 	else:
 		return variables.worker_starting_cap
