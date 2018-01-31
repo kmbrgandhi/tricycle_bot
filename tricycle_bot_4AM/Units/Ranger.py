@@ -177,7 +177,7 @@ def get_attack(gc, unit, location, targeting_units, priority = ranger_unit_prior
                 lowest_health = remaining_health
     if best is not None:
         return best
-    return max(vuln_enemies, key=lambda x: coefficient_computation(gc, unit, x, x.location.map_location(), location))
+    return max(vuln_enemies, key=lambda x: coefficient_computation(gc, unit, x, x.location.map_location(), location, priority = ranger_unit_priority))
 
 def exists_bad_enemy(enemy):
     if attack_range_non_robots(enemy)>0:
@@ -375,12 +375,7 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
                 # dir = move_away(gc, unit, battle_locs)
                 if variables.curr_planet == bc.Planet.Earth:
                     # print('IS RUNNING TOWARDS INIT LOC')
-                    if variables.info[2]+ variables.info[4] > 4 or check_radius_squares_factories(gc, location):
-                        dir = run_towards_init_loc_new(gc, unit, location, direction_to_coord)
-                    else:
-                        #dir = None
-                        dir = get_explore_dir(gc, unit, location)
-
+                    dir = run_towards_init_loc_new(gc, unit, location, direction_to_coord)
                 else:
                     # print('EXPLORING')
                     dir = get_explore_dir(gc, unit, location)
@@ -817,7 +812,7 @@ def coefficient_computation(gc, our_unit, their_unit, their_loc, location, prior
 
         return coeff
 
-def attack_coefficient(gc, our_unit, our_loc, their_unit, their_loc, priority = ranger_unit_priority):
+def attack_coefficient(gc, our_unit, our_loc, their_unit, their_loc, priority= ranger_unit_priority):
     # generic: how appealing is their_unit to attack
     coeff = priority[their_unit.unit_type]
     # if distance < attack_range_non_robots(their_unit):

@@ -14,24 +14,24 @@ else:
     passable_locations = variables.passable_locations_mars
 order = [bc.UnitType.Worker, bc.UnitType.Knight, bc.UnitType.Ranger, bc.UnitType.Mage,
          bc.UnitType.Healer, bc.UnitType.Factory, bc.UnitType.Rocket]  # storing order of units
-knight_unit_priority = [1, 3, 3, 1, 3, 4, 3.4]
+ranger_unit_priority = [0.7, 1, 2, 1, 3, 5, 3]
 directions = variables.directions
 
 def timestep(unit):
     # last check to make sure the right unit type is running this
-    if unit.unit_type != bc.UnitType.Knight:
+    if unit.unit_type != bc.UnitType.Mage:
         # prob should return some kind of error
         return
     # start_time = time.time()
     gc = variables.gc
-    knight_roles = variables.knight_roles
+    mage_roles = variables.mage_roles
     info = variables.info
     next_turn_battle_locs = variables.next_turn_battle_locs
 
-    if unit.id in knight_roles["go_to_mars"] and info[6] == 0:
-        knight_roles["go_to_mars"].remove(unit.id)
-    if unit.id not in knight_roles["fighter"]:
-        knight_roles["fighter"].append(unit.id)
+    if unit.id in mage_roles["go_to_mars"] and info[6] == 0:
+        mage_roles["go_to_mars"].remove(unit.id)
+    if unit.id not in mage_roles["fighter"]:
+        mage_roles["fighter"].append(unit.id)
 
     # if variables.print_count<10:
     # print("Preprocessing:", time.time()-start_time)
@@ -52,25 +52,25 @@ def timestep(unit):
             loc = unit.location.map_location()
             variables.unit_locations[unit.id] = (loc.x, loc.y)
             f_f_quad = (int(loc.x / quadrant_size), int(loc.y / quadrant_size))
-            quadrant_battles[f_f_quad].add_ally(unit.id, "ranger")
+            quadrant_battles[f_f_quad].add_ally(unit.id, "mage")
 
         # start_time = time.time()
         map_loc = location.map_location()
-        if variables.curr_planet == bc.Planet.Earth and len(knight_roles["go_to_mars"]) < 14 and unit.id not in \
-                knight_roles["go_to_mars"] and unit.id in knight_roles["fighter"]:
+        if variables.curr_planet == bc.Planet.Earth and len(mage_roles["go_to_mars"]) < 14 and unit.id not in \
+                mage_roles["go_to_mars"] and unit.id in mage_roles["fighter"]:
             for rocket in variables.rocket_locs:
                 target_loc = variables.rocket_locs[rocket]
                 if sense_util.distance_squared_between_maplocs(map_loc, target_loc) < 150:
                     variables.which_rocket[unit.id] = (target_loc, rocket)
-                    knight_roles["go_to_mars"].append(unit.id)
-                    knight_roles["fighter"].remove(unit.id)
+                    mage_roles["go_to_mars"].append(unit.id)
+                    mage_roles["fighter"].remove(unit.id)
                     break
         # if variables.print_count < 10:
         #    print("Preprocessing inside:", time.time() - start_time)
         # start_time = time.time()
-        dir, attack_target, javelin, move_then_attack, visible_enemies, closest_enemy, signals = knight_sense(gc, unit,
+        dir, attack_target, snipe, move_then_attack, visible_enemies, closest_enemy, signals = mage_sense(gc, unit,
                                                                                                             variables.last_turn_battle_locs,
-                                                                                                            knight_roles,
+                                                                                                            mage_roles,
                                                                                                             map_loc,
                                                                                                             variables.direction_to_coord,
                                                                                                             variables.bfs_array,
@@ -84,7 +84,7 @@ def timestep(unit):
             enemy_loc = closest_enemy.location.map_location()
             f_f_quad = (int(enemy_loc.x / 5), int(enemy_loc.y / 5))
             if f_f_quad not in next_turn_battle_locs:
-                next_turn_battle_locs[f_f_quad] = (enemy_loc, 1)
+                next_turn_battle_locs[f_f_quad] = (map_loc, 1)
             else:
                 next_turn_battle_locs[f_f_quad] = (
                 next_turn_battle_locs[f_f_quad][0], next_turn_battle_locs[f_f_quad][1] + 1)
@@ -93,7 +93,7 @@ def timestep(unit):
             if dir != None and gc.is_move_ready(unit.id) and gc.can_move(unit.id, dir):
                 gc.move_robot(unit.id, dir)
                 ## CHANGE LOC IN NEW DATA STRUCTURE
-                add_new_location(unit.id, (map_loc.x, map_loc.y), dir)
+                Ranger.add_new_location(unit.id, (map_loc.x, map_loc.y), dir)
 
             if attack_target is not None and gc.is_attack_ready(unit.id) and gc.can_attack(unit.id, attack_target.id):
                 if attack_target.id not in targeting_units:
@@ -101,12 +101,6 @@ def timestep(unit):
                 else:
                     targeting_units[attack_target.id] += 1
                 gc.attack(unit.id, attack_target.id)
-                if unit.id in variables.knight_attacks:
-                    variables.knight_attacks[unit.id] += 1
-                else:
-                    variables.knight_attacks[unit.id] = 1
-                variables.overcharge_targets.add(unit.id)
-
         else:
             if attack_target is not None and gc.is_attack_ready(unit.id) and gc.can_attack(unit.id, attack_target.id):
                 if attack_target.id not in targeting_units:
@@ -114,17 +108,19 @@ def timestep(unit):
                 else:
                     targeting_units[attack_target.id] += 1
                 gc.attack(unit.id, attack_target.id)
-                if unit.id in variables.knight_attacks:
-                    variables.knight_attacks[unit.id] += 1
-                else:
-                    variables.knight_attacks[unit.id] = 1
-                variables.overcharge_targets.add(unit.id)
 
             if dir != None and gc.is_move_ready(unit.id) and gc.can_move(unit.id, dir):
                 gc.move_robot(unit.id, dir)
                 ## CHANGE LOC IN NEW DATA STRUCTURE
-                add_new_location(unit.id, (map_loc.x, map_loc.y), dir)
-
+                Ranger.add_new_location(unit.id, (map_loc.x, map_loc.y), dir)
+        """
+        if snipe!=None and gc.can_begin_snipe(unit.id, snipe.location.map_location()) and gc.is_begin_snipe_ready(unit.id):
+            gc.begin_snipe(unit.id, snipe.location)
+        """
+        # if variables.print_count < 10:
+        # print("Doing tasks:", time.time() - start_time)
+        # if variables.print_count<10:
+        #    variables.print_count+=1
 
 """
 def add_healer_target(gc, ranger_loc):
@@ -151,7 +147,7 @@ def go_to_mars_sense(gc, unit, battle_locs, location, enemies, direction_to_coor
     signals = {}
     dir = None
     attack = None
-    javelin = None
+    blink = None
     closest_enemy = None
     move_then_attack = False
     visible_enemies = False
@@ -163,14 +159,14 @@ def go_to_mars_sense(gc, unit, battle_locs, location, enemies, direction_to_coor
 
     # # rocket was launched
     if unit.id not in variables.which_rocket or variables.which_rocket[unit.id][1] not in variables.rocket_locs:
-        variables.knight_roles["go_to_mars"].remove(unit.id)
-        return dir, attack, javelin, move_then_attack, visible_enemies, closest_enemy, signals
+        variables.mage_roles["go_to_mars"].remove(unit.id)
+        return dir, attack, blink, move_then_attack, visible_enemies, closest_enemy, signals
     target_loc = variables.which_rocket[unit.id][0]
 
     # # rocket was destroyed
     if not gc.has_unit_at_location(target_loc):
-        variables.knight_roles["go_to_mars"].remove(unit.id)
-        return dir, attack, javelin, move_then_attack, visible_enemies, closest_enemy, signals
+        variables.mage_roles["go_to_mars"].remove(unit.id)
+        return dir, attack, blink, move_then_attack, visible_enemies, closest_enemy, signals
     # print(unit.id)
     # print('MY LOCATION:', start_coords)
     # print('GOING TO:', target_loc)
@@ -195,19 +191,19 @@ def go_to_mars_sense(gc, unit, battle_locs, location, enemies, direction_to_coor
                     break
                     # print(dir)
 
-    return dir, attack, javelin, move_then_attack, visible_enemies, closest_enemy, signals
+    return dir, attack, blink, move_then_attack, visible_enemies, closest_enemy, signals
 
 
-def knight_sense(gc, unit, battle_locs, knight_roles, location, direction_to_coord, bfs_array, targeting_units,
+def mage_sense(gc, unit, battle_locs, mage_roles, location, direction_to_coord, bfs_array, targeting_units,
                  rocket_locs):
     enemies = gc.sense_nearby_units_by_team(location, unit.vision_range, variables.enemy_team)
-    if unit.id in knight_roles["go_to_mars"]:
+    if unit.id in mage_roles["go_to_mars"]:
         return go_to_mars_sense(gc, unit, battle_locs, location, enemies, direction_to_coord, bfs_array,
                                 targeting_units, rocket_locs)
     signals = {}
     dir = None
     attack = None
-    javelin = None
+    blink = None
     closest_enemy = None
     move_then_attack = False
     visible_enemies = False
@@ -216,7 +212,7 @@ def knight_sense(gc, unit, battle_locs, knight_roles, location, direction_to_coo
     #    print("Sensing nearby units:", time.time() - start_time)
     if len(enemies) > 0:
         visible_enemies = True
-        """
+        start_time = time.time()
         closest_enemy = None
         closest_dist = float('inf')
         for enemy in enemies:
@@ -226,48 +222,41 @@ def knight_sense(gc, unit, battle_locs, knight_roles, location, direction_to_coo
                 if dist < closest_dist:
                     closest_dist = dist
                     closest_enemy = enemy
-        """
-        closest_enemy = None
-        closest_dist = -float('inf')
-        for enemy in enemies:
-            enemy_loc = enemy.location
-            if enemy_loc.is_on_map():
-                enemy_map_loc = enemy_loc.map_location()
-                coeff = Ranger.coefficient_computation(gc, unit, enemy, enemy_map_loc, location)
-                # dist = sense_util.distance_squared_between_maplocs(loc.map_location(), location)
-                if coeff > closest_dist:
-                    closest_dist = coeff
-                    closest_enemy = enemy
         # if variables.print_count < 10:
         #    print("Getting closest enemy:", time.time() - start_time)
         # sorted_enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(location))
         # closest_enemy = closest_among_ungarrisoned(sorted_enemies)
         start_time = time.time()
-        attack = Ranger.get_attack(gc, unit, location, targeting_units, knight_unit_priority)
+        attack = Ranger.get_attack(gc, unit, location, targeting_units)
         # if variables.print_count < 10:
         #    print("Getting attack:", time.time() - start_time)
         if attack is not None:
             if closest_enemy is not None:
-                dir = Ranger.go_to_loc(unit, location,
-                                closest_enemy.location.map_location())  # optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location())
+                start_time = time.time()
+                if Ranger.check_radius_squares_factories(gc, location):
+                    dir = Ranger.optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location())
+                elif (Ranger.exists_bad_enemy(closest_enemy)) or not gc.can_attack(unit.id, closest_enemy.id):
+                    # if variables.print_count < 10:
+                    #    print("Checking if condition:", time.time() - start_time)
+                    start_time = time.time()
+                    dir = sense_util.best_available_direction(gc, unit, [closest_enemy])
+                    # if variables.print_count < 10:
+                    #    print("Getting best available direction:", time.time() - start_time)
+
+                    # and (closest_enemy.location.map_location().distance_squared_to(location)) ** (
+                    # 0.5) + 2 < unit.attack_range() ** (0.5)) or not gc.can_attack(unit.id, attack.id):
         else:
             if gc.is_move_ready(unit.id):
+
                 if closest_enemy is not None:
-                    dir = Ranger.go_to_loc(unit, location,
-                                    closest_enemy.location.map_location())  # optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location())
-                    if dir is None or dir == variables.directions[8]:
-                        dir = Ranger.optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location())
+                    dir = Ranger.optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location())
+
                     next_turn_loc = location.add(dir)
-                    attack = Ranger.get_attack(gc, unit, next_turn_loc, targeting_units, knight_unit_priority)
+                    attack = Ranger.get_attack(gc, unit, next_turn_loc, targeting_units)
                     if attack is not None:
                         move_then_attack = True
                 else:
-                    if variables.curr_planet == bc.Planet.Earth:
-                        # print('IS RUNNING TOWARDS INIT LOC')
-                        dir = Ranger.run_towards_init_loc_new(gc, unit, location, direction_to_coord)
-                    else:
-                        # print('EXPLORING')
-                        dir = Ranger.get_explore_dir(gc, unit, location)
+                    dir = Ranger.run_towards_init_loc_new(gc, unit, location, direction_to_coord)
                     # if variables.print_count < 10:
                     #    print("Getting direction:", time.time() - start_time)
     else:
@@ -275,7 +264,7 @@ def knight_sense(gc, unit, battle_locs, knight_roles, location, direction_to_coo
         if len(rocket_locs) > 0 and gc.round() > 660 and variables.curr_planet == bc.Planet.Earth:
             dir = Ranger.move_to_rocket(gc, unit, location, direction_to_coord, bfs_array)
             if dir is not None:
-                return dir, attack, javelin, move_then_attack, visible_enemies, closest_enemy, signals
+                return dir, attack, blink, move_then_attack, visible_enemies, closest_enemy, signals
         if len(battle_locs) > 0:
             # print('IS GOING TO BATTLE')
             dir = Ranger.go_to_battle_new(gc, unit, battle_locs, location, direction_to_coord)
@@ -291,67 +280,32 @@ def knight_sense(gc, unit, battle_locs, knight_roles, location, direction_to_coo
         # if variables.print_count < 10:
         #    print("regular movement:", time.time() - start_time)
 
-    return dir, attack, javelin, move_then_attack, visible_enemies, closest_enemy, signals
+    return dir, attack, blink, move_then_attack, visible_enemies, closest_enemy, signals
 
-def add_new_location(unit_id, old_coords, direction):
-    if variables.curr_planet == bc.Planet.Earth:
-        quadrant_size = variables.earth_quadrant_size
-    else:
-        quadrant_size = variables.mars_quadrant_size
 
-    unit_mov = variables.direction_to_coord[direction]
-    new_coords = (old_coords[0]+unit_mov[0], old_coords[1]+unit_mov[1])
-    variables.unit_locations[unit_id] = new_coords
 
-    old_quadrant = (int(old_coords[0] / quadrant_size), int(old_coords[1] / quadrant_size))
-    new_quadrant = (int(new_coords[0] / quadrant_size), int(new_coords[1] / quadrant_size))
-
-    if old_quadrant != new_quadrant:
-        variables.quadrant_battle_locs[old_quadrant].remove_ally(unit_id)
-        variables.quadrant_battle_locs[new_quadrant].add_ally(unit_id, "knight")
-
-def update_knights():
+def update_mages():
     """
     1. If no rockets, remove any rangers from going to mars.
     2. Account for launched / destroyed rockets (in going to mars sense)
     """
     gc = variables.gc
-    knight_roles = variables.knight_roles
+    mage_roles = variables.mage_roles
     which_rocket = variables.which_rocket
-    knight_attacks = variables.knight_attacks
     rocket_locs = variables.rocket_locs
     info = variables.info
 
-    remove = set()
-    for knight_id in knight_attacks:
-        if knight_id not in variables.my_unit_ids:
-            remove.add(knight_id)
-
-    knights_dead_no_attack = 0
-    total_dead_knights = 0
-    for knight_id in remove:
-        num_times_attacked = knight_attacks[knight_id]
-        if num_times_attacked == 0:
-            knights_dead_no_attack += 1
-        total_dead_knights += 1
-        del knight_attacks[knight_id]
-
-    if total_dead_knights == 0:
-        variables.died_without_attacking = 0
-    else:
-        variables.died_without_attacking = knights_dead_no_attack / total_dead_knights
-
-    for knight_id in knight_roles["go_to_mars"]:
+    for mage_id in mage_roles["go_to_mars"]:
         no_rockets = True if info[6] == 0 else False
-        if knight_id not in which_rocket or which_rocket[knight_id][1] not in rocket_locs:
+        if mage_id not in which_rocket or which_rocket[mage_id][1] not in rocket_locs:
             launched_rocket = True
         else:
             launched_rocket = False
-            target_loc = which_rocket[knight_id][0]
+            target_loc = which_rocket[mage_id][0]
             if not gc.has_unit_at_location(target_loc):
                 destroyed_rocket = True
             else:
                 destroyed_rocket = False
         if no_rockets or launched_rocket or destroyed_rocket:
-            knight_roles["go_to_mars"].remove(knight_id)
+            mage_roles["go_to_mars"].remove(mage_id)
 

@@ -14,7 +14,7 @@ else:
     passable_locations = variables.passable_locations_mars
 order = [bc.UnitType.Worker, bc.UnitType.Knight, bc.UnitType.Ranger, bc.UnitType.Mage,
          bc.UnitType.Healer, bc.UnitType.Factory, bc.UnitType.Rocket]  # storing order of units
-knight_unit_priority = [1, 3, 3, 1, 3, 4, 3.4]
+ranger_unit_priority = [0.7, 1, 2, 1, 3, 5, 3]
 directions = variables.directions
 
 def timestep(unit):
@@ -101,10 +101,6 @@ def timestep(unit):
                 else:
                     targeting_units[attack_target.id] += 1
                 gc.attack(unit.id, attack_target.id)
-                if unit.id in variables.knight_attacks:
-                    variables.knight_attacks[unit.id] += 1
-                else:
-                    variables.knight_attacks[unit.id] = 1
                 variables.overcharge_targets.add(unit.id)
 
         else:
@@ -114,10 +110,6 @@ def timestep(unit):
                 else:
                     targeting_units[attack_target.id] += 1
                 gc.attack(unit.id, attack_target.id)
-                if unit.id in variables.knight_attacks:
-                    variables.knight_attacks[unit.id] += 1
-                else:
-                    variables.knight_attacks[unit.id] = 1
                 variables.overcharge_targets.add(unit.id)
 
             if dir != None and gc.is_move_ready(unit.id) and gc.can_move(unit.id, dir):
@@ -216,7 +208,7 @@ def knight_sense(gc, unit, battle_locs, knight_roles, location, direction_to_coo
     #    print("Sensing nearby units:", time.time() - start_time)
     if len(enemies) > 0:
         visible_enemies = True
-        """
+        start_time = time.time()
         closest_enemy = None
         closest_dist = float('inf')
         for enemy in enemies:
@@ -226,24 +218,12 @@ def knight_sense(gc, unit, battle_locs, knight_roles, location, direction_to_coo
                 if dist < closest_dist:
                     closest_dist = dist
                     closest_enemy = enemy
-        """
-        closest_enemy = None
-        closest_dist = -float('inf')
-        for enemy in enemies:
-            enemy_loc = enemy.location
-            if enemy_loc.is_on_map():
-                enemy_map_loc = enemy_loc.map_location()
-                coeff = Ranger.coefficient_computation(gc, unit, enemy, enemy_map_loc, location)
-                # dist = sense_util.distance_squared_between_maplocs(loc.map_location(), location)
-                if coeff > closest_dist:
-                    closest_dist = coeff
-                    closest_enemy = enemy
         # if variables.print_count < 10:
         #    print("Getting closest enemy:", time.time() - start_time)
         # sorted_enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(location))
         # closest_enemy = closest_among_ungarrisoned(sorted_enemies)
         start_time = time.time()
-        attack = Ranger.get_attack(gc, unit, location, targeting_units, knight_unit_priority)
+        attack = Ranger.get_attack(gc, unit, location, targeting_units)
         # if variables.print_count < 10:
         #    print("Getting attack:", time.time() - start_time)
         if attack is not None:
@@ -258,7 +238,7 @@ def knight_sense(gc, unit, battle_locs, knight_roles, location, direction_to_coo
                     if dir is None or dir == variables.directions[8]:
                         dir = Ranger.optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location())
                     next_turn_loc = location.add(dir)
-                    attack = Ranger.get_attack(gc, unit, next_turn_loc, targeting_units, knight_unit_priority)
+                    attack = Ranger.get_attack(gc, unit, next_turn_loc, targeting_units)
                     if attack is not None:
                         move_then_attack = True
                 else:
@@ -318,28 +298,8 @@ def update_knights():
     gc = variables.gc
     knight_roles = variables.knight_roles
     which_rocket = variables.which_rocket
-    knight_attacks = variables.knight_attacks
     rocket_locs = variables.rocket_locs
     info = variables.info
-
-    remove = set()
-    for knight_id in knight_attacks:
-        if knight_id not in variables.my_unit_ids:
-            remove.add(knight_id)
-
-    knights_dead_no_attack = 0
-    total_dead_knights = 0
-    for knight_id in remove:
-        num_times_attacked = knight_attacks[knight_id]
-        if num_times_attacked == 0:
-            knights_dead_no_attack += 1
-        total_dead_knights += 1
-        del knight_attacks[knight_id]
-
-    if total_dead_knights == 0:
-        variables.died_without_attacking = 0
-    else:
-        variables.died_without_attacking = knights_dead_no_attack / total_dead_knights
 
     for knight_id in knight_roles["go_to_mars"]:
         no_rockets = True if info[6] == 0 else False

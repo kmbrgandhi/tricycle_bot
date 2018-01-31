@@ -45,16 +45,14 @@ update.initiate_quadrants()
 
 # constants = variables.Constants(list(bc.Direction), gc.team(), sense_util.enemy_team(gc), start_map, variables.locs_next_to_terrain, variables.karbonite_locations)
 ##AI EXECUTION##
-print(variables.earth_quadrant_size)
-
 while True:
-    beginning_start_time = time.time()
+    #beginning_start_time = time.time()
     # time_left = gc.get_time_left_ms()
-    print("PYROUND:",gc.round())
+    # print("PYROUND:",gc.round())
     # print("TIME LEFT:", gc.get_time_left_ms())
-    start_time = time.time()
+    #start_time = time.time()
     update.update_variables()
-    #print("UPDATE_TIME",time.time()-start_time)
+    #print(time.time()-start_time)
     time_rangers = 0
     time_workers = 0
     time_healers = 0
@@ -73,10 +71,7 @@ while True:
             if unit.unit_type == unit_types["worker"]:
                 try:
                     start_time = time.time()
-                    
                     worker.timestep(unit)
-                    variables.collective_worker_time += (time.time()-start_time) #DO NOT COMMENT OUT
-
                     time_workers += (time.time()-start_time)
 
                 except Exception as e:
@@ -85,7 +80,7 @@ while True:
                     traceback.print_exc()
             elif unit.unit_type == unit_types["knight"]:
                 #start_time = time.time()
-                if variables.curr_planet == bc.Planet.Mars or min(variables.dists)<5 and gc.round()<175:
+                if min(variables.dists)<5 and gc.round()<175:
                     knight.timestep(unit)
                 else:
                     knight_altern.timestep(unit)
@@ -145,7 +140,7 @@ while True:
     #print('TIME SPENT ON WORKERS:', time_workers)
 
     #if time_rangers > 0.02:
-    #print('TIME SPENT ON RANGERS:', time_rangers)
+    #    print('TIME SPENT ON RANGERS:', time_rangers)
 
     #print('TIME SPENT ON HEALERS:', time_healers)
     #print('TIME SPENT ON FACTORIES:', time_factories)

@@ -55,10 +55,8 @@ class QuadrantInfo():
         self.assigned_healers = {}
 
         self.num_died = 0
-        self.num_workers_assigned = 0
 
         self.enemy_locs = {}
-
 
         self.health_coeff = None
 

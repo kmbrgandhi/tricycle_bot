@@ -8,7 +8,6 @@ import Units.quadrants as quadrants
 
 import Units.Healer as healer
 import Units.Knight as knight
-import Units.Knight_altern as knight_altern
 import Units.Mage as mage
 import Units.Ranger as ranger
 import Units.Worker as worker
@@ -178,7 +177,7 @@ def update_variables():
 
     ## Worker 
     variables.my_karbonite = gc.karbonite()
-    variables.collective_worker_time = 0
+
 
     ## Income
     variables.worker_harvest_amount = 0
@@ -195,19 +194,16 @@ def update_variables():
         variables.num_unsuccessful_savior = 0
         variables.saviour_time_between = 0
 
-    #start_time = time.time()
+    # start_time = time.time()
     worker.designate_roles()
-    #print("designating roles time: ",time.time() - start_time)
+    # print("designating roles time: ",time.time() - start_time)
 
     ## Rangers
     variables.targeting_units = {}
     ranger.update_rangers()
 
     ## Knights
-    if variables.curr_planet == bc.Planet.Mars or min(variables.dists)<5 and gc.round()<175:
-        knight.update_battles()
-    else:
-        knight_altern.update_knights()
+    knight.update_battles()
 
     ## Healers
     healer.update_healers()
