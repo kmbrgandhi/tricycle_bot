@@ -270,7 +270,10 @@ class QuadrantInfo():
             if not self.in_battle[0]:
                 return 0
             else: 
-                return (self.num_died / (self.quadrant_size ** 2))
+                if self.health_coeff is not None: 
+                    return self.num_died/(self.quadrant_size**2) + self.health_coeff
+                else:
+                    return (self.num_died / (self.quadrant_size ** 2)) 
 
     def urgency_coeff(self, robot_type): 
         """

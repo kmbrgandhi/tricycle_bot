@@ -170,8 +170,10 @@ ranged_enemies = 0
 healer_radius = 9
 healer_target_locs = set()
 overcharge_targets = set()  ## stored as IDs
-assigned_healers = {}       ## healer id: (cluster, best_healer_loc)
+assigned_healers = {}       ## healer id: (quadrant, best_healer_loc)
 assigned_overcharge = {}
+
+healer_quadrant_priority = []
 
 #ROCKETS
 rocket_launch_times = {}

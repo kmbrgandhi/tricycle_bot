@@ -52,7 +52,7 @@ def timestep(unit):
             loc = unit.location.map_location()
             variables.unit_locations[unit.id] = (loc.x, loc.y)
             f_f_quad = (int(loc.x / quadrant_size), int(loc.y / quadrant_size))
-            quadrant_battles[f_f_quad].add_ally(unit.id, "ranger")
+            quadrant_battles[f_f_quad].add_ally(unit.id, "knight")
 
         # start_time = time.time()
         map_loc = location.map_location()
@@ -158,7 +158,8 @@ def go_to_mars_sense(gc, unit, battle_locs, location, enemies, direction_to_coor
 
     if len(enemies) > 0:
         visible_enemies = True
-        attack = Ranger.get_attack(gc, unit, location, targeting_units)
+        if gc.is_attack_ready(unit.id): 
+            attack = get_attack(gc, unit, location, targeting_units)
     start_coords = (location.x, location.y)
 
     # # rocket was launched
@@ -211,22 +212,10 @@ def knight_sense(gc, unit, battle_locs, knight_roles, location, direction_to_coo
     closest_enemy = None
     move_then_attack = False
     visible_enemies = False
-    start_time = time.time()
     # if variables.print_count < 10:
     #    print("Sensing nearby units:", time.time() - start_time)
     if len(enemies) > 0:
         visible_enemies = True
-        """
-        closest_enemy = None
-        closest_dist = float('inf')
-        for enemy in enemies:
-            loc = enemy.location
-            if loc.is_on_map():
-                dist = sense_util.distance_squared_between_maplocs(loc.map_location(), location)
-                if dist < closest_dist:
-                    closest_dist = dist
-                    closest_enemy = enemy
-        """
         closest_enemy = None
         closest_dist = -float('inf')
         for enemy in enemies:
@@ -242,10 +231,9 @@ def knight_sense(gc, unit, battle_locs, knight_roles, location, direction_to_coo
         #    print("Getting closest enemy:", time.time() - start_time)
         # sorted_enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(location))
         # closest_enemy = closest_among_ungarrisoned(sorted_enemies)
-        start_time = time.time()
-        attack = Ranger.get_attack(gc, unit, location, targeting_units, knight_unit_priority)
-        # if variables.print_count < 10:
-        #    print("Getting attack:", time.time() - start_time)
+        if gc.is_attack_ready(unit.id): 
+            attack = get_attack(gc, unit, location, targeting_units, knight_unit_priority)
+
         if attack is not None:
             if closest_enemy is not None:
                 dir = Ranger.go_to_loc(unit, location,
@@ -258,7 +246,7 @@ def knight_sense(gc, unit, battle_locs, knight_roles, location, direction_to_coo
                     if dir is None or dir == variables.directions[8]:
                         dir = Ranger.optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location())
                     next_turn_loc = location.add(dir)
-                    attack = Ranger.get_attack(gc, unit, next_turn_loc, targeting_units, knight_unit_priority)
+                    attack = get_attack(gc, unit, next_turn_loc, targeting_units, knight_unit_priority)
                     if attack is not None:
                         move_then_attack = True
                 else:
@@ -292,6 +280,29 @@ def knight_sense(gc, unit, battle_locs, knight_roles, location, direction_to_coo
         #    print("regular movement:", time.time() - start_time)
 
     return dir, attack, javelin, move_then_attack, visible_enemies, closest_enemy, signals
+
+def get_attack(gc, unit, location, targeting_units, priority = knight_unit_priority):
+    enemy_team = variables.enemy_team
+    vuln_enemies = gc.sense_nearby_units_by_team(location, unit.attack_range(), enemy_team)
+    if len(vuln_enemies)==0:
+        return None
+    #return vuln_enemies[0]
+    best = None
+    lowest_health = float('inf')
+    for enemy in vuln_enemies:
+        if enemy.id in targeting_units:
+            if enemy.unit_type == variables.unit_types["knight"]:
+                mult = 30 - enemy.knight_defense()
+            else:
+                mult = 30
+            remaining_health = enemy.health - targeting_units[enemy.id] * mult
+            if remaining_health > 0 and remaining_health < lowest_health:
+                best = enemy
+                lowest_health = remaining_health
+    if best is not None:
+        return best
+    return max(vuln_enemies, key=lambda x: Ranger.coefficient_computation(gc, unit, x, x.location.map_location(), location))
+
 
 def add_new_location(unit_id, old_coords, direction):
     if variables.curr_planet == bc.Planet.Earth:
