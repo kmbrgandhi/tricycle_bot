@@ -375,7 +375,7 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
                 # dir = move_away(gc, unit, battle_locs)
                 if variables.curr_planet == bc.Planet.Earth:
                     # print('IS RUNNING TOWARDS INIT LOC')
-                    if len(variables.info[2]+ variables.info[4] > 4) or check_radius_squares_factories(gc, location):
+                    if variables.info[2]+ variables.info[4] > 4 or check_radius_squares_factories(gc, location):
                         dir = run_towards_init_loc_new(gc, unit, location, direction_to_coord)
                     else:
                         #dir = None
