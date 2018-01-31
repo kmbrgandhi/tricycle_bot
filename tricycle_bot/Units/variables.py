@@ -318,7 +318,7 @@ if curr_planet == bc.Planet.Earth:
     for my_init_loc in our_init_locs:
         my_init_coords = (my_init_loc.x,my_init_loc.y)
         init_loc_values.append(my_init_coords[1]*my_width + my_init_coords[0])
-
+    """
     for x in range(earth_start_map.width):
         for y in range(earth_start_map.height):
             if (x,y) in passable_locations_earth:
@@ -340,7 +340,7 @@ if curr_planet == bc.Planet.Earth:
                         if min_bfs_distance < max_range_initial_factory:
                             possible_initial_factory_coords.append((x,y))
 
-
+    """
     ## Karbonite locations update
 
     karbonite_locations = {}
@@ -390,7 +390,10 @@ if curr_planet == bc.Planet.Earth:
         if len(components[i])>1:
             components_final[i] = components[i][:]
     use_components = False
-    if len(components_final) > 1 and len(components_final) < 15:
+    use_single_component = False
+    if len(components_final)==1 and len(components_final[list(components_final.keys())[0]]) < 60:
+        use_single_component = True
+    if len(components_final) > 1 and len(components_final) < 15 and len(dists)>0 and min(dists) > 30:
         use_components = True
         amount_components = {}
         for i in components_final:
@@ -404,7 +407,6 @@ if curr_planet == bc.Planet.Earth:
         num_workers = {}
         for i in components_final:
             num_workers[i] = 0
-
     worker_starting_cap = max(5, min(12, len(karbonite_locations) / 20))
 
 else:
