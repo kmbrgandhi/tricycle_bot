@@ -195,7 +195,7 @@ def update_variables():
         variables.num_unsuccessful_savior = 0
         variables.saviour_time_between = 0
 
-    start_time = time.time()
+    #start_time = time.time()
     worker.designate_roles()
     #print("designating roles time: ",time.time() - start_time)
 

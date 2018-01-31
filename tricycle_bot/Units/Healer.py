@@ -7,7 +7,7 @@ import Units.variables as variables
 import Units.explore as explore
 import Units.Ranger as Ranger
 
-
+import time
 import numpy as np
 
 if variables.curr_planet==bc.Planet.Earth:
@@ -71,15 +71,14 @@ def timestep(unit):
             if variables.research.get_level(variables.unit_types["healer"]) == 3 and overcharge_to_total < 0.2 and len(overcharge_targets) > 0:
                 best_overcharge_target = gc.unit(overcharge_targets.pop())
                 assigned_overcharge[unit.id] = best_overcharge_target
-            best_heal_target = get_best_target(gc, unit, unit_loc, my_team)
-            if best_heal_target is not None:
-                heal = True
+            if gc.is_heal_ready(unit.id): 
+                best_heal_target = get_best_target(gc, unit, unit_loc, my_team)
+                if best_heal_target is not None:
+                    heal = True
             assigned, best_loc = assign_to_quadrant(gc, unit, unit_loc)
-            # print('assigned? ', assigned)
-            # print('assigned loc: ', best_loc)
             if not assigned:
-                nearby = gc.sense_nearby_units_by_team(bc.MapLocation(variables.curr_planet, unit_loc[0], unit_loc[1]), 8, variables.my_team)
-                best_dir = sense_util.best_available_direction(gc,unit,nearby)
+                unit_loc_map = bc.MapLocation(variables.curr_planet, unit_loc[0], unit_loc[1])
+                best_dir = Ranger.run_towards_init_loc_new(gc, unit, unit_loc_map, variables.direction_to_coord)
 
         ## Overcharge
         if unit.id in assigned_overcharge:
@@ -121,7 +120,7 @@ def timestep(unit):
                 if overcharged_unit.unit_type == variables.unit_types["ranger"]:
                     Ranger.timestep(overcharged_unit)
         if best_heal_target is not None:
-            if heal and gc.is_heal_ready(unit.id) and gc.can_heal(unit.id, best_heal_target.id):
+            if heal and gc.can_heal(unit.id, best_heal_target.id):
                 gc.heal(unit.id, best_heal_target.id)
         if best_dir is not None and gc.is_move_ready(unit.id) and gc.can_move(unit.id,best_dir):
             gc.move_robot(unit.id, best_dir)
@@ -138,21 +137,6 @@ def assign_to_quadrant(gc, unit, unit_loc):
 
     quadrants = [x for x in quadrant_battles]
     quadrants = sorted(quadrants, key=lambda x: quadrant_battles[x].urgency_coeff("healer"), reverse=True)
-
-    # best_quadrant = (None, None)
-    # best_coeff = -float('inf')
-
-    # for quadrant in quadrant_battles:
-    #     q_info = quadrant_battles[quadrant]
-    #     coeff = q_info.urgency_coeff("healer")
-    #     # distance =  ADD DISTANCE COEFF TOO
-    #     if coeff > best_coeff and q_info.healer_loc is not None:
-    #         bfs_array = variables.bfs_array
-    #         our_coords_val = Ranger.get_coord_value(unit_loc)
-    #         target_coords_val = Ranger.get_coord_value(q_info.healer_loc)
-    #         if bfs_array[our_coords_val, target_coords_val]!=float('inf'):
-    #             best_quadrant = quadrant
-    #             best_coeff = coeff
 
     for quadrant in quadrants: 
         q_info = quadrant_battles[quadrant]
@@ -243,15 +227,37 @@ def get_best_target(gc, unit, coords, my_team):
                 return ally
     return None
 
-def get_dangerous_allies(gc, loc, radius, team):
-    DANGEROUS = [bc.UnitType.Knight, bc.UnitType.Ranger, bc.UnitType.Mage]
-    allies = gc.sense_nearby_units_by_team(loc, radius, team)
-    dangerous_allies = 0
-    for ally in allies:
-        if ally.unit_type in DANGEROUS:
-            dangerous_allies += 1
+# def get_best_target_opt(gc, unit, coords, my_team, quadrant_size): 
+#     assigned_healers = variables.assigned_healers
 
-    return dangerous_allies
+#     quadrant = (int(coords[0]/quadrant_size),int(coords[1]/quadrant_size))
+
+#     if unit.id in assigned_healers: 
+#         assignment = assigned_healers[unit.id]
+#         quadrant_loc = (int(assignment[1][0]/quadrant_size), int(assignment[1][1]/quadrant_size))
+#         assigned_quadrant = assignment[0]
+#         if quadrant == quadrant_loc: 
+#             q_info1 = variables.quadrant_battle_locs[quadrant_loc]
+#             q_info2 = variables.quadrant_battle_locs[assigned_quadrant]
+#             fighters = q_info1.fighters() | q_info2.fighters()
+#             allies = q_info1.all_allies() | q_info2.all_allies()
+#         else: 
+#             q_info = variables.quadrant_battle_locs[quadrant]
+#             fighters = q_info.fighters() 
+#             allies = q_info.all_allies()
+
+#         if len(fighters) > 0: 
+#             allies = []
+#             for ally_id in allies: 
+#                 ally_loc = variables.unit_locations[ally_id]
+#                 distance = sense_util.distance_squared_between_coords(coords, ally_loc)
+#                 if distance < 30: # heal range = 30
+#                     ally = gc.unit(ally_id)
+#                     allies.append((ally, ally.health/ally.max_health))
+#             if len(allies) > 0:
+#                 allies = sorted(allies, key=lambda x: x[1])
+#                 return allies[0]
+#     return None
 
 def update_healers():
     """
