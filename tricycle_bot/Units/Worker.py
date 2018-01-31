@@ -160,7 +160,8 @@ def timestep(unit):
 		start_time = time.time()
 		#mine_simple(gc,unit,my_location,earth_start_map)
 		
-		if variables.collective_worker_time > 0.01:
+		if variables.collective_worker_time > 0.015:
+			#print("simple mining")
 			mine_simple(gc,unit,my_location,earth_start_map)
 		else:
 			mine(gc,unit,my_location,earth_start_map,karbonite_locations,current_roles, building_assignment, next_turn_battle_locs)
@@ -308,8 +309,11 @@ def designate_roles():
 		update_for_dead_workers(gc,current_roles,blueprinting_queue,blueprinting_assignment,building_assignment)
 
 		update_building_assignment(gc,building_assignment,blueprinting_assignment)
-		update_deposit_info(gc,karbonite_locations)
 
+
+		start_time = time.time()
+		update_deposit_info(gc,karbonite_locations)
+		print("updating variables time",time.time() - start_time)
 
 		max_num_builders = 5
 		max_num_blueprinters = 2 #len(blueprinting_queue)*2 + 1 # at least 1 blueprinter, 2 blueprinters per cluster
@@ -351,7 +355,7 @@ def designate_roles():
 
 			closest_workers_to_damaged_building[damaged_building.id] = closest_worker_ids
 
-
+		#start_time = time.time()
 		idle_workers = []
 		if gc.round()>300 or (gc.round()>100 and len(variables.dists)==0):
 			for worker in workers:
@@ -379,56 +383,7 @@ def designate_roles():
 
 		elif gc.round()>500:
 			idle_workers = [worker for worker in workers]
-
-
-
-
-		"""
-		start_time = time.time()
-		for worker in workers:
-
-			start_time = time.time()
-			worker_coord = variables.unit_locations[worker.id]
-			worker_adjacent_coords = explore.coord_neighbors(worker_coord,diff=explore.diffs_50,include_self=True)
-			worker_coords_val = Ranger.get_coord_value(worker_coord)
-
-			print("inner part 1",time.time() - start_time)
-			start_time = time.time()
-			can_reach_karbonite = False
-			for karbonite_coord in karbonite_locations.keys():
-				#if gc.round() > 110:
-				#	print("coord",karbonite_coord,"num karbonite",karbonite_locations[karbonite_coord])
-
-				# maybe just check coords that are within a radius of 15 of worker
-				karbonite_coords_val = Ranger.get_coord_value(karbonite_coord)
-				karbonite_at = karbonite_locations[karbonite_coord]
-
-				path_length = variables.bfs_array[worker_coords_val,karbonite_coords_val]
-
-				quadrant_coords = get_quadrant_coords(karbonite_coord)
-				q_info = variables.quadrant_battle_locs[quadrant_coords]
-				enemies_in_quadrant = len(q_info.enemies)
-
-				if path_length == float('inf') or enemies_in_quadrant > 0:
-					continue
-				else: 
-					can_reach_karbonite = True
-
-					if path_length < 15 and worker.ability_heat() <= 10:
-						if worker.id not in accessible_karbonite:
-							accessible_karbonite[worker.id] = karbonite_at
-						else:
-							accessible_karbonite[worker.id] += karbonite_at
-			print("inner part 2",time.time() - start_time)
-			if not can_reach_karbonite:
-				idle_workers.append(worker)
-		"""
-
-		#print("part 3",time.time() - start_time)
-		#variables.replication_priority = sorted(accessible_karbonite.keys(),key=lambda unit_id:accessible_karbonite[unit_id])
-
-		#print("accessible karbonite",accessible_karbonite)
-
+		#print("wtf this takes so long?",time.time() - start_time)
 
 		#print("closest workers to blueprint",closest_workers_to_blueprint)
 		#print("workers in recruitment range",workers_in_recruitment_range)
@@ -799,14 +754,14 @@ def get_optimal_deposit(gc,unit,position,karbonite_locations,in_vision_range=Fal
 
 
 			#print("INITIALIZATION time",time.time() - inner_time)
-			"""
+			
 			quadrant = get_quadrant_coords(location_coord)
 			q_info = variables.quadrant_battle_locs[quadrant]
 			enemies_in_quadrant = len(q_info.enemies)
-			"""
+			
 			inner_time = time.time()
 			distance_squared = sense_util.distance_squared_between_coords(location_coord,position_coord)
-			if variables.bfs_array[our_coords_val, target_coords_val] != float('inf'):# and enemies_in_quadrant == 0:
+			if variables.bfs_array[our_coords_val, target_coords_val] != float('inf') and enemies_in_quadrant == 0:
 				if distance_squared > 5:
 					if second_min_karbonite_coord is None:
 						if min_karbonite_coord is None:
@@ -1480,7 +1435,7 @@ def get_factory_limit():
 	factory_cost_per_round = variables.factory_cost_per_round
 	usable_income = max(0,variables.past_karbonite_gain - variables.reserved_income)
 	#print("factory cap is now", min(usable_income/factory_cost_per_round,15))
-	return max(4, min(usable_income/factory_cost_per_round,15))
+	return max(4, usable_income/factory_cost_per_round + (variables.my_karbonite - 500)/200)
 
 def get_rocket_limit():
 	return 4
@@ -1680,7 +1635,6 @@ def get_quadrant_coords(coords):
 		quadrant_size = variables.mars_quadrant_size
 
 	return (int(coords[0] / quadrant_size), int(coords[1] / quadrant_size))
-
 
 
 def add_new_location(unit_id, old_coords, direction):

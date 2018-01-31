@@ -48,11 +48,11 @@ update.initiate_quadrants()
 while True:
     beginning_start_time = time.time()
     # time_left = gc.get_time_left_ms()
-    # print("PYROUND:",gc.round())
+    print("PYROUND:",gc.round())
     # print("TIME LEFT:", gc.get_time_left_ms())
     start_time = time.time()
     update.update_variables()
-    print("UPDATE_TIME",time.time()-start_time)
+    #print("UPDATE_TIME",time.time()-start_time)
     time_rangers = 0
     time_workers = 0
     time_healers = 0
@@ -60,7 +60,7 @@ while True:
     unit_types = variables.unit_types
     info = variables.info
 
-    print('TIME LEFT', gc.get_time_left_ms())
+    #print('TIME LEFT', gc.get_time_left_ms())
     ##print("past karbonite gain",variables.past_karbonite_gain)
 
     try:
@@ -140,14 +140,14 @@ while True:
 
     # send the actions we've performed, and wait for our next turn.
 
-    print('TIME SPENT ON WORKERS:', time_workers)
+    #print('TIME SPENT ON WORKERS:', time_workers)
 
     #if time_rangers > 0.02:
-    print('TIME SPENT ON RANGERS:', time_rangers)
+    #print('TIME SPENT ON RANGERS:', time_rangers)
 
-    print('TIME SPENT ON HEALERS:', time_healers)
-    print('TIME SPENT ON FACTORIES:', time_factories)
-    print('TOTAL TIME:', time.time()-beginning_start_time)
+    #print('TIME SPENT ON HEALERS:', time_healers)
+    #print('TIME SPENT ON FACTORIES:', time_factories)
+    #print('TOTAL TIME:', time.time()-beginning_start_time)
     if gc.round()%5==0:
         gcollector.collect()
     gc.next_turn()
