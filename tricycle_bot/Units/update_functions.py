@@ -97,10 +97,6 @@ def update_variables():
         q_info = variables.quadrant_battle_locs[quadrant]
         q_info.update_ally_health_coefficient(gc)
 
-    # Update list of quadrants 
-    variables.healer_quadrant_priority = [x for x in variables.quadrant_battle_locs]
-    variables.healer_quadrant_priority = sorted(variables.healer_quadrant_priority, key=lambda x: variables.quadrant_battle_locs[x].urgency_coeff("healer"), reverse=True)
-
     # Something something enemies
     for poss_enemy in variables.units:
         if poss_enemy.team != variables.my_team and poss_enemy.unit_type in variables.attacker:

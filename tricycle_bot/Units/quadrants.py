@@ -119,7 +119,7 @@ class QuadrantInfo():
         if loc in self.passable_locations and self.passable_locations[loc] and self.is_accessible_from_init_loc(loc):
             processed_locs.add(loc)
 
-        for i in range(1,int(self.quadrant_size/2)+1): 
+        for i in range(1,6): 
             loc1 = sense_util.add_multiple(loc, side1, i)
             loc2 = sense_util.add_multiple(loc, side2, i)
 
@@ -167,6 +167,8 @@ class QuadrantInfo():
                 for loc in self.healer_locs: 
                     if self.is_accessible(curr_loc, loc): 
                         self.assigned_healers[healer_id] = loc
+                        before = variables.assigned_healers[healer_id]
+                        variables.assigned_healers[healer_id] = (before[0], loc)
                         # self.healer_locs.remove(loc)
                         break
 

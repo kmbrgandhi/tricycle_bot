@@ -135,7 +135,8 @@ def assign_to_quadrant(gc, unit, unit_loc):
     quadrant_battles = variables.quadrant_battle_locs
     assigned_healers = variables.assigned_healers
 
-    quadrants = variables.healer_quadrant_priority
+    quadrants = [x for x in quadrant_battles]
+    quadrants = sorted(quadrants, key=lambda x: quadrant_battles[x].urgency_coeff("healer"), reverse=True)
 
     for quadrant in quadrants: 
         q_info = quadrant_battles[quadrant]

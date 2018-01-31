@@ -227,8 +227,7 @@ def go_to_mars_sense(gc, unit, battle_locs, location, enemies, direction_to_coor
     
     if len(enemies) > 0:
         visible_enemies = True
-        if gc.is_attack_ready(unit.id): 
-            attack = get_attack(gc, unit, location, targeting_units)
+        attack = get_attack(gc, unit, location, targeting_units)
     start_coords = (location.x, location.y)
 
     # # rocket was launched
@@ -299,8 +298,7 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
             #    print("Getting closest enemy:", time.time() - start_time)
             # sorted_enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(location))
             # closest_enemy = closest_among_ungarrisoned(sorted_enemies)
-            if gc.is_attack_ready(unit.id): 
-                attack = get_attack(gc, unit, location, targeting_units)
+            attack = get_attack(gc, unit, location, targeting_units)
             # if variables.print_count < 10:
             #    print("Getting attack:", time.time() - start_time)
             if attack is not None:
@@ -351,10 +349,9 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
                         if dir is None or dir == variables.directions[8]:
                             dir = optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location())
                         next_turn_loc = location.add(dir)
-                        if gc.is_attack_ready(unit.id): 
-                            attack = get_attack(gc, unit, next_turn_loc, targeting_units)
-                            if attack is not None:
-                                move_then_attack = True
+                        attack = get_attack(gc, unit, next_turn_loc, targeting_units)
+                        if attack is not None:
+                            move_then_attack = True
                     else:
                         if variables.curr_planet == bc.Planet.Earth:
                             # print('IS RUNNING TOWARDS INIT LOC')
@@ -623,8 +620,7 @@ def snipe_sense(gc, unit, battle_locs, location, enemies, direction_to_coord, bf
     if not unit.ranger_is_sniping():
         if len(enemies) > 0:
             visible_enemies= True
-            if gc.is_attack_ready(unit.id): 
-                attack = get_attack(gc, unit, location, targeting_units)
+            attack = get_attack(gc, unit, location, targeting_units)
 
         if len(enemies)>0 or check_radius_squares_factories(gc, unit, 2) or not gc.is_begin_snipe_ready(unit.id): #or how_many_adjacent(gc, unit)>5
             dir = move_away(gc, unit, battle_locs, location)

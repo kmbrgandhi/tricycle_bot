@@ -158,8 +158,7 @@ def go_to_mars_sense(gc, unit, battle_locs, location, enemies, direction_to_coor
 
     if len(enemies) > 0:
         visible_enemies = True
-        if gc.is_attack_ready(unit.id): 
-            attack = get_attack(gc, unit, location, targeting_units)
+        attack = get_attack(gc, unit, location, targeting_units)
     start_coords = (location.x, location.y)
 
     # # rocket was launched
@@ -231,8 +230,7 @@ def knight_sense(gc, unit, battle_locs, knight_roles, location, direction_to_coo
         #    print("Getting closest enemy:", time.time() - start_time)
         # sorted_enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(location))
         # closest_enemy = closest_among_ungarrisoned(sorted_enemies)
-        if gc.is_attack_ready(unit.id): 
-            attack = get_attack(gc, unit, location, targeting_units, knight_unit_priority)
+        attack = get_attack(gc, unit, location, targeting_units, knight_unit_priority)
 
         if attack is not None:
             if closest_enemy is not None:
