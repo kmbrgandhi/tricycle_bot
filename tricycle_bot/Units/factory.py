@@ -73,7 +73,7 @@ def timestep(unit):
 		my_location = unit.location.map_location()
 		my_location_coords = (my_location.x, my_location.y)
 		if gc.round() < 250:
-			for neighbor in explore.coord_neighbors(my_location_coords, diff=explore.diffs_20):
+			for neighbor in explore.coord_neighbors(my_location_coords, diff=explore.diffs_50):
 				neighbor_loc = bc.MapLocation(variables.curr_planet, neighbor[0], neighbor[1])
 				if gc.can_sense_location(neighbor_loc) and gc.has_unit_at_location(neighbor_loc):
 					nearby_unit = gc.sense_unit_at_location(neighbor_loc)
