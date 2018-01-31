@@ -55,7 +55,7 @@ def timestep(unit):
 	"""
 
 	"""
-
+	
 	if variables.knight_rush:
 		if not variables.stockpile_until_75 and gc.can_produce_robot(unit.id, bc.UnitType.Knight): #and should_produce_robot(gc, mining_rate, current_production, karbonite_lower_limit): # otherwise produce a unit, based on most_off_optimal
 			if total_units[0]<2:
@@ -100,7 +100,7 @@ def timestep(unit):
 			else:
 				gc.produce_robot(unit.id, bc.UnitType.Healer)
 				variables.producing[4] += 1
-
+	
 		#current_production += order[best].factory_cost()
 
 def evaluate_stockpile():

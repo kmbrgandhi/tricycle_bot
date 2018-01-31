@@ -623,7 +623,8 @@ def get_worker_cap(gc,karbonite_locations, info, num_enemies):
 		#print('replication cap yes')
 		return 6
 	elif info[5] >= 1:
-		return min(5 + float(len(karbonite_locations)/25),20)
+		print(5 + int(len(karbonite_locations)/25))
+		return 5 + int(len(karbonite_locations)/25)
 	else:
 		return variables.worker_starting_cap
 
@@ -768,11 +769,14 @@ def update_deposit_info(gc,karbonite_locations):
 			karbonite_locations[(x,y)] = current_karbonite
 	
 # returns map location of closest karbonite deposit	
-def get_closest_deposit(gc,unit,position,karbonite_locations,in_vision_range=False):	
+def get_optimal_deposit(gc,unit,position,karbonite_locations,in_vision_range=False):	
 	
 	planet = variables.earth
 	position_coord = (position.x,position.y)
 	# start_time = time.time()
+
+	min_karbonite_num = 0
+	min_karbonite_coord = None
 
 	for location_coord in explore.coord_neighbors(position_coord, diff=explore.diffs_50, include_self=True):
 		#location_coord_thirds = (int(location_coord[0]/variables.bfs_fineness), int(location_coord[1]/variables.bfs_fineness))
@@ -792,8 +796,18 @@ def get_closest_deposit(gc,unit,position,karbonite_locations,in_vision_range=Fal
 			enemies_in_quadrant = len(q_info.enemies)
 
 
+			distance_squared = sense_util.distance_squared_between_coords(location_coord,position_coord)
 			if variables.bfs_array[our_coords_val, target_coords_val] != float('inf') and enemies_in_quadrant == 0:
-				return bc.MapLocation(planet,location_coord[0],location_coord[1])
+				if distance_squared > 5:
+					if min_karbonite_coord is None:
+						return bc.MapLocation(planet,location_coord[0],location_coord[1])
+					else:
+						return bc.MapLocation(planet,min_karbonite_coord[0],min_karbonite_coord[1])
+				else:
+					karbonite_at = karbonite_locations[location_coord]
+					if karbonite_at > min_karbonite_num:
+						min_karbonite_coord = location_coord
+						min_karbonite_num = karbonite_at
 
 	#print("is deposit in vision range",is_deposit_in_vision_range)
 	#print("closest_deposit rn",closest_deposit)
@@ -829,16 +843,19 @@ def get_closest_deposit(gc,unit,position,karbonite_locations,in_vision_range=Fal
 	return closest_deposit
 	
 def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, building_assignment, battle_locs):
-	start_time = time.time()
-	closest_deposit = get_closest_deposit(gc,my_unit,my_location,karbonite_locations)
+	#start_time = time.time()
+	closest_deposit = get_optimal_deposit(gc,my_unit,my_location,karbonite_locations)
+
+	my_location_coord = (my_location.x,my_location.y)
 	#print("closest deposit",closest_deposit)
 	#print("closest deposit time",time.time() - start_time)
 	#check to see if there even are deposits
 	if start_map.on_map(closest_deposit):
 		#print("this is my deposit",closest_deposit)
-		start_time = time.time()
-		direction_to_deposit = my_location.direction_to(closest_deposit)
+		#start_time = time.time()
+
 		deposit_coord = (closest_deposit.x,closest_deposit.y)
+		direction_to_deposit = my_location.direction_to(closest_deposit)
 		#print(unit.id, "is trying to mine at", direction_to_deposit)
 		enemy_units = gc.sense_nearby_units_by_team(my_location, my_unit.vision_range, sense_util.enemy_team(gc))
 		dangerous_types = [variables.unit_types["knight"], variables.unit_types["ranger"], variables.unit_types["mage"], variables.unit_types["factory"]]
@@ -851,24 +868,99 @@ def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, bui
 				dangerous_enemies.append(unit)
 
 
-		#print("enemy precomp",time.time()-start_time)
 		if len(dangerous_enemies) > 0:
 			dir = sense_util.best_available_direction(gc, my_unit, dangerous_enemies)
 			movement.try_move(gc, my_unit, (my_location.x,my_location.y), dir)	
-		elif my_location != closest_deposit:
+
+
+		if my_location.is_adjacent_to(closest_deposit) or my_location == closest_deposit:
+
+			# mine if adjacent to deposit
+			if gc.can_harvest(my_unit.id,direction_to_deposit):
+
+				gc.harvest(my_unit.id,direction_to_deposit)
+				
+				karbonite_gained = min(variables.worker_harvest_amount,karbonite_locations[deposit_coord])
+				variables.current_karbonite_gain += karbonite_gained
+				karbonite_locations[deposit_coord] -= karbonite_gained
+				variables.my_karbonite = gc.karbonite()
+				
+				current_roles["miner"].remove(my_unit.id)
+
+
+			## LOOK FOR NEXT MINING SPOT AND MOVE TOWARD IT
+			next_deposit = get_optimal_deposit(gc,my_unit,my_location,karbonite_locations)
+
+			if start_map.on_map(next_deposit):
+				next_deposit_coord = (next_deposit.x,next_deposit.y)
+				mineable_spots = explore.coord_neighbors(next_deposit_coord,include_self=True)
+
+
+				quadrant = get_quadrant_coords(next_deposit_coord)
+				q_info = variables.quadrant_battle_locs[quadrant]
+				ally_ids_in_quadrant = q_info.all_allies()
+
+
+				ally_on_deposit_list = []
+				for ally_id in ally_ids_in_quadrant:
+					ally_coord = variables.unit_locations[ally_id]
+					if ally_coord in mineable_spots:
+						ally_on_deposit_list.append(ally_coord)
+
+				location_decided = False
+				for mineable_spot in mineable_spots:
+					if mineable_spot in passable_locations:
+						if passable_locations[mineable_spot] and mineable_spot not in ally_on_deposit_list:
+							target_loc = bc.MapLocation(variables.curr_planet,mineable_spot[0],mineable_spot[1])
+							try_move_smartly(my_unit, my_location, target_loc)
+							location_decided = True
+							break
+
+				if not location_decided:
+					try_move_smartly(my_unit, my_location, next_deposit)	
+
+			else:
+				current_roles["miner"].remove(my_unit.id)
+
+
+		else:
+			## IF NOT ADJACENT MINE FROM NEARBY DEPOSIT THEN MOVE 
+
+			# get close adjacent karbonite deposit
+			max_karbonite_num = 0
+			max_karbonite_coord = None
+			
+			for adjacent_coord in explore.coord_neighbors(my_location_coord,include_self=True):
+			
+				if adjacent_coord not in karbonite_locations: 
+					continue
+
+				karbonite_at_adjacency = karbonite_locations[adjacent_coord]
+
+				if karbonite_at_adjacency > max_karbonite_num:
+					max_karbonite_coord = adjacent_coord
+					max_karbonite_num = karbonite_at_adjacency
+
+
+			if max_karbonite_coord is not None:
+
+				max_karbonite_location = bc.MapLocation(start_map.planet,max_karbonite_coord[0],max_karbonite_coord[1])
+				direction_to_adjacent_deposit = my_location.direction_to(max_karbonite_location)
+
+				if gc.can_harvest(my_unit.id,direction_to_adjacent_deposit):
+
+					gc.harvest(my_unit.id,direction_to_adjacent_deposit)
+					
+					karbonite_gained = min(variables.worker_harvest_amount,karbonite_locations[max_karbonite_coord])
+					variables.current_karbonite_gain += karbonite_gained
+					karbonite_locations[max_karbonite_coord] -= karbonite_gained
+					variables.my_karbonite = gc.karbonite()
+
+
 			# move toward deposit
-			#print("my location",my_location)
-			#print("trying to move to closest deposit",closest_deposit)
-			start_time = time.time()
-			my_location_coord = (my_location.x,my_location.y)
 			mineable_spots = explore.coord_neighbors(deposit_coord,include_self=True)
 
-			if variables.curr_planet == bc.Planet.Earth: 
-				quadrant_size = variables.earth_quadrant_size
-			else:
-				quadrant_size = variables.mars_quadrant_size
-
-			quadrant = (int(closest_deposit.x / quadrant_size), int(closest_deposit.y / quadrant_size))
+			quadrant = get_quadrant_coords(deposit_coord)
 			q_info = variables.quadrant_battle_locs[quadrant]
 			ally_ids_in_quadrant = q_info.all_allies()
 
@@ -879,36 +971,21 @@ def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, bui
 				if ally_coord in mineable_spots:
 					ally_on_deposit_list.append(ally_coord)
 
+			location_decided = False
 			for mineable_spot in mineable_spots:
 				if mineable_spot in passable_locations:
 					if passable_locations[mineable_spot] and mineable_spot not in ally_on_deposit_list:
 						target_loc = bc.MapLocation(variables.curr_planet,mineable_spot[0],mineable_spot[1])
 						try_move_smartly(my_unit, my_location, target_loc)
-						#print(my_unit.id,"moved")
+						location_decided = True
 						break
-			#print("moving time",time.time()-start_time)
 
-		if my_location.is_adjacent_to(closest_deposit) or my_location == closest_deposit:
+			if not location_decided:
+				try_move_smartly(my_unit, my_location, closest_deposit)	
 
-			# mine if adjacent to deposit
-			#print("trying to harvest at:",closest_deposit)
-			if gc.can_harvest(my_unit.id,direction_to_deposit):
 
-				gc.harvest(my_unit.id,direction_to_deposit)
-				
-				variables.current_karbonite_gain += min(variables.worker_harvest_amount,karbonite_locations[deposit_coord])
-				variables.my_karbonite = gc.karbonite()
-				
-				current_roles["miner"].remove(my_unit.id)
-				#print(my_unit.id," just harvested!")
 
-		"""
-		if current_num_workers < worker_starting_cap and gc.round() <= 100:
-			try_replicate = replicate(gc,unit)
-			#print("still replicating??",try_replicate)
-			if try_replicate:
-				return
-		"""
+
 		info = variables.info
 		#print("worker cap",get_worker_cap(gc,variables.karbonite_locations,info,variables.num_enemies))
 		if info[0] < get_worker_cap(gc,variables.karbonite_locations,info,variables.num_enemies):
