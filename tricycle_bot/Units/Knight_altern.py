@@ -125,26 +125,6 @@ def timestep(unit):
                 ## CHANGE LOC IN NEW DATA STRUCTURE
                 add_new_location(unit.id, (map_loc.x, map_loc.y), dir)
 
-
-"""
-def add_healer_target(gc, ranger_loc):
-    healer_target_locs = variables.healer_target_locs
-    valid = True
-
-    locs_near = gc.all_locations_within(ranger_loc, variables.healer_radius)
-    for near in locs_near:
-        near_coords = (near.x, near.y)
-        if near_coords in healer_target_locs:
-            valid = False
-            break
-    if valid:
-        healer_target_locs.add((ranger_loc.x, ranger_loc.y))
-
-
-def go_to_mars_sense(gc, unit, battle_locs, location, enemies, direction_to_coord, bfs_dict, targeting_units, bfs_fineness, rocket_locs):
-"""
-
-
 def go_to_mars_sense(gc, unit, battle_locs, location, enemies, direction_to_coord, bfs_array, targeting_units,
                      rocket_locs):
     # print('GOING TO MARS')
