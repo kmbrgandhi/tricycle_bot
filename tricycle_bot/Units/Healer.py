@@ -98,6 +98,9 @@ def timestep(unit):
         if len(enemies) > 0:
             enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(loc))
             enemy_loc = enemies[0].location.map_location()
+            battle_quadrant = (int(enemy_loc.x/5), int(enemy_loc.y/5))
+            if battle_quadrant not in variables.next_turn_battle_locs: 
+                variables.next_turn_battle_locs[battle_quadrant] = (enemy_loc, 1)
             best_dir = dir_away_from_enemy(gc, unit, loc, enemy_loc)
         elif variables.curr_round > 650: 
             best_dir = Ranger.move_to_rocket(gc, unit, loc, variables.direction_to_coord, variables.bfs_array)
