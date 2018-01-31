@@ -975,6 +975,10 @@ def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, bui
 
 		# only adds enemy units that can attack
 		for unit in enemy_units:
+			map_loc = unit.location.map_location()
+			battle_quadrant = (int(map_loc.x/5), int(map_loc.y/5))
+			if battle_quadrant not in variables.next_turn_battle_locs: 
+				variables.next_turn_battle_locs[battle_quadrant] = (map_loc, 1)
 			if unit.unit_type in dangerous_types:
 				dangerous_enemies.append(unit)
 

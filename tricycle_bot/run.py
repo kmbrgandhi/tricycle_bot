@@ -110,6 +110,7 @@ while True:
             elif unit.unit_type == unit_types["healer"]:
                 start_time = time.time()
                 healer.timestep(unit)
+                variables.collective_healer_time += (time.time() - start_time)
                 time_healers+=(time.time()-start_time)
             elif unit.unit_type == unit_types["factory"]:
                 start_time = time.time()
