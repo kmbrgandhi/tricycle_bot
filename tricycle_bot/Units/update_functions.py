@@ -29,10 +29,13 @@ def update_variables():
     ## Battle locations
     variables.last_turn_battle_locs = variables.next_turn_battle_locs.copy()
     variables.next_turn_battle_locs = {}
-    if variables.curr_round % 30 == 0:
+
+    if variables.curr_round % 2 == 0: 
         variables.update_quadrant_healer_loc = True
-    else: 
+    else:
         variables.update_quadrant_healer_loc = False
+
+
     # variables.quadrant_battle_locs = {}
 
     ## Units
@@ -66,7 +69,9 @@ def update_variables():
         variables.switch_to_rangers = False
 
     # Update which ally unit id's are still alive & deaths per quadrant
+    # start_time = time.time()
     update_quadrants() # Updates enemies in quadrant & resets num dead allies
+    # print('update quadrants time: ', time.time()-start_time)
 
     if variables.curr_planet == bc.Planet.Earth: 
         quadrant_size = variables.earth_quadrant_size
@@ -169,9 +174,9 @@ def update_variables():
         variables.num_unsuccessful_savior = 0
         variables.saviour_time_between = 0
 
-    start_time = time.time()
+    # start_time = time.time()
     worker.designate_roles()
-    #print("designating time: ",time.time() - start_time)
+    # print("designating roles time: ",time.time() - start_time)
 
     ## Rangers
     variables.targeting_units = {}
@@ -183,11 +188,8 @@ def update_variables():
     ## Healers
     healer.update_healers()
 
-    # Rockets
+    ## Rockets
     rocket.update_rockets()
-
-    ## Mages
-
 
     ## Factories
     factory.evaluate_stockpile()
@@ -198,31 +200,49 @@ def update_quadrants():
     battle_quadrants = variables.quadrant_battle_locs
     battle_locs = variables.last_turn_battle_locs
 
-    if variables.curr_planet == bc.Planet.Earth: 
-        quadrant_size = variables.earth_quadrant_size
-    else:
-        quadrant_size = variables.mars_quadrant_size
+    # if variables.curr_planet == bc.Planet.Earth: 
+    #     quadrant_size = variables.earth_quadrant_size
+    # else:
+    #     quadrant_size = variables.mars_quadrant_size
 
-    already_included_quadrants = set()
-    for q_loc in battle_locs: 
-        map_loc = battle_locs[q_loc][0]
-        my_quadrant = (int(map_loc.x/quadrant_size), int(map_loc.y/quadrant_size))
-        already_included_quadrants.add(my_quadrant)
+    # already_included_quadrants = set()
+    # for q_loc in battle_locs: 
+    #     map_loc = battle_locs[q_loc][0]
+    #     my_quadrant = (int(map_loc.x/quadrant_size), int(map_loc.y/quadrant_size))
+    #     already_included_quadrants.add(my_quadrant)
 
     for quadrant in battle_quadrants: 
         q_info = battle_quadrants[quadrant]
         q_info.reset_num_died()
-        new_battle_locs, ranged = q_info.update_enemies(gc)
-        variables.ranged_enemies += ranged
-        if quadrant not in already_included_quadrants and len(new_battle_locs) > 0: 
-            loc = new_battle_locs[0]
-            quadrant_loc = (int(loc[0]/5),int(loc[1]/5))
-            battle_locs[quadrant_loc] = (bc.MapLocation(variables.curr_planet,loc[0],loc[1]), 1)
+        q_info.update_in_battle()
+        # new_battle_locs, ranged = q_info.update_enemies(gc)
+        # variables.ranged_enemies += ranged
+        # if quadrant not in already_included_quadrants and len(new_battle_locs) > 0: 
+        #     loc = new_battle_locs[0]
+        #     quadrant_loc = (int(loc[0]/5),int(loc[1]/5))
+        #     battle_locs[quadrant_loc] = (bc.MapLocation(variables.curr_planet,loc[0],loc[1]), 1)
 
     if variables.update_quadrant_healer_loc: 
+        if variables.curr_planet == bc.Planet.Earth: 
+            quadrant_size = variables.earth_quadrant_size
+        else:
+            quadrant_size = variables.mars_quadrant_size
+
+        already_included_quadrants = set()
+        for q_loc in battle_locs: 
+            map_loc = battle_locs[q_loc][0]
+            my_quadrant = (int(map_loc.x/quadrant_size), int(map_loc.y/quadrant_size))
+            already_included_quadrants.add(my_quadrant)
+
         for quadrant in battle_quadrants: 
             q_info = battle_quadrants[quadrant]
-            q_info.update_healer_ideal_loc()
+            q_info.update_healer_locs()
+            new_battle_locs, ranged = q_info.update_enemies(gc)
+            variables.ranged_enemies += ranged
+            if quadrant not in already_included_quadrants and len(new_battle_locs) > 0: 
+                loc = new_battle_locs[0]
+                quadrant_loc = (int(loc[0]/5),int(loc[1]/5))
+                battle_locs[quadrant_loc] = (bc.MapLocation(variables.curr_planet,loc[0],loc[1]), 1)
 
 def initiate_quadrants(): 
     ## MAKE QUADRANTS

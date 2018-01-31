@@ -3,7 +3,6 @@ import random
 import sys
 import traceback
 import Units.map_info as map_info
-import Units.sense_util as sense_util
 import Units.explore as explore
 import time
 import numpy as np
@@ -18,7 +17,11 @@ gc = bc.GameController()
 ## CONSTANTS ##
 
 my_team = gc.team()
-enemy_team = sense_util.enemy_team(gc)
+enemy_team = None
+teams = bc.Team
+for team in teams:
+    if team != gc.team(): 
+        enemy_team = team
 
 directions = list(bc.Direction)
 all_but_center_dir = directions[:-1]
@@ -49,8 +52,6 @@ locs_next_to_terrain = map_info.get_locations_next_to_terrain(gc,earth)
 
 earth_diagonal = (earth_start_map.height**2 + earth_start_map.width**2)
 mars_diagonal = (mars_start_map.height**2 + mars_start_map.width**2)
-my_team = gc.team()
-enemy_team = sense_util.enemy_team(gc)
 
 num_enemies = 0
 info = []
@@ -166,7 +167,7 @@ ranged_enemies = 0
 healer_radius = 9
 healer_target_locs = set()
 overcharge_targets = set()  ## stored as IDs
-assigned_healers = {}
+assigned_healers = {}       ## healer id: (cluster, best_healer_loc)
 assigned_overcharge = {}
 
 #ROCKETS
@@ -177,9 +178,10 @@ rocket_locs = {}
 # RANGER
 ranger_roles = {"fighter":[],"sniper":[], "go_to_mars":[]}
 is_sniping = {}
-where_rangers_attacking = {}                    ## Direction in which ranger is attacking
-for d in directions: 
-    where_rangers_attacking[d] = 0
+# where_rangers_attacking = {}                    ## Direction in which ranger is attacking
+# for d in directions: 
+#     where_rangers_attacking[d] = 0
+# update_ranger_attack_dir = False
 
 # Mages
 mage_roles = {"fighter":[], "go_to_mars":[]}
