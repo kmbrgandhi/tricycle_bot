@@ -29,12 +29,8 @@ def update_variables():
     ## Battle locations
     variables.last_turn_battle_locs = variables.next_turn_battle_locs.copy()
     variables.next_turn_battle_locs = {}
-    if variables.curr_round % 30 == 0:
-        variables.update_ranger_attack_dir = True
-    else: 
-        variables.update_ranger_attack_dir = False
 
-    if variables.curr_round % 5 == 0: 
+    if variables.curr_round % 3 == 0: 
         variables.update_quadrant_healer_loc = True
     else:
         variables.update_quadrant_healer_loc = False
@@ -176,17 +172,17 @@ def update_variables():
         variables.num_unsuccessful_savior = 0
         variables.saviour_time_between = 0
 
-    start_time = time.time()
+    # start_time = time.time()
     worker.designate_roles()
-    #print("designating time: ",time.time() - start_time)
+    # print("designating roles time: ",time.time() - start_time)
 
     ## Rangers
     variables.targeting_units = {}
     ranger.update_rangers()
 
-    where_rangers_attacking = variables.where_rangers_attacking     # reset where rangers attacking
-    for d in where_rangers_attacking: 
-        where_rangers_attacking[d] = 0
+    # where_rangers_attacking = variables.where_rangers_attacking     # reset where rangers attacking
+    # for d in where_rangers_attacking: 
+    #     where_rangers_attacking[d] = 0
 
     ## Knights
     knight.update_battles()

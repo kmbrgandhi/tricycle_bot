@@ -171,7 +171,7 @@ def choose_healer_loc(q_info, unit_loc):
     if len(possible_healer_locs) > 0:
         for healer_loc in possible_healer_locs: 
             if is_accessible(unit_loc, healer_loc): 
-                q_info.healer_locs.remove(healer_loc)
+                # q_info.healer_locs.remove(healer_loc)
                 return healer_loc
     else: 
         return q_info.target_loc
