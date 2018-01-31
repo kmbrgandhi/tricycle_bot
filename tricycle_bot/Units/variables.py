@@ -166,7 +166,7 @@ ranged_enemies = 0
 healer_radius = 9
 healer_target_locs = set()
 overcharge_targets = set()  ## stored as IDs
-assigned_healers = {}
+assigned_healers = {}       ## healer id: (cluster, best_healer_loc)
 assigned_overcharge = {}
 
 #ROCKETS
@@ -177,9 +177,10 @@ rocket_locs = {}
 # RANGER
 ranger_roles = {"fighter":[],"sniper":[], "go_to_mars":[]}
 is_sniping = {}
-where_rangers_attacking = {}                    ## Direction in which ranger is attacking
-for d in directions: 
-    where_rangers_attacking[d] = 0
+# where_rangers_attacking = {}                    ## Direction in which ranger is attacking
+# for d in directions: 
+#     where_rangers_attacking[d] = 0
+# update_ranger_attack_dir = False
 
 # Mages
 mage_roles = {"fighter":[], "go_to_mars":[]}

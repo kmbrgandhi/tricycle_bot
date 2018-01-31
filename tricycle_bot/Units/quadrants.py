@@ -16,8 +16,14 @@ class QuadrantInfo():
         self.bottom_left = bottom_left ## (x,y)
         if variables.curr_planet == bc.Planet.Earth:
             self.quadrant_size = variables.earth_quadrant_size 
+            self.max_width = variables.earth_start_map.width
+            self.max_height = variables.earth_start_map.height
+            self.passable_locations = variables.passable_locations_earth
         else:
             self.quadrant_size = variables.mars_quadrant_size 
+            self.max_width = variables.mars_start_map.width
+            self.max_height = variables.mars_start_map.height
+            self.passable_locations = variables.passable_locations_mars
 
         self.quadrant_locs = set()
         self.get_quadrant_locs()
@@ -25,7 +31,7 @@ class QuadrantInfo():
         self.middle = (self.bottom_left[0]+int(self.quadrant_size/2), self.bottom_left[1]+int(self.quadrant_size/2))
         
         self.target_loc = None 
-        self.healer_loc = None
+        self.healer_locs = set()
 
         self.get_passable_locations()
 
@@ -40,7 +46,11 @@ class QuadrantInfo():
         self.workers = set()
         self.factories = set()
 
-        self.assigned_healers = set()
+        self.where_rangers_attacking = {}
+        for d in variables.directions: 
+            self.where_rangers_attacking[d] = 0
+
+        self.assigned_healers = {}
 
         self.num_died = 0
 
@@ -77,57 +87,117 @@ class QuadrantInfo():
 
         if self.middle[0] < max_width and self.middle[1] < max_height and passable_locations[self.middle]: 
             self.target_loc = self.middle
-            self.healer_loc = self.middle
         else: 
             for loc in self.quadrant_locs:
                 self.target_loc = loc 
-                self.healer_loc = loc
                 break
 
-    def update_healer_ideal_loc(self): 
+    def update_healer_locs(self): 
+        unit_locations = variables.unit_locations
+        # Only run if there is more than one ranger here 
+        if len(self.rangers) > 0: 
+            ## Get avg ranger location in current quadrant
+            avg_ranger_x = 0
+            avg_ranger_y = 0
+            for ranger_id in self.rangers: 
+                ranger_loc = unit_locations[ranger_id]
+                avg_ranger_x += ranger_loc[0]
+                avg_ranger_y += ranger_loc[1]
+            avg_ranger_x = int(avg_ranger_x/len(self.rangers))
+            avg_ranger_y = int(avg_ranger_y/len(self.rangers))
+            avg_ranger = (avg_ranger_x, avg_ranger_y)
+
+            ## Get direction in which most rangers are attacking 
+            best_dir = None
+            best_count = 0
+
+            for d in self.where_rangers_attacking: 
+                count = self.where_rangers_attacking[d]
+                if count > best_count: 
+                    best_dir = d
+                    best_count = count
+
+            ## Set the group of ideal healer locations to be 3-4 squares behind rangers in 
+            ## opposite direction of attack direction
+            if best_dir is not None: 
+                avg_ranger_map_loc = bc.MapLocation(variables.curr_planet,avg_ranger_x,avg_ranger_y)
+                opp_best_dir = best_dir.opposite()
+                ideal_loc = avg_ranger_map_loc.add_multiple(opp_best_dir, 3)
+                self.healer_locs = self.get_ideal_healer_locs(ideal_loc, opp_best_dir)
+
+                self.update_assigned_healer_locs()
+
+    def get_ideal_healer_locs(self, map_loc, d): 
+        side1 = d.rotate_right().rotate_right()
+        side2 = d.rotate_left().rotate_left()
+
+        loc = (map_loc.x, map_loc.y)
+
+        processed_locs = set() 
+
+        if self.is_within_map(loc) and self.passable_locations[loc] and self.is_accessible_from_init_loc(loc): 
+            processed_locs.add(loc)
+
+        for i in range(1,int(self.quadrant_size/2)+1): 
+            curr_map_loc1 = map_loc.add_multiple(side1,i)
+            curr_map_loc2 = map_loc.add_multiple(side2,i)
+
+            loc1 = (curr_map_loc1.x, curr_map_loc1.y)
+            loc2 = (curr_map_loc2.x, curr_map_loc2.y)
+
+            if self.is_within_map(loc1) and self.passable_locations[loc1] and self.is_accessible_from_init_loc(loc1): 
+                processed_locs.add(loc1)
+
+            if self.is_within_map(loc2) and self.passable_locations[loc2] and self.is_accessible_from_init_loc(loc2): 
+                processed_locs.add(loc2)
+
+        return processed_locs
+
+    def is_within_map(self, loc): 
         if variables.curr_planet == bc.Planet.Earth: 
-            passable_locations = variables.passable_locations_earth
+            max_width = variables.earth_start_map.width
+            max_height = variables.earth_start_map.height
         else: 
-            passable_locations = variables.passable_locations_mars
+            max_width = variables.mars_start_map.width
+            max_height = variables.mars_start_map.height
 
-        neighbor_quadrants = self.get_neighboring_quadrants() 
+        if loc[0] >= 0 and loc[0] < max_width and loc[1] >= 0 and loc[1] < max_height: 
+            return True 
+        return False
 
-        enemies = set()
-        most_enemies = 0
-        worst_quadrant = None
-        for quadrant in neighbor_quadrants: 
-            if quadrant in variables.quadrant_battle_locs: 
-                q_enemies = variables.quadrant_battle_locs[quadrant].enemies
-                enemies.update(q_enemies)
-                if len(q_enemies) > most_enemies: 
-                    most_enemies = len(q_enemies)
-                    worst_quadrant = quadrant
+    def is_accessible_from_init_loc(self, coords):
+        """
+        Determines if location 'coords' is accessible from any of our initial locations. 
+        """
+        accessible = False
+        if variables.curr_planet == bc.Planet.Earth:
+            for init_loc in variables.our_init_locs:
+                bfs_array = variables.bfs_array
+                our_coords_val = Ranger.get_coord_value((init_loc.x,init_loc.y))
+                target_coords_val = Ranger.get_coord_value(coords)
+                if bfs_array[our_coords_val, target_coords_val]!=float('inf'):
+                    accessible = True
+        else:
+            accessible = True
+        return accessible
 
-        if len(enemies) == 0: 
-            return 
+    def is_accessible(self, unit_loc, target_loc): 
+        bfs_array = variables.bfs_array
+        our_coords_val = Ranger.get_coord_value(unit_loc)
+        target_coords_val = Ranger.get_coord_value(target_loc)
+        if bfs_array[our_coords_val, target_coords_val]!=float('inf'):
+            return True 
+        return False
 
-        worst_middle = variables.quadrant_battle_locs[worst_quadrant].middle
-        furthest_away = sorted(list(self.quadrant_locs), key=lambda x: sense_util.distance_squared_between_coords(x, worst_middle),reverse=True)
-        for loc in furthest_away: 
-            accessible = False
-            if variables.curr_planet == bc.Planet.Earth:
-                for init_loc in variables.our_init_locs:
-                    bfs_array = variables.bfs_array
-                    our_coords_val = Ranger.get_coord_value((init_loc.x,init_loc.y))
-                    target_coords_val = Ranger.get_coord_value(loc)
-                    if bfs_array[our_coords_val, target_coords_val]!=float('inf'):
-                        accessible = True
-            else:
-                accessible = True
-
-
-            if passable_locations[loc] and accessible: 
-                self.healer_loc = loc
-                break
-
-    def get_neighboring_quadrants(self): 
-        quadrant = (int(self.bottom_left[0] / self.quadrant_size), int(self.bottom_left[1] / self.quadrant_size))
-        return explore.coord_neighbors(quadrant)
+    def update_assigned_healer_locs(self): 
+        if len(self.healer_locs) > 0:
+            for healer_id in self.assigned_healers: 
+                curr_loc = variables.unit_locations[healer_id]
+                for loc in self.healer_locs: 
+                    if self.is_accessible(curr_loc, loc): 
+                        self.assigned_healers[healer_id] = loc
+                        # self.healer_locs.remove(loc)
+                        break
 
     def all_allies(self): 
         return self.knights | self.rangers | self.healers | self.mages | self.workers
@@ -257,17 +327,17 @@ class QuadrantInfo():
                 if len(self.all_allies()) > 0: 
                     return assigned_coeff + (self.num_died/(self.quadrant_size**2)) + 1.5*self.health_coeff + 0.5*(len(self.fighters())/len(self.all_allies()))
                 else: 
-                    return assigned_coeff + (self.num_died/(self.quadrant_size**2)) + 1.5*self.health_coeff
+                    return 0
             else: 
                 if len(self.all_allies()) > 0: 
                     return assigned_coeff + (self.num_died/(self.quadrant_size**2)) + 0.5*(len(self.fighters())/len(self.all_allies()))
                 else: 
-                    return assigned_coeff + (self.num_died/(self.quadrant_size**2))
+                    return 0
         elif robot_type == "knight": 
             return 1.5*len(self.enemy_factories)/self.quadrant_size + 1.5*len(self.enemies)/(self.quadrant_size**2) + 0.5*len(self.enemy_workers)/(self.quadrant_size**2)
 
     def __str__(self):
-        return "bottom left: " + str(self.bottom_left) + "\nallies: " + str(self.all_allies()) + "\nenemies: " + str(self.enemies) + "\ntarget loc: " + str(self.target_loc) + "\nhealer loc: " + str(self.healer_loc) + "\n"
+        return "bottom left: " + str(self.bottom_left) + "\nallies: " + str(self.all_allies()) + "\nenemies: " + str(self.enemies) + "\ntarget loc: " + str(self.target_loc) + "\n"
 
     def __repr__(self):
-        return "bottom left: " + str(self.bottom_left) + "\nallies: " + str(self.all_allies()) + "\nenemies: " + str(self.enemies) + "\ntarget loc: " + str(self.target_loc) + "\nhealer loc: " + str(self.healer_loc) + "\n" 
+        return "bottom left: " + str(self.bottom_left) + "\nallies: " + str(self.all_allies()) + "\nenemies: " + str(self.enemies) + "\ntarget loc: " + str(self.target_loc) + "\n" 

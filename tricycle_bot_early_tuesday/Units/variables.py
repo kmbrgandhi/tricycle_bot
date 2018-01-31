@@ -114,7 +114,7 @@ for unit in earth_start_map.initial_units:
 ## HEALER VARIABLES ##
 healer_radius = 9
 healer_target_locs = set()
-assigned_healers = {}
+assigned_healers = {}               ## healer id: (cluster, best_healer_loc)
 
 #ROCKETS
 rocket_launch_times = {}

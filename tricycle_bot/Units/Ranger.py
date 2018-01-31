@@ -98,8 +98,7 @@ def timestep(unit):
                 else:
                     targeting_units[attack_target.id]+= 1
                 gc.attack(unit.id, attack_target.id)
-                d = map_loc.direction_to(attack_target.location.map_location())
-                variables.where_rangers_attacking[d] += 1
+                update_ranger_attack_dir(unit.id, map_loc, attack_target, quadrant_size)
                 variables.overcharge_targets.add(unit.id)
 
             if snipe is not None:
@@ -114,8 +113,7 @@ def timestep(unit):
                 else:
                     targeting_units[attack_target.id]+=1
                 gc.attack(unit.id, attack_target.id)
-                d = map_loc.direction_to(attack_target.location.map_location())
-                variables.where_rangers_attacking[d] += 1
+                update_ranger_attack_dir(unit.id, map_loc, attack_target, quadrant_size)
                 variables.overcharge_targets.add(unit.id)
 
 
@@ -133,6 +131,12 @@ def timestep(unit):
         #print("Doing tasks:", time.time() - start_time)
     #if variables.print_count<10:
     #    variables.print_count+=1
+
+def update_ranger_attack_dir(ranger_id, ranger_map_loc, target, quadrant_size):
+    d = ranger_map_loc.direction_to(target.location.map_location())
+    ranger_loc = variables.unit_locations[ranger_id]
+    quadrant = (int(ranger_loc[0]/quadrant_size), int(ranger_loc[1]/quadrant_size))
+    variables.quadrant_battle_locs[quadrant].where_rangers_attacking[d] += 1
 
 def add_new_location(unit_id, old_coords, direction):
     if variables.curr_planet == bc.Planet.Earth: 
