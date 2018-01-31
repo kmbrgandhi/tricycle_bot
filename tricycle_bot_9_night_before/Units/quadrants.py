@@ -46,8 +46,6 @@ class QuadrantInfo():
         self.workers = set()
         self.factories = set()
 
-        self.in_battle = (False, 0) # (in battle, last_turn_quadrant_attacked)
-
         self.where_rangers_attacking = {}
         for d in variables.directions: 
             self.where_rangers_attacking[d] = 0
@@ -61,18 +59,38 @@ class QuadrantInfo():
         self.health_coeff = None
 
     def get_quadrant_locs(self):
+        if variables.curr_planet == bc.Planet.Earth: 
+            passable_locations = variables.passable_locations_earth
+            max_width = variables.earth_start_map.width
+            max_height = variables.earth_start_map.height
+        else: 
+            passable_locations = variables.passable_locations_mars
+            max_width = variables.mars_start_map.width
+            max_height = variables.mars_start_map.height
         for i in range(self.quadrant_size): 
             x = self.bottom_left[0] + i
-            if x < self.max_width: 
+            if x < max_width: 
                 for j in range(self.quadrant_size): 
                     y = self.bottom_left[1] + j
-                    if y < self.max_height and self.passable_locations[(x,y)]: 
+                    if y < max_height and passable_locations[(x,y)]: 
                         self.quadrant_locs.add((x,y))
 
     def get_passable_locations(self):
-        for loc in self.quadrant_locs:
-            self.target_loc = loc 
-            break
+        if variables.curr_planet == bc.Planet.Earth: 
+            passable_locations = variables.passable_locations_earth
+            max_width = variables.earth_start_map.width
+            max_height = variables.earth_start_map.height
+        else: 
+            passable_locations = variables.passable_locations_mars
+            max_width = variables.mars_start_map.width
+            max_height = variables.mars_start_map.height
+
+        if self.middle[0] < max_width and self.middle[1] < max_height and passable_locations[self.middle]: 
+            self.target_loc = self.middle
+        else: 
+            for loc in self.quadrant_locs:
+                self.target_loc = loc 
+                break
 
     def update_healer_locs(self): 
         unit_locations = variables.unit_locations
@@ -102,15 +120,18 @@ class QuadrantInfo():
             ## Set the group of ideal healer locations to be 3-4 squares behind rangers in 
             ## opposite direction of attack direction
             if best_dir is not None: 
-                opp_best_dir = sense_util.opposite(best_dir)
-                ideal_loc = sense_util.add_multiple(avg_ranger, best_dir, 2)
+                avg_ranger_map_loc = bc.MapLocation(variables.curr_planet,avg_ranger_x,avg_ranger_y)
+                opp_best_dir = best_dir.opposite()
+                ideal_loc = avg_ranger_map_loc.add_multiple(opp_best_dir, 3)
                 self.healer_locs = self.get_ideal_healer_locs(ideal_loc, opp_best_dir)
 
                 self.update_assigned_healer_locs()
 
-    def get_ideal_healer_locs(self, loc, d): 
+    def get_ideal_healer_locs(self, map_loc, d): 
         side1 = d.rotate_right().rotate_right()
         side2 = d.rotate_left().rotate_left()
+
+        loc = (map_loc.x, map_loc.y)
 
         processed_locs = set() 
 
@@ -118,8 +139,11 @@ class QuadrantInfo():
             processed_locs.add(loc)
 
         for i in range(1,int(self.quadrant_size/2)+1): 
-            loc1 = sense_util.add_multiple(loc, side1, i)
-            loc2 = sense_util.add_multiple(loc, side2, i)
+            curr_map_loc1 = map_loc.add_multiple(side1,i)
+            curr_map_loc2 = map_loc.add_multiple(side2,i)
+
+            loc1 = (curr_map_loc1.x, curr_map_loc1.y)
+            loc2 = (curr_map_loc2.x, curr_map_loc2.y)
 
             if loc1 in self.passable_locations and self.passable_locations[loc1] and self.is_accessible_from_init_loc(loc1):
                 processed_locs.add(loc1)
@@ -130,7 +154,14 @@ class QuadrantInfo():
         return processed_locs
 
     def is_within_map(self, loc): 
-        if loc[0] >= 0 and loc[0] < self.max_width and loc[1] >= 0 and loc[1] < self.max_height: 
+        if variables.curr_planet == bc.Planet.Earth: 
+            max_width = variables.earth_start_map.width
+            max_height = variables.earth_start_map.height
+        else: 
+            max_width = variables.mars_start_map.width
+            max_height = variables.mars_start_map.height
+
+        if loc[0] >= 0 and loc[0] < max_width and loc[1] >= 0 and loc[1] < max_height: 
             return True 
         return False
 
@@ -168,11 +199,6 @@ class QuadrantInfo():
                         # self.healer_locs.remove(loc)
                         break
 
-    def update_in_battle(self): 
-        if self.in_battle[0]: 
-            if variables.curr_round > 4 + self.in_battle[1]:
-                self.in_battle = (False, variables.curr_round)
-
     def all_allies(self): 
         return self.knights | self.rangers | self.healers | self.mages | self.workers
     
@@ -203,6 +229,15 @@ class QuadrantInfo():
         self.enemies = set()
         self.enemy_workers = set()
         self.enemy_factories = set()
+
+        if variables.curr_planet == bc.Planet.Earth:
+            passable_locations = variables.passable_locations_earth
+            max_width = variables.earth_start_map.width
+            max_height = variables.earth_start_map.height
+        else:
+            passable_locations = variables.passable_locations_mars
+            max_width = variables.mars_start_map.width
+            max_height = variables.mars_start_map.height
 
         ## Find enemies in quadrant
         # If enemy in location that can't be sensed don't erase it yet
@@ -267,9 +302,9 @@ class QuadrantInfo():
 
     def urgency_coeff_without_add_units(self, robot_type):
         if robot_type == "healer":
-            if not self.in_battle[0]:
-                return 0
-            else: 
+            if self.health_coeff is not None:
+                return (self.num_died / (self.quadrant_size ** 2)) + 1.5 * self.health_coeff
+            else:
                 return (self.num_died / (self.quadrant_size ** 2))
 
     def urgency_coeff(self, robot_type): 
@@ -283,20 +318,19 @@ class QuadrantInfo():
             else:
                 return self.num_died/(self.quadrant_size**2)
         elif robot_type == "healer":
-            if len(self.rangers) == 0: assigned_coeff = 0
-            else: assigned_coeff = 1 - len(self.assigned_healers)/len(self.rangers)
-
-            if self.in_battle[0]: assigned_battle = 1
-            else: assigned_battle = 0
+            if len(self.rangers) == 0:
+                assigned_coeff = 0
+            else: 
+                assigned_coeff = 1 - len(self.assigned_healers)/len(self.rangers)
 
             if self.health_coeff is not None: 
                 if len(self.all_allies()) > 0: 
-                    return assigned_battle + assigned_coeff + (self.num_died/(self.quadrant_size**2)) + 1.5*self.health_coeff + 0.5*(len(self.fighters())/len(self.all_allies()))
+                    return assigned_coeff + (self.num_died/(self.quadrant_size**2)) + 1.5*self.health_coeff + 0.5*(len(self.fighters())/len(self.all_allies()))
                 else: 
                     return 0
             else: 
                 if len(self.all_allies()) > 0: 
-                    return assigned_battle + assigned_coeff + (self.num_died/(self.quadrant_size**2)) + 0.5*(len(self.fighters())/len(self.all_allies()))
+                    return assigned_coeff + (self.num_died/(self.quadrant_size**2)) + 0.5*(len(self.fighters())/len(self.all_allies()))
                 else: 
                     return 0
         elif robot_type == "knight": 
