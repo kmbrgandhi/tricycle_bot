@@ -145,8 +145,8 @@ def timestep(unit):
 		variables.worker_harvest_amount = unit.worker_harvest_amount()
 
 
-	print()
-	print("on unit #",unit.id, "position: ",my_location, "role: ",my_role)
+	#print()
+	#print("on unit #",unit.id, "position: ",my_location, "role: ",my_role)
 	#print("KARBONITE: ",gc.karbonite()
 	
 	current_num_workers = info[0]
@@ -387,8 +387,8 @@ def designate_roles():
 		#print("closest workers to blueprint",closest_workers_to_blueprint)
 		#print("workers in recruitment range",workers_in_recruitment_range)
 
-		print("blueprinting_assignment",blueprinting_assignment)
-		print("building_assignment",building_assignment)
+		#print("blueprinting_assignment",blueprinting_assignment)
+		#print("building_assignment",building_assignment)
 		#print("blueprinting_queue",blueprinting_queue)
 
 		######################
@@ -571,7 +571,7 @@ def designate_roles():
 			"""
 			current_roles[new_role].append(worker.id)
 		#print("for loop",time.time() - start_time)
-	print("current roles",variables.current_worker_roles)
+	#print("current roles",variables.current_worker_roles)
 
 
 # parameters: amount of karbonite on the map, factory number ( diff behavior before and after our first factory), 
@@ -1518,7 +1518,7 @@ def build_start_round(start_map):
 			bfs_distance = variables.bfs_array[our_coords_val,target_coords_val]
 			if bfs_distance < min_bfs_distance:
 				min_bfs_distance = bfs_distance
-	print("bfs distance",min_bfs_distance)
+	#print("bfs distance",min_bfs_distance)
 
 	return 1
 	if min_bfs_distance == float('inf'):
@@ -1565,7 +1565,7 @@ def get_closest_site(my_unit,my_location,blueprinting_queue):
 
 # controls how many buildings we can have in progress at a time, can modify this to scale with karbonite number, round # or number of units (enemy or ally)
 def building_in_progress_cap(gc):
-	print("buildings in progress cap",max(1,int(variables.my_karbonite/150)))
+	#print("buildings in progress cap",max(1,int(variables.my_karbonite/150)))
 	return max(1,int(variables.my_karbonite/150))
 
 

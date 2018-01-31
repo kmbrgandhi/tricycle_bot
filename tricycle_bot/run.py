@@ -45,12 +45,12 @@ update.initiate_quadrants()
 
 # constants = variables.Constants(list(bc.Direction), gc.team(), sense_util.enemy_team(gc), start_map, variables.locs_next_to_terrain, variables.karbonite_locations)
 ##AI EXECUTION##
-print(variables.earth_quadrant_size)
+#print(variables.earth_quadrant_size)
 
 while True:
     beginning_start_time = time.time()
     # time_left = gc.get_time_left_ms()
-    print("PYROUND:",gc.round())
+    #print("PYROUND:",gc.round())
     # print("TIME LEFT:", gc.get_time_left_ms())
     start_time = time.time()
     update.update_variables()

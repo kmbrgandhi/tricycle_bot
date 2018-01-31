@@ -309,7 +309,7 @@ if curr_planet == bc.Planet.Earth:
         if min(dists) < 25 and max(dists) < 33:
             knight_rush = True
 
-    print("min dists",min(dists))
+    #print("min dists",min(dists))
     # GENERATE POSSIBLE FACTORY LOCATIONS
     possible_initial_factory_coords = []
     init_loc_values = []
