@@ -8,6 +8,7 @@ import traceback
 import research
 import Units.Healer as healer
 import Units.Knight as knight
+import Units.Knight_altern as knight_altern
 import Units.Mage as mage
 import Units.Ranger as ranger
 import Units.Worker as worker
@@ -82,7 +83,10 @@ while True:
                     traceback.print_exc()
             elif unit.unit_type == unit_types["knight"]:
                 #start_time = time.time()
-                knight.timestep(unit)
+                if min(variables.dists)<5 and gc.round()<175:
+                    knight.timestep(unit)
+                else:
+                    knight_altern.timestep(unit)
                 #time_knights+=(time.time()-start_time)
             elif unit.unit_type == unit_types["ranger"]:
                 try:
