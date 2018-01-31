@@ -136,7 +136,9 @@ def update_ranger_attack_dir(ranger_id, ranger_map_loc, target, quadrant_size):
     d = ranger_map_loc.direction_to(target.location.map_location())
     ranger_loc = variables.unit_locations[ranger_id]
     quadrant = (int(ranger_loc[0]/quadrant_size), int(ranger_loc[1]/quadrant_size))
-    variables.quadrant_battle_locs[quadrant].where_rangers_attacking[d] += 1
+    q_info =  variables.quadrant_battle_locs[quadrant]
+    q_info.where_rangers_attacking[d] += 1
+    q_info.in_battle = (True, variables.curr_round)
 
 def add_new_location(unit_id, old_coords, direction):
     if variables.curr_planet == bc.Planet.Earth: 

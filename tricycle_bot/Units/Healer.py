@@ -68,7 +68,7 @@ def timestep(unit):
             total = len(assigned_healers) + len(assigned_overcharge)
             if total > 0: overcharge_to_total = len(assigned_overcharge) / total
             # Assign to overcharge if there are targets and ratio is good
-            if variables.research.get_level(bc.UnitType.Healer) == 3 and overcharge_to_total < 0.2 and len(overcharge_targets) > 0:
+            if variables.research.get_level(variables.unit_types["healer"]) == 3 and overcharge_to_total < 0.2 and len(overcharge_targets) > 0:
                 best_overcharge_target = gc.unit(overcharge_targets.pop())
                 assigned_overcharge[unit.id] = best_overcharge_target
             best_heal_target = get_best_target(gc, unit, unit_loc, my_team)

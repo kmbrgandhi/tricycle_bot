@@ -214,6 +214,7 @@ def update_quadrants():
     for quadrant in battle_quadrants: 
         q_info = battle_quadrants[quadrant]
         q_info.reset_num_died()
+        q_info.update_in_battle()
         new_battle_locs, ranged = q_info.update_enemies(gc)
         variables.ranged_enemies += ranged
         if quadrant not in already_included_quadrants and len(new_battle_locs) > 0: 
