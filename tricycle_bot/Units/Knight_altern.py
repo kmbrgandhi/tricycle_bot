@@ -101,6 +101,10 @@ def timestep(unit):
                 else:
                     targeting_units[attack_target.id] += 1
                 gc.attack(unit.id, attack_target.id)
+                if unit.id in variables.knight_attacks:
+                    variables.knight_attacks[unit.id] += 1
+                else:
+                    variables.knight_attacks[unit.id] = 1
                 variables.overcharge_targets.add(unit.id)
 
         else:
@@ -110,6 +114,10 @@ def timestep(unit):
                 else:
                     targeting_units[attack_target.id] += 1
                 gc.attack(unit.id, attack_target.id)
+                if unit.id in variables.knight_attacks:
+                    variables.knight_attacks[unit.id] += 1
+                else:
+                    variables.knight_attacks[unit.id] = 1
                 variables.overcharge_targets.add(unit.id)
 
             if dir != None and gc.is_move_ready(unit.id) and gc.can_move(unit.id, dir):
@@ -298,8 +306,28 @@ def update_knights():
     gc = variables.gc
     knight_roles = variables.knight_roles
     which_rocket = variables.which_rocket
+    knight_attacks = variables.knight_attacks
     rocket_locs = variables.rocket_locs
     info = variables.info
+
+    remove = set()
+    for knight_id in knight_attacks:
+        if knight_id not in variables.my_unit_ids:
+            remove.add(knight_id)
+
+    knights_dead_no_attack = 0
+    total_dead_knights = 0
+    for knight_id in remove:
+        num_times_attacked = knight_attacks[knight_id]
+        if num_times_attacked == 0:
+            knights_dead_no_attack += 1
+        total_dead_knights += 1
+        del knight_attacks[knight_id]
+
+    if total_dead_knights == 0:
+        variables.died_without_attacking = 0
+    else:
+        variables.died_without_attacking = knights_dead_no_attack / total_dead_knights
 
     for knight_id in knight_roles["go_to_mars"]:
         no_rockets = True if info[6] == 0 else False

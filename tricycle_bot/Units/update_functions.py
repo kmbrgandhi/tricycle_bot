@@ -8,6 +8,7 @@ import Units.quadrants as quadrants
 
 import Units.Healer as healer
 import Units.Knight as knight
+import Units.Knight_altern as knight_altern
 import Units.Mage as mage
 import Units.Ranger as ranger
 import Units.Worker as worker
@@ -203,7 +204,10 @@ def update_variables():
     ranger.update_rangers()
 
     ## Knights
-    knight.update_battles()
+    if variables.curr_planet == bc.Planet.Mars or min(variables.dists)<5 and gc.round()<175:
+        knight.update_battles()
+    else:
+        knight_altern.update_knights()
 
     ## Healers
     healer.update_healers()

@@ -83,7 +83,7 @@ while True:
                     traceback.print_exc()
             elif unit.unit_type == unit_types["knight"]:
                 #start_time = time.time()
-                if min(variables.dists)<5 and gc.round()<175:
+                if variables.curr_planet == bc.Planet.Mars or min(variables.dists)<5 and gc.round()<175:
                     knight.timestep(unit)
                 else:
                     knight_altern.timestep(unit)
