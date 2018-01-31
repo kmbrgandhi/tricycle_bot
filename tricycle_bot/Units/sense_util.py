@@ -25,7 +25,7 @@ def distance_squared_between_coords(coords1, coords2):
 
 def health_multiplier(unit):
     # Multiplier for how appealing it is to attack a unit, given its current health.
-    c = 1
+    c = 1.75
     return 1 + c*(unit.max_health - unit.health)/unit.max_health
 
 def enemy_team(gc):
