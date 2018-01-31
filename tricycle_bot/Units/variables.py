@@ -8,11 +8,19 @@ import time
 import numpy as np
 from scipy.sparse import dok_matrix
 from scipy.sparse import csgraph
+from scipy.cluster.hierarchy import linkage, fcluster
+import numpy as np
 
 
 gc = bc.GameController()
 
+def to_coords(value):
+    y_value = int(value/earth_width)
+    x_value = value - earth_width * y_value
+    return (x_value, y_value)
 
+def get_coord_value(coords):
+    return coords[1]*my_width + coords[0]
 
 ## CONSTANTS ##
 
@@ -144,7 +152,8 @@ for dx in [-4,-3,-2,-1,0,1,2,3,4]:
 		building_scouting_diff.append((dx,dy))
 
 current_worker_roles = {"miner":[],"builder":[],"blueprinter":[],"boarder":[],"repairer":[],"idle":[]}
-
+miner_component_assignments = {}
+travelled_to_component = {}
 reserved_income = 5
 factory_cost_per_round = float(40) / 15 + 1.5 # 40 karbonite per 15 turns to make all offensive units + offset for factory cost
 worker_harvest_amount = 0
@@ -247,7 +256,7 @@ if curr_planet == bc.Planet.Earth:
     earth_height = earth_map.height
     my_width = earth_width
     my_height = earth_height
-
+    start_time = time.time()
     for x in range(-1, earth_width+1):
         for y in range(-1, earth_height+1):
             coords = (x, y)
@@ -314,7 +323,48 @@ if curr_planet == bc.Planet.Earth:
                 for initial_coord in initial_coords:
                     our_coords_val = initial_coord[1] * my_width + initial_coord[0]
                     if bfs_array[our_coords_val, target_coords_val] != float('inf'):
-                        karbonite_locations[(x, y)] = karbonite_at
+                        karbonite_locations[karbonite_coord] = karbonite_at
+                        break
+    start_time = time.time()
+    S2 = dok_matrix((number_of_cells, number_of_cells), dtype=int)
+    for x in range(earth_width):
+        for y in range(earth_height):
+            curr = (x, y)
+            if curr in karbonite_locations:
+                val = y * earth_width + x
+                for coord in explore.coord_neighbors(curr):
+                    if coord in karbonite_locations:
+                        val2 = coord[1] * earth_width + coord[0]
+                        S2[val, val2] = 1
+                        S2[val2, val] = 1
+    num, connected_components = csgraph.connected_components(S2, directed = False)
+    components = {}
+    for index in range(len(connected_components)):
+        coords = to_coords(index)
+        component = connected_components[index]
+        if component in components:
+            components[component].append(coords)
+        else:
+            components[component] = [coords]
+    components_final = {}
+    for i in components:
+        if len(components[i])>1:
+            components_final[i] = components[i][:]
+    use_components = False
+    if len(components_final) > 1 and len(components_final) < 15:
+        use_components = True
+        amount_components = {}
+        for i in components_final:
+            amount_components[i] = sum(karbonite_locations[j] for j in components_final[i])
+        bad_component = {}
+        for i in components_final:
+            min_our_dist = min(bfs_array[get_coord_value((our_loc.x, our_loc.y)), get_coord_value(their_loc)] for our_loc in our_init_locs for their_loc in components[i])
+            min_their_dist =  min(bfs_array[get_coord_value((our_loc.x, our_loc.y)), get_coord_value(their_loc)] for our_loc in init_enemy_locs for their_loc in components[i])
+            if min_our_dist > (min_their_dist * 1.3):
+                bad_component[i] = True
+        num_workers = {}
+        for i in components_final:
+            num_workers[i] = 0
 
     worker_starting_cap = max(5, min(12, len(karbonite_locations) / 20))
 
@@ -358,4 +408,5 @@ attacker = set([bc.UnitType.Ranger, bc.UnitType.Knight, bc.UnitType.Mage, bc.Uni
 stockpile_until_75 = False
 between_stockpiles = 0
 stockpile_has_been_above = False
+
 
