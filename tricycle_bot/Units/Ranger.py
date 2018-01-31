@@ -13,7 +13,7 @@ else:
     passable_locations = variables.passable_locations_mars
 order = [bc.UnitType.Worker, bc.UnitType.Knight, bc.UnitType.Ranger, bc.UnitType.Mage,
          bc.UnitType.Healer, bc.UnitType.Factory, bc.UnitType.Rocket]  # storing order of units
-ranger_unit_priority = [0.7, 1, 2, 1, 3, 5, 3]
+ranger_unit_priority = [0.7, 1, 2, 1, 2.95, 3.5, 3.4]
 directions = variables.directions
 
 
@@ -165,7 +165,11 @@ def get_attack(gc, unit, location, targeting_units):
     lowest_health = float('inf')
     for enemy in vuln_enemies:
         if enemy.id in targeting_units:
-            remaining_health = enemy.health - targeting_units[enemy.id] * 30
+            if enemy.unit_type == variables.unit_types["knight"]:
+                mult = 30 - unit.knight_defense()
+            else:
+                mult = 30
+            remaining_health = enemy.health - targeting_units[enemy.id] * mult
             if remaining_health > 0 and remaining_health < lowest_health:
                 best = enemy
                 lowest_health = remaining_health
