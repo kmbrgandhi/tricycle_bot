@@ -161,9 +161,16 @@ def get_attack(gc, unit, location, targeting_units):
     if len(vuln_enemies)==0:
         return None
     #return vuln_enemies[0]
+    best = None
+    lowest_health = float('inf')
     for enemy in vuln_enemies:
-        if enemy.id in targeting_units and int(enemy.health/unit.damage())<targeting_units[enemy.id]:
-            return enemy
+        if enemy.id in targeting_units:
+            remaining_health = enemy.health - targeting_units[enemy.id] * 30
+            if remaining_health > 0 and remaining_health < lowest_health:
+                best = enemy
+                lowest_health = remaining_health
+    if best is not None:
+        return best
     return max(vuln_enemies, key=lambda x: coefficient_computation(gc, unit, x, x.location.map_location(), location))
 
 def exists_bad_enemy(enemy):
@@ -267,7 +274,6 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
         enemies = gc.sense_nearby_units_by_team(location, unit.vision_range, variables.enemy_team)
         if unit.id in ranger_roles["go_to_mars"]:
             return go_to_mars_sense(gc, unit, battle_locs, location, enemies, direction_to_coord, bfs_array, targeting_units, rocket_locs)
-        start_time = time.time()
         # if variables.print_count < 10:
         #    print("Sensing nearby units:", time.time() - start_time)
         if len(enemies) > 0:
@@ -286,7 +292,6 @@ def ranger_sense(gc, unit, battle_locs, ranger_roles, location, direction_to_coo
             #    print("Getting closest enemy:", time.time() - start_time)
             # sorted_enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(location))
             # closest_enemy = closest_among_ungarrisoned(sorted_enemies)
-            start_time = time.time()
             attack = get_attack(gc, unit, location, targeting_units)
             # if variables.print_count < 10:
             #    print("Getting attack:", time.time() - start_time)
