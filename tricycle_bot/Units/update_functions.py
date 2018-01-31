@@ -177,7 +177,7 @@ def update_variables():
 
     ## Worker 
     variables.my_karbonite = gc.karbonite()
-
+    variables.collective_worker_time = 0
 
     ## Income
     variables.worker_harvest_amount = 0

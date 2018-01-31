@@ -105,6 +105,8 @@ update_quadrant_healer_loc = True
 
 ## WORKER VARIABLES ##
 
+collective_worker_time = 0
+
 factory_spacing = 5
 rocket_spacing = 2
 min_workers_per_building = 4
