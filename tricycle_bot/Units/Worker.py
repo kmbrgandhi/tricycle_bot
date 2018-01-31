@@ -1520,6 +1520,7 @@ def build_start_round(start_map):
 				min_bfs_distance = bfs_distance
 	print("bfs distance",min_bfs_distance)
 
+	return 1
 	if min_bfs_distance == float('inf'):
 		return 1
 	else:

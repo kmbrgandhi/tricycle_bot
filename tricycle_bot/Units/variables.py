@@ -111,6 +111,17 @@ for unit in my_units:
 death_allies_per_quadrant = {}      ## (quad x, quad y): ((x,y), num_dead)
 update_quadrant_healer_loc = True
 
+
+our_init_locs = []
+init_enemy_locs = []
+for unit in earth_start_map.initial_units:
+    loc = unit.location.map_location()
+    if unit.team == enemy_team:
+        init_enemy_locs.append(loc)
+    else:
+        our_init_locs.append(loc)
+
+
 ## WORKER VARIABLES ##
 
 collective_worker_time = 0
@@ -162,17 +173,11 @@ worker_harvest_amount = 0
 current_karbonite_gain = 0
 past_karbonite_gain = 0
 
+
 ## KNIGHT VARIABLES ##
 knight_roles = {"fighter":[], "go_to_mars":[]}
 assigned_knights = {}       ## knight_id: (x, y)
-our_init_locs = []
-init_enemy_locs = []
-for unit in earth_start_map.initial_units:
-    loc = unit.location.map_location()
-    if unit.team == enemy_team:
-        init_enemy_locs.append(loc)
-    else:
-        our_init_locs.append(loc)
+
 knight_attacks = {}
 died_without_attacking = 0
 ranged_enemies = 0
@@ -301,6 +306,38 @@ if curr_planet == bc.Planet.Earth:
     if len(dists)>0:
         if min(dists) < 25 and max(dists) < 33:
             knight_rush = True
+
+    print("min dists",min(dists))
+    # GENERATE POSSIBLE FACTORY LOCATIONS
+    possible_initial_factory_coords = []
+    init_loc_values = []
+    max_range_initial_factory = max(min(min(dists)-40,70),15)
+
+    for my_init_loc in our_init_locs:
+        my_init_coords = (my_init_loc.x,my_init_loc.y)
+        init_loc_values.append(my_init_coords[1]*my_width + my_init_coords[0])
+
+    for x in range(earth_start_map.width):
+        for y in range(earth_start_map.height):
+            if (x,y) in passable_locations_earth:
+                if passable_locations_earth[(x,y)]:
+
+                    possible_loc_value = y*my_width + x
+
+                    if len(init_loc_values) == 1:
+                        bfs_dist = bfs_array[init_loc_values[0],possible_loc_value]
+                        if bfs_dist < max_range_initial_factory:
+                            possible_initial_factory_coords.append((x,y))
+                    else:
+                        min_bfs_distance = float('inf')
+                        for init_loc_value in init_loc_values:
+                            bfs_dist = bfs_array[init_loc_value,possible_loc_value]
+                            if bfs_dist < min_bfs_distance:
+                                min_bfs_distance = bfs_dist
+
+                        if min_bfs_distance < max_range_initial_factory:
+                            possible_initial_factory_coords.append((x,y))
+
 
     ## Karbonite locations update
 
