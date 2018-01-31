@@ -196,7 +196,7 @@ def update_variables():
 
     start_time = time.time()
     worker.designate_roles()
-    print("designating roles time: ",time.time() - start_time)
+    #print("designating roles time: ",time.time() - start_time)
 
     ## Rangers
     variables.targeting_units = {}

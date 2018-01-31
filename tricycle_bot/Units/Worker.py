@@ -160,7 +160,8 @@ def timestep(unit):
 		start_time = time.time()
 		#mine_simple(gc,unit,my_location,earth_start_map)
 		
-		if variables.collective_worker_time > 0.01:
+		if variables.collective_worker_time > 0.015:
+			#print("simple mining")
 			mine_simple(gc,unit,my_location,earth_start_map)
 		else:
 			mine(gc,unit,my_location,earth_start_map,karbonite_locations,current_roles, building_assignment, next_turn_battle_locs)
@@ -309,7 +310,7 @@ def designate_roles():
 
 		update_building_assignment(gc,building_assignment,blueprinting_assignment)
 
-		
+
 		start_time = time.time()
 		update_deposit_info(gc,karbonite_locations)
 		print("updating variables time",time.time() - start_time)
@@ -753,14 +754,14 @@ def get_optimal_deposit(gc,unit,position,karbonite_locations,in_vision_range=Fal
 
 
 			#print("INITIALIZATION time",time.time() - inner_time)
-			"""
+			
 			quadrant = get_quadrant_coords(location_coord)
 			q_info = variables.quadrant_battle_locs[quadrant]
 			enemies_in_quadrant = len(q_info.enemies)
-			"""
+			
 			inner_time = time.time()
 			distance_squared = sense_util.distance_squared_between_coords(location_coord,position_coord)
-			if variables.bfs_array[our_coords_val, target_coords_val] != float('inf'):# and enemies_in_quadrant == 0:
+			if variables.bfs_array[our_coords_val, target_coords_val] != float('inf') and enemies_in_quadrant == 0:
 				if distance_squared > 5:
 					if second_min_karbonite_coord is None:
 						if min_karbonite_coord is None:
@@ -1634,7 +1635,6 @@ def get_quadrant_coords(coords):
 		quadrant_size = variables.mars_quadrant_size
 
 	return (int(coords[0] / quadrant_size), int(coords[1] / quadrant_size))
-
 
 
 def add_new_location(unit_id, old_coords, direction):
