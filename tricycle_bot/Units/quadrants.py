@@ -117,7 +117,7 @@ class QuadrantInfo():
 
         processed_locs = set() 
 
-        if self.is_within_map(loc) and self.passable_locations[loc] and self.is_accessible_from_init_loc(loc): 
+        if loc in self.passable_locations and self.passable_locations[loc] and self.is_accessible_from_init_loc(loc):
             processed_locs.add(loc)
 
         for i in range(1,int(self.quadrant_size/2)+1): 
@@ -127,10 +127,10 @@ class QuadrantInfo():
             loc1 = (curr_map_loc1.x, curr_map_loc1.y)
             loc2 = (curr_map_loc2.x, curr_map_loc2.y)
 
-            if self.is_within_map(loc1) and self.passable_locations[loc1] and self.is_accessible_from_init_loc(loc1): 
+            if loc1 in self.passable_locations and self.passable_locations[loc1] and self.is_accessible_from_init_loc(loc1):
                 processed_locs.add(loc1)
 
-            if self.is_within_map(loc2) and self.passable_locations[loc2] and self.is_accessible_from_init_loc(loc2): 
+            if loc2 in self.passable_locations and self.passable_locations[loc2] and self.is_accessible_from_init_loc(loc2):
                 processed_locs.add(loc2)
 
         return processed_locs
