@@ -183,6 +183,7 @@ died_without_attacking = 0
 ranged_enemies = 0
 
 ## HEALER VARIABLES ##
+collective_healer_time = 0
 healer_radius = 9
 healer_target_locs = set()
 overcharge_targets = set()  ## stored as IDs

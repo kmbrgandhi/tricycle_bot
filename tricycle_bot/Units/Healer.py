@@ -23,7 +23,15 @@ def timestep(unit):
     if unit.unit_type != bc.UnitType.Healer:
         return
     # print('HEALER ID: ', unit.id)
-    gc = variables.gc
+
+    if variables.collective_healer_time > 0.02:
+        # print('simple')
+        timestep_simple(unit)
+    else:
+        timestep_complex(unit)    
+
+def timestep_complex(unit):
+    gc = variables.gc  
 
     composition = variables.info
     direction_to_coord = variables.direction_to_coord
@@ -86,7 +94,7 @@ def timestep(unit):
             if gc.can_overcharge(unit.id, ally.id):
                 overcharge = True
                 best_overcharge_target = ally
-        if best_heal_target is None:
+        if best_heal_target is None and gc.is_heal_ready(unit.id):
             best_heal_target = get_best_target(gc, unit, unit_loc, my_team)
             if best_heal_target is not None:
                 heal = True
@@ -130,6 +138,63 @@ def timestep(unit):
             add_new_location(unit.id, unit_loc, best_dir)
         elif best_loc is not None and gc.is_move_ready(unit.id) and unit_loc != best_loc:
             try_move_smartly(unit, unit_loc, best_loc)
+
+
+def timestep_simple(unit):
+    gc = variables.gc
+
+    composition = variables.info
+    direction_to_coord = variables.direction_to_coord
+    bfs_array = variables.bfs_array
+    enemy_team = variables.enemy_team
+    my_team = variables.my_team
+
+    assigned_healers = variables.assigned_healers              ## healer id: (cluster, best_healer_loc)
+    assigned_overcharge = variables.assigned_overcharge
+    overcharge_targets = variables.overcharge_targets
+
+    quadrant_battles = variables.quadrant_battle_locs
+    if variables.curr_planet == bc.Planet.Earth:
+        quadrant_size = variables.earth_quadrant_size
+    else:
+        quadrant_size = variables.mars_quadrant_size
+
+    unit_locations = variables.unit_locations
+
+    best_loc = None
+    best_heal_target = None
+    location = unit.location
+
+    if location.is_on_map():
+        ## Track location
+        if unit.id not in unit_locations:
+            loc = unit.location.map_location()
+            unit_locations[unit.id] = (loc.x,loc.y)
+            f_f_quad = (int(loc.x / quadrant_size), int(loc.y / quadrant_size))
+            quadrant_battles[f_f_quad].add_ally(unit.id, "healer")
+
+        unit_loc = unit_locations[unit.id]
+
+        ## Assign
+        if unit.id not in assigned_healers: 
+            for quadrant in quadrant_battles: 
+                q_info = quadrant_battles[quadrant]
+                if q_info.in_battle[0]: 
+                    healer_loc = choose_healer_loc(q_info, unit_loc)
+                    if healer_loc is not None: 
+                        assigned_healers[unit.id] = (quadrant, healer_loc)
+                        best_loc = healer_loc
+
+        ## Heal
+        if gc.is_heal_ready(unit.id): 
+            best_heal_target = get_best_target(gc, unit, unit_loc, my_team)
+
+        ## Do stuff 
+        if best_heal_target is not None and gc.can_heal(unit.id, best_heal_target.id):
+            gc.heal(unit.id, best_heal_target.id)
+        if best_loc is not None and gc.is_move_ready(unit.id) and unit_loc != best_loc:
+            try_move_smartly(unit, unit_loc, best_loc)
+
 
 def assign_to_quadrant(gc, unit, unit_loc):
     """
