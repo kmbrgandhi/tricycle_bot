@@ -13,6 +13,7 @@ import Units.Ranger as ranger
 import Units.Worker as worker
 import Units.factory as factory
 import Units.rocket as rocket
+import Units.sense_util as sense_util
 import time
 
 def update_variables():
@@ -145,13 +146,32 @@ def update_variables():
         elif unit.unit_type == unit_types["rocket"]:
             num_rocket+=1
             rockets.append(unit)
+
+    # process factories in order of unit production
+    already_producing = []
+    not_producing = []
+    for fact in factories:
+        if fact.is_factory_producing():
+            already_producing.append(fact)
+        else:
+            not_producing.append(fact)
+    proxy = None
+    battle_locs = variables.last_turn_battle_locs
+    if len(battle_locs)>0:
+        random_choice = random.choice(list(battle_locs.keys()))
+        corr_loc = battle_locs[random_choice][0]
+    else:
+        corr_loc = random.choice(variables.init_enemy_locs)
+    not_producing.sort(key = lambda x: sense_util.distance_squared_between_maplocs(x.location.map_location(), corr_loc))
+
     variables.info = [num_workers, num_knights, num_rangers, num_mages, num_healers, num_factory, num_rocket]
     variables.in_order_units.extend(rangers)
     variables.in_order_units.extend(workers)
     variables.in_order_units.extend(knights)
     variables.in_order_units.extend(mages)
     variables.in_order_units.extend(healers)
-    variables.in_order_units.extend(factories)
+    variables.in_order_units.extend(not_producing)
+    variables.in_order_units.extend(already_producing)
     variables.in_order_units.extend(rockets)
     ## **************************************** UNITS **************************************** ## 
 
