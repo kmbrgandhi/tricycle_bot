@@ -106,6 +106,8 @@ update_quadrant_healer_loc = True
 ## WORKER VARIABLES ##
 
 collective_worker_time = 0
+build_delay = 0
+
 
 factory_spacing = 5
 rocket_spacing = 2
