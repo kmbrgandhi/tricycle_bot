@@ -104,7 +104,7 @@ class QuadrantInfo():
             if best_dir is not None: 
                 avg_ranger_map_loc = bc.MapLocation(variables.curr_planet,avg_ranger_x,avg_ranger_y)
                 opp_best_dir = best_dir.opposite()
-                ideal_loc = avg_ranger_map_loc.add_multiple(opp_best_dir, 3)
+                ideal_loc = avg_ranger_map_loc.add_multiple(opp_best_dir, 2)
                 self.healer_locs = self.get_ideal_healer_locs(ideal_loc, opp_best_dir)
 
                 self.update_assigned_healer_locs()
@@ -273,10 +273,13 @@ class QuadrantInfo():
 
     def urgency_coeff_without_add_units(self, robot_type):
         if robot_type == "healer":
-            if self.health_coeff is not None:
-                return (self.num_died / (self.quadrant_size ** 2)) + 1.5 * self.health_coeff
-            else:
-                return (self.num_died / (self.quadrant_size ** 2))
+            if not self.in_battle[0]:
+                return 0
+            else: 
+                if self.health_coeff is not None:
+                    return (self.num_died / (self.quadrant_size ** 2)) + 1.5 * self.health_coeff
+                else:
+                    return (self.num_died / (self.quadrant_size ** 2))
 
     def urgency_coeff(self, robot_type): 
         """
