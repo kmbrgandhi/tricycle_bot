@@ -157,7 +157,7 @@ def add_new_location(unit_id, old_coords, direction):
         variables.quadrant_battle_locs[old_quadrant].remove_ally(unit_id)
         variables.quadrant_battle_locs[new_quadrant].add_ally(unit_id, "ranger")
 
-def get_attack(gc, unit, location, targeting_units):
+def get_attack(gc, unit, location, targeting_units, priority = ranger_unit_priority):
     enemy_team = variables.enemy_team
     vuln_enemies = gc.sense_nearby_units_by_team(location, unit.attack_range(), enemy_team)
     if len(vuln_enemies)==0:
@@ -794,11 +794,11 @@ def closest_among_ungarrisoned(sorted_units):
     return None
 
 
-def coefficient_computation(gc, our_unit, their_unit, their_loc, location):
+def coefficient_computation(gc, our_unit, their_unit, their_loc, location, priority = ranger_unit_priority):
     # compute the relative appeal of attacking a unit.  Use AOE computation if attacking unit is mage.
     if not gc.can_attack(our_unit.id, their_unit.id):
         return 0
-    coeff = attack_coefficient(gc, our_unit, location, their_unit, their_loc)
+    coeff = attack_coefficient(gc, our_unit, location, their_unit, their_loc, priority)
     if our_unit.unit_type != bc.UnitType.Mage:
         return coeff
     else:
@@ -808,13 +808,13 @@ def coefficient_computation(gc, our_unit, their_unit, their_loc, location):
             except:
                 new_unit = None
             if new_unit is not None and new_unit.team!=our_unit.team:
-                coeff = coeff + attack_coefficient(gc, our_unit, location, new_unit, new_unit.location.map_location())
+                coeff = coeff + attack_coefficient(gc, our_unit, location, new_unit, new_unit.location.map_location(), priority)
 
         return coeff
 
-def attack_coefficient(gc, our_unit, our_loc, their_unit, their_loc):
+def attack_coefficient(gc, our_unit, our_loc, their_unit, their_loc, priority = ranger_unit_priority):
     # generic: how appealing is their_unit to attack
-    coeff = ranger_unit_priority[their_unit.unit_type]
+    coeff = priority[their_unit.unit_type]
     # if distance < attack_range_non_robots(their_unit):
     #     coeff = coeff * sense_util.can_attack_multiplier(their_unit)
     coeff = coeff * sense_util.health_multiplier(their_unit)

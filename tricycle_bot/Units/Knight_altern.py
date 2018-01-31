@@ -14,7 +14,7 @@ else:
     passable_locations = variables.passable_locations_mars
 order = [bc.UnitType.Worker, bc.UnitType.Knight, bc.UnitType.Ranger, bc.UnitType.Mage,
          bc.UnitType.Healer, bc.UnitType.Factory, bc.UnitType.Rocket]  # storing order of units
-ranger_unit_priority = [0.7, 1, 2, 1, 3, 5, 3]
+knight_unit_priority = [0.7, 1, 2, 1, 2.95, 3.5, 3.4]
 directions = variables.directions
 
 def timestep(unit):
@@ -231,7 +231,7 @@ def knight_sense(gc, unit, battle_locs, knight_roles, location, direction_to_coo
         # sorted_enemies = sorted(enemies, key=lambda x: x.location.map_location().distance_squared_to(location))
         # closest_enemy = closest_among_ungarrisoned(sorted_enemies)
         start_time = time.time()
-        attack = Ranger.get_attack(gc, unit, location, targeting_units)
+        attack = Ranger.get_attack(gc, unit, location, targeting_units, knight_unit_priority)
         # if variables.print_count < 10:
         #    print("Getting attack:", time.time() - start_time)
         if attack is not None:
@@ -246,7 +246,7 @@ def knight_sense(gc, unit, battle_locs, knight_roles, location, direction_to_coo
                     if dir is None or dir == variables.directions[8]:
                         dir = Ranger.optimal_direction_towards(gc, unit, location, closest_enemy.location.map_location())
                     next_turn_loc = location.add(dir)
-                    attack = Ranger.get_attack(gc, unit, next_turn_loc, targeting_units)
+                    attack = Ranger.get_attack(gc, unit, next_turn_loc, targeting_units, knight_unit_priority)
                     if attack is not None:
                         move_then_attack = True
                 else:

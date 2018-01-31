@@ -174,7 +174,8 @@ def optimal_unload(gc, unit, directions, building_assignments, battle_locs):
 			locs = explore.coord_neighbors(map_loc_coords, diff=explore.diffs_10)
 			locs_good = []
 			for loc in locs:
-				if gc.can_sense_location(loc) and gc.has_unit_at_location(loc):
+				loc_map_vers = bc.MapLocation(variables.curr_planet, loc[0], loc[1])
+				if gc.can_sense_location(loc_map_vers) and gc.has_unit_at_location(loc_map_vers):
 					locs_good.append(loc)
 			num_good = len(locs_good)
 			if num_good > best_val:
