@@ -923,7 +923,6 @@ def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, bui
 	if variables.use_components:
 		if my_unit.id not in variables.miner_component_assignments:
 			best, best_loc = assign_mining_component(gc, my_unit, my_location)
-			print(best_loc)
 			variables.miner_component_assignments[my_unit.id] = best_loc
 			variables.num_workers[best]+=1
 		if my_unit.id in variables.miner_component_assignments and my_unit.id not in variables.travelled_to_component:
