@@ -14,7 +14,7 @@ else:
     passable_locations = variables.passable_locations_mars
 order = [bc.UnitType.Worker, bc.UnitType.Knight, bc.UnitType.Ranger, bc.UnitType.Mage,
          bc.UnitType.Healer, bc.UnitType.Factory, bc.UnitType.Rocket]  # storing order of units
-knight_unit_priority = [0.7, 1, 2, 1, 2.95, 3.5, 3.4]
+knight_unit_priority = [1, 3, 3, 1, 3, 4, 3.4]
 directions = variables.directions
 
 def timestep(unit):
@@ -216,7 +216,7 @@ def knight_sense(gc, unit, battle_locs, knight_roles, location, direction_to_coo
     #    print("Sensing nearby units:", time.time() - start_time)
     if len(enemies) > 0:
         visible_enemies = True
-        start_time = time.time()
+        """
         closest_enemy = None
         closest_dist = float('inf')
         for enemy in enemies:
@@ -225,6 +225,18 @@ def knight_sense(gc, unit, battle_locs, knight_roles, location, direction_to_coo
                 dist = sense_util.distance_squared_between_maplocs(loc.map_location(), location)
                 if dist < closest_dist:
                     closest_dist = dist
+                    closest_enemy = enemy
+        """
+        closest_enemy = None
+        closest_dist = -float('inf')
+        for enemy in enemies:
+            enemy_loc = enemy.location
+            if enemy_loc.is_on_map():
+                enemy_map_loc = enemy_loc.map_location()
+                coeff = Ranger.coefficient_computation(gc, unit, enemy, enemy_map_loc, location)
+                # dist = sense_util.distance_squared_between_maplocs(loc.map_location(), location)
+                if coeff > closest_dist:
+                    closest_dist = coeff
                     closest_enemy = enemy
         # if variables.print_count < 10:
         #    print("Getting closest enemy:", time.time() - start_time)
