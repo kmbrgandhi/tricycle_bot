@@ -102,18 +102,15 @@ class QuadrantInfo():
             ## Set the group of ideal healer locations to be 3-4 squares behind rangers in 
             ## opposite direction of attack direction
             if best_dir is not None: 
-                avg_ranger_map_loc = bc.MapLocation(variables.curr_planet,avg_ranger_x,avg_ranger_y)
-                opp_best_dir = best_dir.opposite()
-                ideal_loc = avg_ranger_map_loc.add_multiple(opp_best_dir, 2)
+                opp_best_dir = sense_util.opposite(best_dir)
+                ideal_loc = sense_util.add_multiple(avg_ranger, best_dir, 2)
                 self.healer_locs = self.get_ideal_healer_locs(ideal_loc, opp_best_dir)
 
                 self.update_assigned_healer_locs()
 
-    def get_ideal_healer_locs(self, map_loc, d): 
+    def get_ideal_healer_locs(self, loc, d): 
         side1 = d.rotate_right().rotate_right()
         side2 = d.rotate_left().rotate_left()
-
-        loc = (map_loc.x, map_loc.y)
 
         processed_locs = set() 
 
@@ -121,11 +118,8 @@ class QuadrantInfo():
             processed_locs.add(loc)
 
         for i in range(1,int(self.quadrant_size/2)+1): 
-            curr_map_loc1 = map_loc.add_multiple(side1,i)
-            curr_map_loc2 = map_loc.add_multiple(side2,i)
-
-            loc1 = (curr_map_loc1.x, curr_map_loc1.y)
-            loc2 = (curr_map_loc2.x, curr_map_loc2.y)
+            loc1 = sense_util.add_multiple(loc, side1, i)
+            loc2 = sense_util.add_multiple(loc, side2, i)
 
             if loc1 in self.passable_locations and self.passable_locations[loc1] and self.is_accessible_from_init_loc(loc1):
                 processed_locs.add(loc1)

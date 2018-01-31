@@ -840,7 +840,7 @@ def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, bui
 		direction_to_deposit = my_location.direction_to(closest_deposit)
 		deposit_coord = (closest_deposit.x,closest_deposit.y)
 		#print(unit.id, "is trying to mine at", direction_to_deposit)
-		enemy_units = gc.sense_nearby_units_by_team(my_location, my_unit.vision_range, sense_util.enemy_team(gc))
+		enemy_units = gc.sense_nearby_units_by_team(my_location, my_unit.vision_range, variables.enemy_team)
 		dangerous_types = [variables.unit_types["knight"], variables.unit_types["ranger"], variables.unit_types["mage"], variables.unit_types["factory"]]
 		dangerous_enemies = []
 

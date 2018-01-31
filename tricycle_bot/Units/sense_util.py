@@ -3,6 +3,8 @@ import random
 import sys
 import traceback
 
+import Units.variables as variables
+
 directions = list(bc.Direction)
 direction_to_index = {"North": 0, "Northeast": 1, "East": 2, "Southeast": 3, "South": 4, "Southwest": 5, "West": 6,
                       "Northwest": 7, "Center": 8}
@@ -28,11 +30,16 @@ def health_multiplier(unit):
     c = 1.75
     return 1 + c*(unit.max_health - unit.health)/unit.max_health
 
-def enemy_team(gc):
-    # Returns the enemy team
-    teams = bc.Team
-    for team in teams:
-        if team != gc.team(): return team
+def opposite(d): 
+    coord_dir = variables.direction_to_coord[d]
+    opp_coord_dir = (-coord_dir[0],-coord_dir[1])
+    return variables.coord_to_direction[opp_coord_dir]
+
+def add_multiple(loc, d, num_add): 
+    coord_dir = variables.direction_to_coord[d]
+    for i in range(num_add): 
+        loc = (loc[0]+coord_dir[0],loc[1]+coord_dir[1])
+    return loc
 
 def best_available_direction_visibility(gc, unit, locs):
     # move unit toward set of locations

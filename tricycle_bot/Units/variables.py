@@ -3,7 +3,6 @@ import random
 import sys
 import traceback
 import Units.map_info as map_info
-import Units.sense_util as sense_util
 import Units.explore as explore
 import time
 import numpy as np
@@ -18,7 +17,11 @@ gc = bc.GameController()
 ## CONSTANTS ##
 
 my_team = gc.team()
-enemy_team = sense_util.enemy_team(gc)
+enemy_team = None
+teams = bc.Team
+for team in teams:
+    if team != gc.team(): 
+        enemy_team = team
 
 directions = list(bc.Direction)
 all_but_center_dir = directions[:-1]
@@ -49,8 +52,6 @@ locs_next_to_terrain = map_info.get_locations_next_to_terrain(gc,earth)
 
 earth_diagonal = (earth_start_map.height**2 + earth_start_map.width**2)
 mars_diagonal = (mars_start_map.height**2 + mars_start_map.width**2)
-my_team = gc.team()
-enemy_team = sense_util.enemy_team(gc)
 
 num_enemies = 0
 info = []
