@@ -160,18 +160,31 @@ def add_new_location(unit_id, old_coords, direction):
 
 
 def get_best_target(gc, unit, loc_coords, priority_order, javelin=False):
+    assigned_knights = variables.assigned_knights
+
     enemy_team = variables.enemy_team
     location = bc.MapLocation(variables.curr_planet,loc_coords[0],loc_coords[1])
     vuln_enemies = gc.sense_nearby_units_by_team(location, unit.attack_range(), enemy_team)
     if len(vuln_enemies)==0 or not gc.is_attack_ready(unit.id):
         return None
     best_target = max(vuln_enemies, key=lambda x: attack.coefficient_computation(gc, unit, x, location, priority_order))
+    
+    ## Make this the new target loc
+    if not variables.knight_rush: 
+        best_target_loc = best_target.location.map_location()
+        assigned_knights[unit.id] = (best_target_loc.x, best_target_loc.y)
     return best_target
 
 def get_best_target_in_quadrant(gc, unit, loc_coords, priority_order): 
     """
     Returns best_target, best_loc to move towards. 
     """
+    quadrant_battles = variables.quadrant_battle_locs
+    if variables.curr_planet == bc.Planet.Earth: 
+        quadrant_size = variables.earth_quadrant_size
+    else:
+        quadrant_size = variables.mars_quadrant_size
+
     enemy_team = variables.enemy_team
     location = bc.MapLocation(variables.curr_planet,loc_coords[0],loc_coords[1])
     vuln_enemies = gc.sense_nearby_units_by_team(location, unit.attack_range(), enemy_team)
@@ -184,13 +197,27 @@ def get_best_target_in_quadrant(gc, unit, loc_coords, priority_order):
             return (best_target, None)
     # If there are no vuln enemies then look at vision range and choose to move towards nearby enemies
     else: 
-        vuln_enemies = gc.sense_nearby_units_by_team(location, unit.vision_range, enemy_team)
-        if len(vuln_enemies) > 0: 
-            best_target = max(vuln_enemies, key=lambda x: attack.coefficient_computation(gc, unit, x, location, priority_order, far=True))
-            best_loc = (best_target.location.map_location().x, best_target.location.map_location().y)
-            return (None, best_loc)
-        return (None, None)
+        # vuln_enemies = gc.sense_nearby_units_by_team(location, unit.vision_range, enemy_team)
+        # if len(vuln_enemies) > 0: 
+        #     best_target = max(vuln_enemies, key=lambda x: attack.coefficient_computation(gc, unit, x, location, priority_order, far=True))
+        #     best_loc = (best_target.location.map_location().x, best_target.location.map_location().y)
+        #     return (None, best_loc)
+        # return (None, None)
+        quadrant = (int(loc_coords[0]/quadrant_size), int(loc_coords[1]/quadrant_size))
+        q_info = quadrant_battles[quadrant]
+        if len(q_info.enemy_locs) > 0:
+            for loc in q_info.enemy_locs: 
+                if is_accessible(loc_coords, loc): 
+                    return (None, loc)
+        return (None, q_info.target_loc)
 
+def is_accessible(unit_loc, target_loc): 
+    bfs_array = variables.bfs_array
+    our_coords_val = Ranger.get_coord_value(unit_loc)
+    target_coords_val = Ranger.get_coord_value(target_loc)
+    if bfs_array[our_coords_val, target_coords_val]!=float('inf'):
+        return True 
+    return False
 
 def update_battles():
     """
@@ -220,8 +247,6 @@ def update_battles():
             knight_coeff = quadrant_battles[f_f_quad].urgency_coeff("knight")
             if knight_coeff == 0: 
                 remove_assigned.add(knight_id)
-
-
 
     for knight_id in remove_assigned: 
         del assigned_knights[knight_id]
