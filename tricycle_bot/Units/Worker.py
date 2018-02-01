@@ -1687,7 +1687,7 @@ def get_factory_limit():
 	factory_cost_per_round = variables.factory_cost_per_round
 	usable_income = max(0,variables.past_karbonite_gain - variables.reserved_income)
 	#print("factory cap is now", min(usable_income/factory_cost_per_round,15))
-	return max(4, usable_income/factory_cost_per_round + (variables.my_karbonite - 400)/200)
+	return min(max(4, usable_income/factory_cost_per_round + (variables.my_karbonite - 400)/200), 28)
 
 def get_rocket_limit():
 	return 4
