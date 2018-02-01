@@ -942,7 +942,6 @@ def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, bui
 	if variables.use_components:
 		if my_unit.id not in variables.miner_component_assignments:
 			best, best_loc = assign_mining_component(gc, my_unit, my_location)
-			print(best_loc)
 			variables.miner_component_assignments[my_unit.id] = best_loc
 			variables.num_workers[best]+=1
 		if my_unit.id in variables.miner_component_assignments and my_unit.id not in variables.travelled_to_component:
@@ -995,6 +994,10 @@ def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, bui
 
 		# only adds enemy units that can attack
 		for unit in enemy_units:
+			map_loc = unit.location.map_location()
+			battle_quadrant = (int(map_loc.x/5), int(map_loc.y/5))
+			if battle_quadrant not in variables.next_turn_battle_locs: 
+				variables.next_turn_battle_locs[battle_quadrant] = (map_loc, 1)
 			if unit.unit_type in dangerous_types:
 				dangerous_enemies.append(unit)
 
@@ -1450,6 +1453,31 @@ def get_workers_per_building(gc,start_map,building_location):
 
 	return min(num_adjacent_spaces,max_workers_per_building)
 
+def best_nearby_component(gc, center):
+	comp_final = variables.components_final
+	min_overall_dist = None
+	min_amount = 0
+	min_component = None
+	for index in comp_final:
+		component = comp_final[index]
+		if index not in variables.bad_component:
+			min_dist = float('inf')
+			min_coords_dist = float('inf')
+			min_loc = None
+			for their_loc in component:
+				dist = variables.bfs_array[Ranger.get_coord_value(center), Ranger.get_coord_value(their_loc)]
+				if dist < min_dist:
+					min_dist = dist
+					min_loc = their_loc
+			if variables.amount_components[index] > 1.7*min_amount:
+				min_overall_dist = min_dist
+				min_amount = variables.amount_components[index]
+				min_component = index
+			elif min_amount/1.7 < variables.amount_components[index] and min_dist < min_overall_dist:
+				min_overall_dist = min_dist
+				min_amount = variables.amount_components[index]
+				min_component = index
+	return min_component
 
 # generates locations to build factories that are close to karbonite deposits
 def get_optimal_building_location(gc, start_map, center, building_type, karbonite_locations, blueprinting_queue, blueprinting_assignment):
@@ -1478,63 +1506,135 @@ def get_optimal_building_location(gc, start_map, center, building_type, karbonit
 	min_deposit_karbonite = float('inf')
 	coords_in_vision_range = explore.coord_neighbors(center_coords, diff=explore.diffs_50, include_self=True)
 
-	for location_coords in coords_in_vision_range:
-		location = bc.MapLocation(variables.curr_planet, location_coords[0], location_coords[1])
-		#print("can we build here?",variables.invalid_building_locations[location_coords],location)
-		if location_coords in passable_locations and passable_locations[location_coords] and variables.invalid_building_locations[location_coords]:
-			# print("optimal building location time",time.time() - start_time)
+	if variables.use_components:
+		best_component_ind = best_nearby_component(gc, center_coords)
+		best_component = variables.components_final[best_component_ind]
+		min_dist = float('inf')
+		min_coords_dist = float('inf')
+		min_loc = None
+		for location_coords in coords_in_vision_range:
+			location = bc.MapLocation(variables.curr_planet, location_coords[0], location_coords[1])
+			if location_coords in passable_locations and passable_locations[location_coords] and variables.invalid_building_locations[location_coords]:
+				# print("optimal building location time",time.time() - start_time)
 
-			#adjacent_spaces = get_workers_per_building(gc,start_map,location)
-			quadrant = get_quadrant_coords(location_coords)
+				# adjacent_spaces = get_workers_per_building(gc,start_map,location)
+				quadrant = get_quadrant_coords(location_coords)
 
-			q_info = variables.quadrant_battle_locs[quadrant]
-			enemies_in_quadrant = len(q_info.enemies)
+				q_info = variables.quadrant_battle_locs[quadrant]
+				enemies_in_quadrant = len(q_info.enemies)
 
-			#print("is blocking site?",is_blocking_site(location_coords),location_coords)
-			#print("location",location,"adjacent spaces",adjacent_spaces)
-			if not is_blocking_site(location_coords) and enemies_in_quadrant == 0 and (quadrant in allowed_quadrants or len(allowed_quadrants) == 0):
+				# print("is blocking site?",is_blocking_site(location_coords),location_coords)
+				# print("location",location,"adjacent spaces",adjacent_spaces)
 
-				if location_coords not in karbonite_locations:
-					karbonite_at_coord = 0
-					empty_space_detected = True
+				if not is_blocking_site(location_coords) and enemies_in_quadrant == 0 and (quadrant in allowed_quadrants or len(allowed_quadrants) == 0):
+					for their_loc in best_component:
+						dist = variables.bfs_array[Ranger.get_coord_value(location_coords), Ranger.get_coord_value(their_loc)]
+						if dist < min_dist:
+							coords_dist = sense_util.distance_squared_between_coords(location_coords, their_loc)
+							min_coords_dist = coords_dist
+							min_dist = dist
+							min_loc = their_loc
+						elif dist == min_dist:
+							coords_dist = sense_util.distance_squared_between_coords(location_coords, their_loc)
+							if coords_dist < min_coords_dist:
+								min_coords_dist = coords_dist
+								min_dist = dist
+								min_loc = their_loc
+		return min_loc
+	elif len(variables.components_final) == 1 and variables.use_single_component:
+		best_component_ind = list(variables.components_final.keys())[0]
+		best_component = variables.components_final[best_component_ind]
+		min_dist = float('inf')
+		min_coords_dist = float('inf')
+		min_loc = None
+		for location_coords in coords_in_vision_range:
+			location = bc.MapLocation(variables.curr_planet, location_coords[0], location_coords[1])
+			if location_coords in passable_locations and passable_locations[location_coords] and variables.invalid_building_locations[location_coords]:
+				# print("optimal building location time",time.time() - start_time)
+
+				# adjacent_spaces = get_workers_per_building(gc,start_map,location)
+				quadrant = get_quadrant_coords(location_coords)
+
+				q_info = variables.quadrant_battle_locs[quadrant]
+				enemies_in_quadrant = len(q_info.enemies)
+
+				# print("is blocking site?",is_blocking_site(location_coords),location_coords)
+				# print("location",location,"adjacent spaces",adjacent_spaces)
+				if not is_blocking_site(location_coords) and enemies_in_quadrant == 0 and (
+								quadrant in allowed_quadrants or len(allowed_quadrants) == 0):
+					for their_loc in best_component:
+						dist = variables.bfs_array[Ranger.get_coord_value(location_coords), Ranger.get_coord_value(their_loc)]
+						if dist < min_dist:
+							coords_dist = sense_util.distance_squared_between_coords(location_coords, their_loc)
+							min_coords_dist = coords_dist
+							min_dist = dist
+							min_loc = their_loc
+						elif dist == min_dist:
+							coords_dist = sense_util.distance_squared_between_coords(location_coords, their_loc)
+							if coords_dist < min_coords_dist:
+								min_coords_dist = coords_dist
+								min_dist = dist
+								min_loc = their_loc
+		return min_loc
+	else:
+		for location_coords in coords_in_vision_range:
+			location = bc.MapLocation(variables.curr_planet, location_coords[0], location_coords[1])
+			#print("can we build here?",variables.invalid_building_locations[location_coords],location)
+			if location_coords in passable_locations and passable_locations[location_coords] and variables.invalid_building_locations[location_coords]:
+				# print("optimal building location time",time.time() - start_time)
+
+				#adjacent_spaces = get_workers_per_building(gc,start_map,location)
+				quadrant = get_quadrant_coords(location_coords)
+
+				q_info = variables.quadrant_battle_locs[quadrant]
+				enemies_in_quadrant = len(q_info.enemies)
+
+				#print("is blocking site?",is_blocking_site(location_coords),location_coords)
+				#print("location",location,"adjacent spaces",adjacent_spaces)
+				if not is_blocking_site(location_coords) and enemies_in_quadrant == 0 and (quadrant in allowed_quadrants or len(allowed_quadrants) == 0):
+
+					if location_coords not in karbonite_locations:
+						karbonite_at_coord = 0
+						empty_space_detected = True
+					else:
+						karbonite_at_coord = karbonite_locations[location_coords]
+						deposits_located = True
+
+					if karbonite_at_coord < min_deposit_karbonite:
+						min_deposit_karbonite = karbonite_at_coord
+						min_deposit_coord = location_coords
+
+					if karbonite_at_coord > 0:
+						continue
+
+					if location_coords in adjacent_locations:
+						potential_adjacent_locations.append(location_coords)
+
+					for adjacent_location in explore.coord_neighbors(location_coords):
+						if adjacent_location in karbonite_locations:
+							karbonite_value = karbonite_locations[adjacent_location]
+						else:
+							karbonite_value = 0
+
+						if location_coords not in karbonite_adjacent_locations:
+							karbonite_adjacent_locations[location_coords] = karbonite_value
+						else:
+							karbonite_adjacent_locations[location_coords] += karbonite_value
+					# print("par t2 location time",time.time() - start_time)
+
 				else:
-					karbonite_at_coord = karbonite_locations[location_coords]
-					deposits_located = True
-
-				if karbonite_at_coord < min_deposit_karbonite:
-					min_deposit_karbonite = karbonite_at_coord
-					min_deposit_coord = location_coords
-
-				if karbonite_at_coord > 0:
 					continue
 
-				if location_coords in adjacent_locations:
-					potential_adjacent_locations.append(location_coords)
 
-				for adjacent_location in explore.coord_neighbors(location_coords):
-					if adjacent_location in karbonite_locations:
-						karbonite_value = karbonite_locations[adjacent_location]
-					else:
-						karbonite_value = 0
+		if not deposits_located and len(potential_adjacent_locations) > 0:
 
-					if location_coords not in karbonite_adjacent_locations:
-						karbonite_adjacent_locations[location_coords] = karbonite_value
-					else:
-						karbonite_adjacent_locations[location_coords] += karbonite_value
-				# print("par t2 location time",time.time() - start_time)
-					
-			else:
-				continue
-
-
-	if not deposits_located and len(potential_adjacent_locations) > 0:
-		return potential_adjacent_locations[0]
-	elif deposits_located and empty_space_detected:
-		return max(list(karbonite_adjacent_locations.keys()), key=lambda loc: karbonite_adjacent_locations[loc])
-	elif deposits_located and not empty_space_detected and min_deposit_coord is not None:
-		return min_deposit_coord
-	else:
-		return None
+			return potential_adjacent_locations[0]
+		elif deposits_located and empty_space_detected:
+			return max(list(karbonite_adjacent_locations.keys()), key=lambda loc: karbonite_adjacent_locations[loc])
+		elif deposits_located and not empty_space_detected and min_deposit_coord is not None:
+			return min_deposit_coord
+		else:
+			return None
 
 	"""
 	if len(karbonite_adjacent_locations) == 0 and min_deposit_coord is not None:
@@ -1587,7 +1687,7 @@ def get_factory_limit():
 	factory_cost_per_round = variables.factory_cost_per_round
 	usable_income = max(0,variables.past_karbonite_gain - variables.reserved_income)
 	#print("factory cap is now", min(usable_income/factory_cost_per_round,15))
-	return max(4, usable_income/factory_cost_per_round + (variables.my_karbonite - 500)/200)
+	return max(4, usable_income/factory_cost_per_round + (variables.my_karbonite - 400)/200)
 
 def get_rocket_limit():
 	return 4
