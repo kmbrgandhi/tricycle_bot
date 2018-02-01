@@ -408,7 +408,7 @@ if curr_planet == bc.Planet.Earth:
         num_workers = {}
         for i in components_final:
             num_workers[i] = 0
-    worker_starting_cap = max(5, min(12, len(karbonite_locations) / 20))
+    worker_starting_cap = max(5, min(12, 6+len(karbonite_locations) / 20))
 
 else:
     my_width = mars_width
