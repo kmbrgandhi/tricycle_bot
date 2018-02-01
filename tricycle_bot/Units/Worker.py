@@ -583,7 +583,7 @@ def get_worker_cap(gc,karbonite_locations, info, num_enemies):
 		#print('replication cap yes')
 		return 6
 	elif info[5] >= 1:
-		return 5 + int(len(karbonite_locations)/25)
+		return 9 + int(len(karbonite_locations)/20)
 	else:
 		return variables.worker_starting_cap
 
@@ -818,7 +818,25 @@ def mine_simple(gc,my_unit,my_location,start_map):
 	my_location_coord = (my_location.x,my_location.y)
 	
 	closest_karbonite_coord = None
-	
+	"""
+	for adjacent_coord in explore.coord_neighbors(my_location_coord,include_self=True):
+		if adjacent_coord in karbonite_locations:
+
+			closest_karbonite_location = bc.MapLocation(variables.earth,adjacent_coord[0],adjacent_coord[1])
+			closest_adjacent_coord = (closest_karbonite_location.x,closest_karbonite_location.y)
+			direction_to_closest_deposit = my_location.direction_to(closest_karbonite_location)
+
+			if gc.can_harvest(my_unit.id,direction_to_closest_deposit):
+
+				gc.harvest(my_unit.id,direction_to_closest_deposit)
+				
+				karbonite_gained = min(variables.worker_harvest_amount,karbonite_locations[closest_adjacent_coord])
+				variables.current_karbonite_gain += karbonite_gained
+				karbonite_locations[closest_adjacent_coord] -= karbonite_gained
+				variables.my_karbonite = gc.karbonite()
+
+				return
+	"""
 	for closeby_coord in explore.coord_neighbors(my_location_coord,diff=explore.diffs_50,include_self=True):
 	
 		if closeby_coord in passable_locations:
@@ -919,6 +937,7 @@ def assign_mining_component(gc, unit, my_location):
 					mult = amount
 					closest_dist_tiebreaker = min_dist
 	return best, best_loc
+
 def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, building_assignment, battle_locs):
 	if variables.use_components:
 		if my_unit.id not in variables.miner_component_assignments:
@@ -1102,9 +1121,30 @@ def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, bui
 		#print("worker cap",get_worker_cap(gc,variables.karbonite_locations,info,variables.num_enemies))
 		if info[0] < get_worker_cap(gc,variables.karbonite_locations,info,variables.num_enemies):
 			if my_location != closest_deposit:
-				shape = [closest_deposit.x- my_location.x, closest_deposit.y - my_location.y]
-				list_of_dirs = sense_util.get_best_option(shape)
-				try_replicate = replicate(gc,my_unit,list_of_dirs)
+
+				max_karbonite_num = 0
+				max_karbonite_coord = None
+
+				for adjacent_coord in explore.coord_neighbors(my_location_coord):
+
+					if adjacent_coord not in karbonite_locations:
+						continue
+
+					karbonite_at_adjacency = karbonite_locations[adjacent_coord]
+
+					if karbonite_at_adjacency > max_karbonite_num:
+						max_karbonite_coord = adjacent_coord
+						max_karbonite_num = karbonite_at_adjacency
+
+
+				if max_karbonite_coord is None:
+					shape = [closest_deposit.x - my_location.x, closest_deposit.y - my_location.y]
+					list_of_dirs = sense_util.get_best_option(shape)
+					try_replicate = replicate(gc,my_unit,list_of_dirs)
+				else:
+					max_karbonite_loc = bc.MapLocation(variables.curr_planet,max_karbonite_coord[0],max_karbonite_coord[1])
+					try_replicate = replicate(gc,my_unit,[my_location.direction_to(max_karbonite_loc)])
+
 			else:
 				try_replicate = replicate(gc,my_unit)
 			#print("try replicate",try_replicate)
