@@ -999,7 +999,9 @@ def mine(gc,my_unit,my_location,start_map,karbonite_locations,current_roles, bui
 			if battle_quadrant not in variables.next_turn_battle_locs: 
 				variables.next_turn_battle_locs[battle_quadrant] = (map_loc, 1)
 			if unit.unit_type in dangerous_types:
-				dangerous_enemies.append(unit)
+				if unit.unit_type == variables.unit_types["factory"] and (unit.structure_is_built() or float(unit.health/unit.max_health) > 0.6):
+					print("FUCK MY LIFEEEFEJAF;SDKJF;A")
+					dangerous_enemies.append(unit)
 
 
 		if len(dangerous_enemies) > 0:
