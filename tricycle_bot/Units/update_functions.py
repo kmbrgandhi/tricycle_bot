@@ -204,7 +204,7 @@ def update_variables():
     ranger.update_rangers()
 
     ## Knights
-    if variables.curr_planet == bc.Planet.Mars or min(variables.dists)<5 and gc.round()<175:
+    if variables.curr_planet == bc.Planet.Mars or len(variables.dists)==0 or min(variables.dists)<5 and gc.round()<175:
         knight.update_battles()
     else:
         knight_altern.update_knights()

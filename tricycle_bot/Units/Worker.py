@@ -160,7 +160,7 @@ def timestep(unit):
 		start_time = time.time()
 		#mine_simple(gc,unit,my_location,earth_start_map)
 		
-		if variables.collective_worker_time > 0.015:
+		if variables.collective_worker_time > 0.02:
 			#print("simple mining")
 			mine_simple(gc,unit,my_location,earth_start_map)
 		else:

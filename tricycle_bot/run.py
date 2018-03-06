@@ -18,7 +18,7 @@ import Units.variables as variables
 import Units.update_functions as update
 import Units.explore as explore
 
-print("pystarting")
+#print("pystarting")
 
 # A GameController is the main type that you talk to the game with.
 # Its constructor will connect to a running game.
@@ -26,7 +26,7 @@ print("pystarting")
 gc = variables.gc
 
 
-print("pystarted")
+print("Thank you devs for all your hard work")
 
 # It's a good idea to try to keep your bots deterministic, to make debugging easier.
 # determinism isn't required, but it means that the same things will happen in every thing you run,

@@ -314,7 +314,7 @@ if curr_planet == bc.Planet.Earth:
     # GENERATE POSSIBLE FACTORY LOCATIONS
     possible_initial_factory_coords = []
     init_loc_values = []
-    max_range_initial_factory = max(min(min(dists)-40,70),15)
+
 
     for my_init_loc in our_init_locs:
         my_init_coords = (my_init_loc.x,my_init_loc.y)
@@ -408,6 +408,8 @@ if curr_planet == bc.Planet.Earth:
         num_workers = {}
         for i in components_final:
             num_workers[i] = 0
+    #print(use_components)
+
     worker_starting_cap = max(5, min(12, 6+len(karbonite_locations) / 20))
 
 else:
@@ -427,7 +429,7 @@ else:
                         S[val, val2] = 1
 
     bfs_array = csgraph.shortest_path(S, method='D', unweighted=True)
-    print(time.time()-start_time)
+    #print(time.time()-start_time)
 
     karbonite_locations = {}
     initial_coords = []
